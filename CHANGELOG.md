@@ -1,5 +1,5 @@
 # Changelog
-
+## 0.23.1
 ## Unreleased
 - Change: turning on "On-screen alert when ready" shows a sample alert. The "Test alert" button is removed.
 - Change: options are grouped by what they do. Settings > General holds the alerts, the Hardcore health warning and the timer options; Display holds the window and map options (the tooltip switch moved here from Nodes); Tools holds the data actions (Reset timers, the new-session switch, and the debug report).

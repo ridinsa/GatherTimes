@@ -12,13 +12,14 @@
 ## Notes-suID: Timer respawn herbal jeung bijih, titik spawn, rute ngumpulkeun, jeung HUD minimap pinuh layar (/gt, /gt hud).
 ## Notes-zhCN: 草药和矿石的刷新计时、刷新点位、采集路线，以及全屏小地图 HUD (/gt, /gt hud)。
 ## Author: miRidinsa
-## Version: 0.23.0
+## Version: 0.23.1
 ## X-License: GPL-3.0-or-later
 ## X-Website: https://github.com/ridinsa/GatherTimes
 ## SavedVariables: GatherTimesDB, GatherTimesHUNDB, HideUnitNamesDB
 ## OptionalDeps: HereBeDragons, GatherMate2, GatherMate2_Data, TomTom
 # CurseForge packaging: uncomment and fill in once the CurseForge project exists
 # ## X-Curse-Project-ID: 000000
+## X-Wago-ID: bGoY1q60
 
 # bundled libraries (put the files in Libs\, a missing file is skipped by the client,
 # the addon then falls back to an installed HereBeDragons and otherwise warns).  They must load before Core\Util.lua.
