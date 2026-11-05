@@ -1,0 +1,120 @@
+## Interface: 11509, 20506, 40402, 50503, 50504, 16001, 120105
+## X-Client-Families: Classic Era, Hardcore, Season of Discovery, Burning Crusade Classic Anniversary, Cataclysm Classic, Mists Classic, Forever, Retail
+## Title: GatherTimes
+## IconTexture: Interface\Icons\INV_Misc_Herb_15
+## Notes: Herb and ore respawn timers, spawn spots, gathering routes and a full-screen minimap HUD (/gt, /gt hud).
+## Notes-deDE: Respawn-Timer für Kräuter und Erze, Fundstellen, Sammelrouten und ein bildschirmfüllendes Minimap-HUD (/gt, /gt hud).
+## Notes-itIT: Timer di respawn per erbe e minerali, posizioni, percorsi di raccolta e un HUD minimappa a schermo intero (/gt, /gt hud).
+## Notes-ptBR: Timers de respawn de ervas e minérios, locais de spawn, rotas de coleta e um HUD de minimapa em tela cheia (/gt, /gt hud).
+## Notes-esES: Timers de reaparición de hierbas y minerales, ubicaciones, rutas de recolección y un HUD de minimapa a pantalla completa (/gt, /gt hud).
+## Notes-koKR: 약초와 광석의 재생성 타이머, 생성 위치, 채집 경로, 전체 화면 미니맵 HUD (/gt, /gt hud).
+## Notes-jaJP: 薬草と鉱石の再出現タイマー、出現地点、採集ルート、全画面ミニマップ HUD (/gt, /gt hud)。
+## Notes-suID: Timer respawn herbal jeung bijih, titik spawn, rute ngumpulkeun, jeung HUD minimap pinuh layar (/gt, /gt hud).
+## Notes-zhCN: 草药和矿石的刷新计时、刷新点位、采集路线，以及全屏小地图 HUD (/gt, /gt hud)。
+## Author: miRidinsa
+## Version: 0.23.0
+## X-License: GPL-3.0-or-later
+## X-Website: https://github.com/ridinsa/GatherTimes
+## SavedVariables: GatherTimesDB, GatherTimesHUNDB, HideUnitNamesDB
+## OptionalDeps: HereBeDragons, GatherMate2, GatherMate2_Data, TomTom
+# CurseForge packaging: uncomment and fill in once the CurseForge project exists
+# ## X-Curse-Project-ID: 000000
+
+# bundled libraries (put the files in Libs\, a missing file is skipped by the client,
+# the addon then falls back to an installed HereBeDragons and otherwise warns).  They must load before Core\Util.lua.
+# LibStub keeps the newest copy when another addon bundles the same library.
+Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
+Libs\HereBeDragons\HereBeDragons-2.0.lua
+Libs\HereBeDragons\HereBeDragons-Pins-2.0.lua
+
+# core (namespace, helpers, data, saved settings)
+Core\Compat.lua
+Core\Core.lua
+
+# translations (Locales.lua = engine, <code>.lua = one language each)
+Locales\Locales.lua
+Locales\idID.lua
+Locales\idID_help.lua
+Locales\frFR.lua
+Locales\frFR_help.lua
+Locales\ruRU.lua
+Locales\ruRU_help.lua
+Locales\deDE.lua
+Locales\deDE_help.lua
+Locales\itIT.lua
+Locales\itIT_help.lua
+Locales\ptBR.lua
+Locales\ptBR_help.lua
+Locales\esES.lua
+Locales\esES_help.lua
+Locales\koKR.lua
+Locales\koKR_help.lua
+Locales\zhCN.lua
+Locales\zhCN_help.lua
+Locales\jaJP.lua
+Locales\jaJP_help.lua
+Locales\suID.lua
+Locales\suID_help.lua
+
+# window / layout
+UI\Style.lua
+UI\Skin.lua
+UI\Tip.lua
+UI\TooltipSkin.lua
+UI\Dropdown.lua
+UI\Widgets.lua
+UI\Panels.lua
+UI\Panels\PanelTimers.lua
+UI\Panels\PanelNodes.lua
+UI\Panels\PanelNav.lua
+UI\Panels\PanelTiming.lua
+UI\Panels\PanelSettings.lua
+UI\Panels\PanelMinimize.lua
+UI\Panels\PanelHelp.lua
+UI\Panels\PanelSummary.lua
+UI\MainTable.lua
+UI\BarDock.lua
+UI\MiniBar.lua
+UI\SpotMenu.lua
+UI\MainFrame.lua
+
+# logic (order matters)
+Core\Util.lua
+Core\Data.lua
+Gathering\Skills.lua
+Gathering\ItemInfo.lua
+Core\Config.lua
+Gathering\Alerts.lua
+Gathering\TextTimers.lua
+Gathering\Spawns.lua
+Gathering\Groups.lua
+Gathering\Learn.lua
+Gathering\Detect.lua
+Navigation\Route.lua
+Navigation\Pins.lua
+Navigation\TomTom.lua
+Gathering\Timers.lua
+Gathering\Stats.lua
+Gathering\Loot.lua
+Gathering\Import.lua
+Gathering\Share.lua
+Core\Report.lua
+
+# minimap HUD (built-in module; Events.lua drives it, so it must load before Events.lua)
+# HUD.lua is the core and must come first: the other HUD files attach to the HUD table it creates
+HUD\HUD.lua
+HUD\HUDFrames.lua
+HUD\HUDMover.lua
+HUD\HUDPins.lua
+HUD\HUDAutoGather.lua
+HUD\HUDOverlay.lua
+HUD\HUDTracking.lua
+HUD\HUDSlash.lua
+HUD\HUDConfig.lua
+
+Core\Events.lua
+
+# Name disguise module
+HideUnitNames\HideUnitNames.lua
+UI\NameDisguiseFrame.lua

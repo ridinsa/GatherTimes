@@ -1,0 +1,24 @@
+package-as: GatherTimes
+
+# Files that live in the repo but should not ship in the addon zip.
+ignore:
+  - README.md
+  - .gitignore
+  - .gitattributes
+  - .github
+  - Libs/README.txt
+
+# The libraries are already bundled in Libs/ (the .toc loads them from there),
+# so no externals are needed. To fetch them at package time instead, delete
+# the bundled copies and uncomment this block:
+#
+# externals:
+#   Libs/LibStub:
+#     url: https://repos.wowace.com/wow/libstub/trunk
+#     tag: latest
+#   Libs/CallbackHandler-1.0:
+#     url: https://repos.wowace.com/wow/callbackhandler/trunk/CallbackHandler-1.0
+#     tag: latest
+#   Libs/HereBeDragons:
+#     url: https://repos.wowace.com/wow/herebedragons/trunk
+#     tag: latest

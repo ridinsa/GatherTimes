@@ -1,2 +1,9 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# keep line endings consistent
+* text=auto eol=lf
+*.tga binary
+*.png binary
+*.ogg binary
+*.mp3 binary
+*.wav binary
+# bundled third-party libraries keep their original endings
+Libs/** -text

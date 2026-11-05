@@ -1,0 +1,6 @@
+<Bindings>
+    <!-- Key Bindings -> AddOns -> GatherTimes.  GatherTimesAddon is the addon table exported by Core.lua. -->
+    <Binding name="GATHERTIMES_HUD_TOGGLE" header="GATHERTIMES" category="ADDONS">
+        if GatherTimesAddon and GatherTimesAddon.HUD then GatherTimesAddon.HUD.Toggle() end
+    </Binding>
+</Bindings>
