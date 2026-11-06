@@ -22,7 +22,8 @@ local CELL_H, GAP = 20, 4   -- chip height, gap between chips
 local BAG_BTN_H = 18        -- height of the "<" / ">" button
 local ICON_SIZE, ICON_GAP = 16, 4   -- the picked item's icon, before the button
 local DD_W, DD_H = 120, 20   -- item dropdown on the left (same choices as the main window)
-local LEAD = 6 + DD_W + 10   -- where the chips start: padding + dropdown + a little air
+local XP_BTN_W = 30         -- the "XP" button right after the dropdown (UI\MiniXP.lua)
+local LEAD = 6 + DD_W + 4 + XP_BTN_W + 10   -- where the chips start: padding + dropdown + XP button + a little air
 local PAD = 6               -- left padding
 local BTN_W = 18            -- the restore button
 local EDGE_W = 3            -- coloured edge on the left of a chip
@@ -447,6 +448,30 @@ local function Layout(f, n, total, bags, gold, iconId, idleHidden)
         right = stripEdge + stripW
     end
 
+    -- the XP button shows whether XP mode is on; XP mode replaces the chips with one line of XP information
+    -- the XP button: shown or hidden by "Show XP button" (Minimize settings > XP); hiding it also turns XP mode off
+    local btnOn = (not GT.MiniXP) or GT.MiniXP.ButtonShown()
+    if f.xpBtn then f.xpBtn:SetShown(btnOn) end
+    if not btnOn and GT.MiniXP then GT.MiniXP.SetOn(false) end
+    local xpOn = (btnOn and GT.MiniXP and GT.MiniXP.IsOn()) or false
+    if f.xpBtn then GT:SetButtonActive(f.xpBtn, xpOn) end
+    -- where the chips start: after the XP button when it is shown, right after the dropdown when it is hidden
+    local lead = btnOn and LEAD or (LEAD - XP_BTN_W - 4)
+    if xpOn then
+        for _, chip in ipairs(f.chips) do chip.blink = nil; chip:Hide() end
+        f.note:Hide()
+        local lineW = availW - lead - right - MID_GAP
+        f.xpLine:ClearAllPoints()
+        f.xpLine:SetPoint("LEFT", f, "LEFT", lead + 2, 0)
+        f.xpLine:SetWidth(math.max(20, lineW))
+        pcall(GT.FitText, f.xpLine, math.max(20, lineW))   -- shrinks the font when the line is too long
+        f.xpLine:SetText(GT.MiniXP.LineText())
+        f.xpLine:Show()
+        return
+    end
+    f.xpLine:Hide()
+
+
     -- chips: ONE fixed width for all of them (not adaptive).  It is wide enough for the widest group name plus the
     -- widest status / timer at the CURRENT font style and size.  Nothing is shrunk or clipped, so a timer is never
     -- cut off; when the chips do not fit on the bar, fewer of them are shown and the rest goes into "+N more".
@@ -488,7 +513,7 @@ local function Layout(f, n, total, bags, gold, iconId, idleHidden)
     local cellW = math.ceil(EDGE_W + TEXT_PAD + labelW + IN_GAP + statusW + TEXT_PAD)
 
     -- how many chips fit left of the right-hand info (all chips are cellW wide, GAP apart)
-    local room = availW - LEAD - right - MID_GAP
+    local room = availW - lead - right - MID_GAP
     local noteW = Measure(f.note, "+99 more")
     local shown = 0
     for k = n, 1, -1 do
@@ -503,7 +528,7 @@ local function Layout(f, n, total, bags, gold, iconId, idleHidden)
         if i <= shown then
             local r = recs[i]
             chip:ClearAllPoints()
-            chip:SetPoint("TOPLEFT", f, "TOPLEFT", LEAD + (i - 1) * (cellW + GAP), y)
+            chip:SetPoint("TOPLEFT", f, "TOPLEFT", lead + (i - 1) * (cellW + GAP), y)
             chip:SetSize(cellW, CELL_H)
             chip.label:SetTextColor(r.lr, r.lg, r.lb)
             chip.status:SetTextColor(r.sr, r.sg, r.sb)
@@ -542,14 +567,14 @@ local function Layout(f, n, total, bags, gold, iconId, idleHidden)
     -- the note: nothing learned here, or the groups that did not fit
     f.note:ClearAllPoints()
     if total == 0 then
-        f.note:SetPoint("LEFT", f, "LEFT", LEAD + 2, 0)
+        f.note:SetPoint("LEFT", f, "LEFT", lead + 2, 0)
         f.note:SetWidth(math.max(20, room))
         -- groups exist but "hide idle groups" left none: say so instead of "no spots learned"
         local msg = (idleHidden or 0) > 0 and "No groups running or ready." or "No spots learned in this zone yet - gather something."
         f.note:SetText(GREY .. GT.TR(msg) .. "|r")
         f.note:Show()
     elseif shown < total then
-        local x = LEAD + (shown > 0 and (shown * cellW + (shown - 1) * GAP + GAP) or 0) + 2
+        local x = lead + (shown > 0 and (shown * cellW + (shown - 1) * GAP + GAP) or 0) + 2
         f.note:SetPoint("LEFT", f, "LEFT", x, 0)
         f.note:SetWidth(0)
         f.note:SetText(GREY .. GT.TRF("+%d more", total - shown) .. "|r")
@@ -572,6 +597,7 @@ function GT:SyncBarDropdown()
     end
     if index and f.dropdown.selected ~= index then f.dropdown:SetSelected(index) end
 end
+
 
 function GT:UpdateMiniBar()
     local f = self.bar
@@ -613,10 +639,28 @@ function GT:CreateMiniBar()
     f.dropdown:SetPoint("LEFT", f, "LEFT", PAD, 0)
     f.dropdown:HookScript("OnClick", function() GT:RefreshMainDropdown(); GT:SyncBarDropdown() end)
 
+    -- "XP" button, right after the dropdown: turns XP mode on and off (UI\MiniXP.lua).  Picking an item turns it off.
+    local xpBtn = self:CreateFlatButton(f, "XP", XP_BTN_W, DD_H)
+    xpBtn:SetPoint("LEFT", f.dropdown, "RIGHT", 4, 0)
+    xpBtn:SetScript("OnClick", function()
+        if GT.MiniXP then GT.MiniXP.SetOn(not GT.MiniXP.IsOn()) end
+        GT:UpdateMiniBar()
+    end)
+    xpBtn:HookScript("OnEnter", function(b)
+        if GT.MiniXP then GT.MiniXP.ShowTip(b) end
+    end)
+    xpBtn:HookScript("OnLeave", function() GT.Tip:Hide() end)
+    f.xpBtn = xpBtn
+
     f.note = GT.Font(f, nil, "OVERLAY", "GameFontDisableSmall")
     f.note:SetJustifyH("LEFT")
     f.note:SetWordWrap(false)
     f.gold = GT.Font(f, nil, "OVERLAY", "GameFontNormalSmall")
+    -- XP mode: all the hero / pet XP information in one line, in place of the chips (UI\MiniXP.lua)
+    f.xpLine = GT.Font(f, nil, "OVERLAY", "GameFontHighlightSmall")
+    f.xpLine:SetJustifyH("LEFT")
+    f.xpLine:SetWordWrap(false)
+    f.xpLine:Hide()
     f.gold:SetJustifyH("RIGHT")
     f.gold:SetWordWrap(false)
 
@@ -681,6 +725,9 @@ function GT:CreateMiniBar()
         if acc < 1 then return end
         acc = 0
         GT:UpdateMiniBar()
+        if GT.MiniXP and s.xpBtn and s.xpBtn:IsShown() and s.xpBtn:IsMouseOver() and GT.Tip.owner == s.xpBtn then
+            GT.MiniXP.ShowTip(s.xpBtn)                  -- keep the XP tooltip live while it is open
+        end
         if s.goldHit and s.goldHit:IsShown() and s.goldHit:IsMouseOver() and GT.Tip.owner == s.goldHit then
             ShowSummaryTip(s.goldHit)                   -- keep the numbers live while it is open
         end

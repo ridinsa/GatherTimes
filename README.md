@@ -50,4 +50,5 @@ The `.pkgmeta` file is for the [BigWigs packager](https://github.com/BigWigsMods
 ## Credits and licenses
 
 - GatherTimes is licensed under GPL-3.0-or-later (see `LICENSE`).
+- The idea of the full-screen minimap HUD comes from [FarmHud](https://github.com/HizurosWoWAddOns/FarmHud) by Hizuro (GPL-3.0). The code and the HUD mask textures in `Masks/` are original to GatherTimes.
 - Bundled libraries keep their own licenses: HereBeDragons (BSD, by Nevcairiel), LibStub and CallbackHandler-1.0 (see their upstream projects).

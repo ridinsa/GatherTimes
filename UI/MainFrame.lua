@@ -145,6 +145,7 @@ end
 -- An entry picked in the main-window dropdown or in the minimized bar's dropdown (UI\MiniBar.lua).
 function GT:PickMainItem(index)
     local ui = GatherTimesDB._ui
+    if GT.MiniXP then GT.MiniXP.SetOn(false) end      -- picking an item brings the gathering timers back
     local key = self.mainKeys and self.mainKeys[index]
     if not key then return end
     ui.mainItem = key

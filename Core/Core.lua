@@ -43,6 +43,9 @@ SlashCmdList["GATHERTIMES"] = function(msg)
             GT.cprint(GT.TR(ui.barDock and "Bar dock ON" or "Bar dock OFF"))
             if GT.BarDock then GT.BarDock.Sync() end
         end
+    elseif arg == "xp" then
+        -- /gt xp : turn XP mode on or off (the bar shows the XP line).  /gt xp reset | /gt xp session  (UI\MiniXP.lua)
+        if GT.MiniXP then GT.MiniXP.Slash((msg or ""):match("^%s*%S+%s*(.*)$") or "") end
     elseif arg == "debug" then
         GT.debugLoot = not GT.debugLoot
         GT.cprint(GT.TR(GT.debugLoot and "Loot debug ON" or "Loot debug OFF"))
@@ -83,6 +86,7 @@ SlashCmdList["GATHERTIMES"] = function(msg)
         GT.cprint(GT.TR("/gt  (window)   /gt list   /gt stats   /gt debug   /gt profile start|report|stop"))
         GT.cprint(GT.TR("/gt yield  (zone loot totals)   /gt yield current  (current zone only)"))
         GT.cprint(GT.TR("/gt hud  (minimap HUD, /gt hud help)"))
+        GT.cprint(GT.TR("/gt xp  (XP mode on the minimized bar)   /gt xp reset   /gt xp session"))
         GT.cprint(GT.TR("/gt min  (shrink the window to a top bar, or bring it back)   /gt dock  (bar pushes the game frames down: on / off)"))
         GT.cprint(GT.TR("/gt export   /gt import  (share your own spots with a friend)   /gt report  (debug report)"))
     end

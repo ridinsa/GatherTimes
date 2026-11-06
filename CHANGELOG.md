@@ -1,4 +1,9 @@
 # Changelog
+## 0.24.0
+- New: hero and pet XP, merged in from the GetXP addon. A small "XP" button after the dropdown on the minimized bar turns XP mode on. In XP mode the bar shows all the XP information in one line in place of the gathering timers: hero battles to the next level, XP/hr, time to level, pet battles, the battle timer, the hunter pet-capped alert and the latest gain. Picking an item in the dropdown turns XP mode off. The XP button can be hidden in Minimize settings > XP. The bar shows hero battles, XP/hr, time to level, rested XP and the pet-capped warning. Hovering the XP button shows the session totals, pet battles, the last battle, rested XP with the battles it covers, the XP to the next level, and the latest five gains. The tracking runs all the time. `/gt xp` toggles XP mode, `/gt xp reset` starts a new XP session and `/gt xp session` prints the totals.
+- Change: Minimize settings are split into tabs: Bar, Chips, Fade and XP. The options are grouped by what they change.
+- Removed: the GetXP window and its minimized icon, the Quests and Spots tabs, the transparency and hide-in-battle buttons, and the chat window that GetXP created ("ExpInfo"). Delete the GetXP addon folder after installing this version.
+
 ## 0.23.1
 ## Unreleased
 - Change: turning on "On-screen alert when ready" shows a sample alert. The "Test alert" button is removed.

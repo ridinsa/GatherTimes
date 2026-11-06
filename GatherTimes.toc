@@ -2,7 +2,7 @@
 ## X-Client-Families: Classic Era, Hardcore, Season of Discovery, Burning Crusade Classic Anniversary, Cataclysm Classic, Mists Classic, Forever, Retail
 ## Title: GatherTimes
 ## IconTexture: Interface\Icons\INV_Misc_Herb_15
-## Notes: Herb and ore respawn timers, spawn spots, gathering routes and a full-screen minimap HUD (/gt, /gt hud).
+## Notes: Herb and ore respawn timers, spawn spots, gathering routes, a full-screen minimap HUD (/gt, /gt hud) and hero/pet XP on the minimized bar (/gt xp).
 ## Notes-deDE: Respawn-Timer für Kräuter und Erze, Fundstellen, Sammelrouten und ein bildschirmfüllendes Minimap-HUD (/gt, /gt hud).
 ## Notes-itIT: Timer di respawn per erbe e minerali, posizioni, percorsi di raccolta e un HUD minimappa a schermo intero (/gt, /gt hud).
 ## Notes-ptBR: Timers de respawn de ervas e minérios, locais de spawn, rotas de coleta e um HUD de minimapa em tela cheia (/gt, /gt hud).
@@ -12,7 +12,7 @@
 ## Notes-suID: Timer respawn herbal jeung bijih, titik spawn, rute ngumpulkeun, jeung HUD minimap pinuh layar (/gt, /gt hud).
 ## Notes-zhCN: 草药和矿石的刷新计时、刷新点位、采集路线，以及全屏小地图 HUD (/gt, /gt hud)。
 ## Author: miRidinsa
-## Version: 0.23.2
+## Version: 0.24.0
 ## X-License: GPL-3.0-or-later
 ## X-Website: https://github.com/ridinsa/GatherTimes
 ## SavedVariables: GatherTimesDB, GatherTimesHUNDB, HideUnitNamesDB
@@ -77,6 +77,7 @@ UI\Panels\PanelSummary.lua
 UI\MainTable.lua
 UI\BarDock.lua
 UI\MiniBar.lua
+UI\MiniXP.lua
 UI\SpotMenu.lua
 UI\MainFrame.lua
 
