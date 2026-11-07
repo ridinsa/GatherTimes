@@ -1,4 +1,6 @@
 package-as: GatherTimes
+changelog: CHANGELOG.md
+changelog-markup: markdown
 
 # Files that live in the repo but should not ship in the addon zip.
 ignore:
