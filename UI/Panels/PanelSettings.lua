@@ -166,7 +166,7 @@ GT.panelBuilders.Settings = function(panel, content)
         function(v) return v .. "%" end,
         "Resize the GatherTimes window.")
     sizeSlider.slider:HookScript("OnMouseUp", function() GT:SetWindowScale(ui.scale) end)
-    Check(display, -72, "See-through while moving (solid on mouse-over)",
+    Check(display, -72, "See-through while moving",
         function() return ui.fadeMoving end, function(v) ui.fadeMoving = v end,
         "Make the window semi-transparent while you drag it; it becomes solid when you hover over it.")
     Slider(display, -94, "Window visibility while moving: %s", 10, 90, 5,
@@ -189,6 +189,42 @@ GT.panelBuilders.Settings = function(panel, content)
             if GT.RefreshMenuMouse then GT.RefreshMenuMouse() end   -- world-map frames only take the mouse when needed
         end,
         "When enabled, hovering a resource name shows its full item details. Turn it off to show only the name and required gathering skill.")
+
+    -- Performance (Core\Graphics.lua): everything here is a console variable, so it also lives on after the addon is off
+    local gfx = GT.Gfx
+    -- Changing graphics reloads textures and terrain, which stalls a slow PC. So the caption follows the drag and the
+    -- level is applied when the mouse is released (or half a second after the last change), once, not at every step.
+    local pendingGfx, gfxToken = nil, 0
+    local function ApplyGfx()
+        if pendingGfx ~= nil and pendingGfx ~= gfx.GetLevel() then gfx.SetLevel(pendingGfx) end
+        pendingGfx = nil
+    end
+    local gfxSlider = Slider(display, -170, "Graphics quality: %s", 0, 3, 1,
+        function() return gfx.GetLevel() end,
+        function(v)
+            pendingGfx = v
+            gfxToken = gfxToken + 1
+            local mine = gfxToken
+            C_Timer.After(0.5, function()
+                if mine == gfxToken and not IsMouseButtonDown("LeftButton") then ApplyGfx() end
+            end)
+        end,
+        function(v) return GT.TR(gfx.LEVEL_NAMES[v] or tostring(v)) end,
+        "Lowers view distance, particles, ground clutter, shadows, water and sky detail for a slow PC. Off puts your own settings back. Some changes only fully apply after /console gxrestart.")
+    gfxSlider.slider:HookScript("OnMouseUp", ApplyGfx)
+    Check(display, -206, "Screen effects (death, invisibility)",
+        function() return gfx.GetScreenFx() end, function(v) gfx.SetScreenFx(v) end,
+        "Untick to turn off the ghost screen effect and the edge effect of invisibility.")
+    Slider(display, -230, "Weather density: %s", 0, 3, 1,
+        function() return gfx.GetWeather() end,
+        function(v) gfx.SetWeather(v) end,
+        function(v) return GT.TR(({ [0] = "off", "Low", "Medium", "High" })[v] or tostring(v)) end,
+        "How much rain, snow and dust is drawn. Off removes it.")
+    Slider(display, -264, "Max camera zoom: %s", 10, 40, 1,
+        function() return gfx.GetZoom() end,
+        function(v) gfx.SetZoom(v) end,
+        function(v) return string.format("%.1fx", v / 10) end,
+        "How far the camera can zoom out. 1.0x is the Classic default; the game never zooms past 50 yards.")
 
     --------------------------------------------------------------------- Look
     local lookOffset = -20
@@ -240,38 +276,40 @@ GT.panelBuilders.Settings = function(panel, content)
     fontLabel:SetPoint("TOPLEFT", 2, -98 + lookOffset)
     GT.MakeFitting(fontLabel, 64)
     fontLabel:SetText(GT.TR("Font:"))
-    if GT.LangFontFile() then
-        fontLabel:Hide()
+    GT.DropUnavailableFonts()
+    local fontNames = {}
+    for i, f in ipairs(GT.FONT_CHOICES) do fontNames[i] = f.name end
+    local langFont = GT.LangFontFile() ~= nil
+    local fontDD = GT:CreateDropdown(look, 190, 18, fontNames, function(index)
+        if langFont then return end
+        cfg().font = GT.FONT_CHOICES[index].key
+        GT.RestyleFonts()
+        GT.RestyleAll()
+    end, 4)
+    fontDD:SetPoint("TOPLEFT", 70, -96 + lookOffset)
+    fontDD:SetSelected(GT.FontChoiceIndex(cfg().font))
+    fontDD:SetEnabled(not langFont)
+    AddOptionTip(fontDD, "Font", "Choose the font used for GatherTimes text.")
+    fontDD.list:ClearAllPoints()
+    fontDD.list:SetPoint("TOPLEFT", fontDD, "BOTTOMLEFT", 0, -1)
+    look:HookScript("OnHide", function() fontDD.list:Hide() end)
+
+    if langFont then
         local fixed = GT.Font(look, nil, "OVERLAY", "GameFontDisableSmall")
-        fixed:SetPoint("TOPLEFT", 2, -98 + lookOffset)
+        fixed:SetPoint("TOPLEFT", 2, -116 + lookOffset)
         GT.MakeFitting(fixed, 280)
-        fixed:SetText(GT.TR("This language uses its own font, so the font style and size are fixed."))
-    else
-        GT.DropUnavailableFonts()
-        local fontNames = {}
-        for i, f in ipairs(GT.FONT_CHOICES) do fontNames[i] = f.name end
-        local fontDD = GT:CreateDropdown(look, 190, 18, fontNames, function(index)
-            cfg().font = GT.FONT_CHOICES[index].key
+        fixed:SetText(GT.TR("Font style is fixed for this language."))
+    end
+
+    Slider(look, -134 + lookOffset, "Font size: %s", 80, 130, 5,
+        function() return cfg().fontScale or 100 end,
+        function(v)
+            cfg().fontScale = v
             GT.RestyleFonts()
             GT.RestyleAll()
-        end, 4)
-        fontDD:SetPoint("TOPLEFT", 70, -96 + lookOffset)
-        fontDD:SetSelected(GT.FontChoiceIndex(cfg().font))
-        AddOptionTip(fontDD, "Font", "Choose the font used for GatherTimes text.")
-        fontDD.list:ClearAllPoints()
-        fontDD.list:SetPoint("TOPLEFT", fontDD, "BOTTOMLEFT", 0, -1)
-        look:HookScript("OnHide", function() fontDD.list:Hide() end)
-
-        Slider(look, -134 + lookOffset, "Font size: %s", 80, 130, 5,
-            function() return cfg().fontScale or 100 end,
-            function(v)
-                cfg().fontScale = v
-                GT.RestyleFonts()
-                GT.RestyleAll()
-            end,
-            function(v) return v .. "%" end,
-            "Scale the text of the GatherTimes windows. Map and minimap text has its own size (Display tab).")
-    end
+        end,
+        function(v) return v .. "%" end,
+        "Scale the text of the GatherTimes windows. Map and minimap text has its own size (Display tab).")
 
     ------------------------------------------------------------------- Tools
     local status = GT.Font(tools, nil, "OVERLAY", "GameFontHighlightSmall")
@@ -283,8 +321,8 @@ GT.panelBuilders.Settings = function(panel, content)
 
     local imp = Button(tools, "Import GatherMate2", 138, 0, -140)
     imp:SetScript("OnClick", function() GT.ImportGatherMate2("") end)
-    local clr = Button(tools, "Clear learned spawn points", 138, 150, -140)
-    Confirm(clr, "Clear learned spawn points", function()
+    local clr = Button(tools, "Clear learned spawns", 138, 150, -140)
+    Confirm(clr, "Clear learned spawns", function()
         GT.ClearSpawns()
         GT.cprint(GT.TR("Learned spawn points cleared."))
         refreshTools()

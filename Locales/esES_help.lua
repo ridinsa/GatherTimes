@@ -37,7 +37,7 @@ Convierte el minimapa real en un gran mapa translúcido que ocupa la pantalla, c
 - Perfil: guardar varios aspectos, cambiar entre ellos o borrarlos. Los perfiles se comparten entre todos los personajes; cada personaje recuerda el suyo.
 - Desbloquear / arrastrar (abajo): coloca el HUD con el ratón; vuelve a pulsar para bloquearlo. Restablecer perfil restaura los valores predeterminados.]]
 
-T.credits = H .. "GatherTimes 0.23.0" .. E .. [[
+T.credits = H .. "GatherTimes 0.24.1" .. E .. [[
 
 Autor: miRidinsa
 Web: https://github.com/ridinsa/

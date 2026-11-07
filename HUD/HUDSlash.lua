@@ -14,7 +14,7 @@ local function PrintHelp()
     Print("/gthud size <150-1400> | alpha <0-1> | zoom <0-5> | offset <x> <y> | rotate")
     Print("/gthud ring <px, 0=off> | ring2 <px> | ringcolor <r> <g> <b> <a> | ringcolor2 <r> <g> <b> <a> | ringthick <1-10> | ringseg <8-256>")
     Print("/gthud dirs | heading | arrow | tracking | trackmode auto/own/stock | tracksize <20-80> | trackpos <x> <y> | addons | scan | mountfade | autogather | restore")
-    Print("/gthud profile [name | delete <name>]   /gthud status | info | frames | debug | reset")
+    Print("/gthud profile [name | delete <name>]   /gthud status | info | frames | skins | debug | reset")
 end
 
 local function OnOff(b) return b and "on" or "off" end
@@ -196,6 +196,31 @@ function HUD.Slash(msg)
     elseif cmd == "status" then Status()
     elseif cmd == "info" then Info()
     elseif cmd == "frames" then ListFrames()
+    elseif cmd == "skins" then
+        -- /gthud skins : every SexyMap-named frame, and every big texture or frame on the Minimap or UIParent, with size,
+        -- shown state and texture path. Used to find the exact piece that draws the ring around the HUD.
+        local function Describe(obj, where)
+            local name = (obj.GetName and obj:GetName()) or "<anon>"
+            local kind = (obj.GetObjectType and obj:GetObjectType()) or "?"
+            local w, h = obj:GetWidth() or 0, obj:GetHeight() or 0
+            local tex = (obj.GetTexture and obj:GetTexture()) or ""
+            local shown = obj.IsShown and obj:IsShown()
+            local vis = obj.IsVisible and obj:IsVisible()
+            if (w >= 250 or name:find("SexyMap") or name:find("Sexy")) then
+                Print(string.format("%s %s %s %dx%d shown=%s visible=%s alpha=%.2f tex=%s",
+                    where, kind, name, w, h, tostring(shown), tostring(vis),
+                    (obj.GetAlpha and obj:GetAlpha()) or -1, tostring(tex)))
+            end
+        end
+        for _, r in ipairs({ Minimap:GetRegions() }) do Describe(r, "Minimap.region") end
+        for _, c in ipairs({ Minimap:GetChildren() }) do Describe(c, "Minimap.child") end
+        for _, c in ipairs({ UIParent:GetChildren() }) do Describe(c, "UIParent.child") end
+        for k, v in pairs(_G) do
+            if type(k) == "string" and k:find("SexyMap") and type(v) == "table" and v.GetObjectType then
+                Describe(v, "_G")
+            end
+        end
+        Print("skins scan done")
     elseif cmd == "debug" then
         HUD.root.debug = not HUD.root.debug
         Print("Debug messages " .. OnOff(HUD.root.debug))

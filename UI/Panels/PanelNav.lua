@@ -146,9 +146,7 @@ GT.panelBuilders.Nav = function(panel, content)
         "Stop following the route and remove its map line and waypoint.")
     local status = GT.Font(route, nil, "OVERLAY", "GameFontNormalSmall")
     status:SetPoint("TOPLEFT", 2, -222)
-    Note(route, -248, "Choose one enabled herb / ore to focus the route, or all enabled resources. " ..
-        "Builds an optimized route through active timers (nearest neighbour + 2-opt). " ..
-        "With 'Only include ready nodes' off, nodes ready by arrival are included. Auto-arrow advances when you reach a node and needs TomTom.")
+    Note(route, -248, "Pick one resource or all enabled. Builds a route through active timers. Auto-arrow needs TomTom.")
 
     --------------------------------------------------------------- Markers
     Check(markers, -4,  "Show spawn pins on map and minimap", function() return cfg().showSpawns end,
@@ -183,9 +181,7 @@ GT.panelBuilders.Nav = function(panel, content)
     GT.uiRefresh[#GT.uiRefresh + 1] = function() offsetSlider:Refresh() end
     AddTip(offsetSlider.slider, "Node offset while gathering",
         "Adjust the recorded node position by this distance while gathering. Zero disables the offset.")
-    Note(markers, -190, "Pins mark every remembered herb / ore spot. The group label is the same G number shown " ..
-        "in the Timers list. When 'Only show timers and pins of the zone I am in' is on (Settings > General), " ..
-        "only spots in your current zone are drawn.")
+    Note(markers, -190, "Pins mark remembered spots. The G number matches the Timers list.")
 
     ----------------------------------------------------------------- Arrow
     Check(arrow, -4,  "Use TomTom integration", function() return cfg().tomtom end,
@@ -217,8 +213,7 @@ GT.panelBuilders.Nav = function(panel, content)
     end, "Remove GatherTimes waypoints from TomTom.")
     Button(arrow, "Waypoint to nearest", 138, 150, -140, WaypointToNearest,
         "Set a TomTom waypoint or direction arrow to the nearest enabled node within range.")
-    Note(arrow, -170, "Needs the TomTom addon. The waypoint points at the nearest enabled herb / ore node within " ..
-        "the distance threshold, and follows the route when one is active.")
+    Note(arrow, -170, "Needs TomTom. Points to the nearest enabled node in range and follows the active route.")
 
     ------------------------------------------------------------- show/update
     panel:SetScript("OnShow", function() ShowSub(active) end)

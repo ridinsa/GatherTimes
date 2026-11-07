@@ -107,9 +107,8 @@ function GT.FontChoiceIndex(key)
     return 1
 end
 
--- the saved text size (percent, 80-130); 100 when there is none or the language uses its own font
+-- the saved text size (percent, 80-130); 100 when there is none
 local function UserFontScale()
-    if GT.LangFontFile() then return 1 end
     local ok, c = pcall(GT.cfg)
     return (ok and c and c.fontScale or 100) / 100
 end

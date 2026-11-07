@@ -37,7 +37,7 @@ Transforme la vraie minicarte en une grande carte translucide sur votre écran, 
 - Profil : enregistrer plusieurs apparences, passer de l’une à l’autre ou les supprimer. Les profils sont partagés par tous les personnages ; chacun mémorise le sien.
 - Déverrouiller / déplacer (en bas) : positionnez le HUD à la souris, puis appuyez de nouveau pour le verrouiller. Réinitialiser le profil restaure les valeurs par défaut.]]
 
-T.credits = H .. "GatherTimes 0.23.0" .. E .. [[
+T.credits = H .. "GatherTimes 0.24.1" .. E .. [[
 
 Auteur : miRidinsa
 Site web : https://github.com/ridinsa/

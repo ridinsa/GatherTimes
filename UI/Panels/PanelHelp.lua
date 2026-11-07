@@ -73,7 +73,7 @@ Per node: Now = the respawn time in use. Learned (n) = the range measured from y
 ]] .. H .. "Settings" .. E .. [[
 
 - General: on-screen alert and Alert time, minimum and maximum ready-alert distance (0 disables that bound), alert when chat announces maintenance (flash colour 1-7), low health warning (Hardcore), Ready status lasts, and Only show timers and pins of the zone I am in.
-- Display: map text size, window size, see-through while moving, keep windows visible (ESC does not close them), and item tooltip on hover. The language dropdown is under Look; it takes effect after a UI reload (shown as "w/reload").
+- Display: map text size, window size, see-through while moving, keep windows visible (ESC does not close them), and item tooltip on hover. Graphics quality (Off / Low / Very low / Minimal) lowers view distance, particles, ground clutter, shadows, water and sky detail for a slow PC; Off puts your own settings back. Screen effects turns off the ghost screen effect and invisibility's edge effect. Weather density (Off / Low / Medium / High) and Max camera zoom (1.0x to 4.0x) are also here. Some graphics changes only fully apply after /console gxrestart. The language dropdown is under Look; it takes effect after a UI reload (shown as "w/reload").
 - Look: Language, Frame skin (colour themes for the windows and tooltips; Pastel Pink and Sakura use dark text, and their text has a thin outline), Font (Friz Quadrata, Arial Narrow, Skurri, Morpheus, or Friends when the client has it) and Font size (80% to 130%). Korean, Chinese, Japanese and Russian keep their own font, so the font choice is replaced by a note for them.
 - Tools: status of the addon and its helpers, Import GatherMate2, Clear learned spawn points, Export my spots / Import spots (share spots with friends), Copy debug report (one block of text for a bug report), Reset timers, Start a new session at login, and the error log.
 
@@ -162,6 +162,7 @@ TOPICS[#TOPICS + 1] = { "cmds", "Cmds", H .. "Slash commands" .. E .. [[
 /gt export - show your own spots as text to share
 /gt import - import spots from a friend's text
 /gt report - debug report to copy into a bug report
+/gt gfx - graphics quality level and the graphics settings this client has
 /gthud - same as /gt hud
 /hun - Random Name (see Panels > Settings > Random Name)
 
@@ -192,6 +193,7 @@ TOPICS[#TOPICS + 1] = { "cmds", "Cmds", H .. "Slash commands" .. E .. [[
 /gthud trackmode auto | own | stock - tracking button while the HUD is off
 /gthud arrow - player arrow on / off
 /gthud addons - hide minimap addon skins / buttons on / off
+/gthud skins - list the minimap skin frames and textures (for bug reports)
 /gthud scan - deep scan for minimap addons on / off
 /gthud mountfade - hide HUD while mounted on / off
 /gthud autogather - auto-enable with gathering tracking on / off
@@ -202,7 +204,7 @@ TOPICS[#TOPICS + 1] = { "cmds", "Cmds", H .. "Slash commands" .. E .. [[
 /gthud reset - reset the current profile
 /gthud help - show command help]] }
 
-TOPICS[#TOPICS + 1] = { "credits", "Credits", H .. "GatherTimes 0.23.0" .. E .. [[
+TOPICS[#TOPICS + 1] = { "credits", "Credits", H .. "GatherTimes 0.24.1" .. E .. [[
 
 Author: miRidinsa
 Website: https://github.com/ridinsa/

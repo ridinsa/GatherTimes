@@ -85,6 +85,7 @@ f:SetScript("OnEvent", function(_, event, msg, msg2, ...)
     if event == "PLAYER_ENTERING_WORLD" then
         HUDEvent(event, msg, msg2)                -- msg = isInitialLogin, msg2 = isReloadingUi
         pcall(GT.WarnMissingLibs)                 -- once per session: HereBeDragons missing -> distances / pins are off
+        if GT.Gfx then pcall(GT.Gfx.Reapply) end  -- saved graphics / screen effect / weather / camera zoom choices
         local rok, changed = pcall(GT.RecheckRealm)   -- the Hardcore flag may only be known now, see Config.lua
         if GT.RestoreSession then pcall(GT.RestoreSession) end               -- resume the last session (once per login)
         if rok and changed then pcall(GT.RefreshTimingUI) end

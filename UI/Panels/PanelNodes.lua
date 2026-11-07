@@ -34,6 +34,32 @@ local function Cycle(idx, count, back)
     return idx
 end
 
+-- order the sound button cycles through (display only: saved settings keep the GT.SOUNDS index,
+-- so "None" stays index 7 and old saves / Reset keep working). Gentle sounds first, loud ones last.
+local SOUND_ORDER = { "None", "Default", "Whisper", "Toast", "Popup", "Invite", "Map Ping",
+    "Auction", "Queue", "Level Up", "Ready Check", "Raid Warning", "Alarm", "Alarm 2" }
+local soundCycle
+local function SoundCycle()
+    if soundCycle then return soundCycle end
+    soundCycle = {}
+    local used = {}
+    for _, name in ipairs(SOUND_ORDER) do
+        for i, snd in ipairs(GT.SOUNDS) do
+            if snd.name == name and not used[i] then used[i] = true; soundCycle[#soundCycle + 1] = i end
+        end
+    end
+    for i in ipairs(GT.SOUNDS) do            -- anything not listed above goes at the end
+        if not used[i] then soundCycle[#soundCycle + 1] = i end
+    end
+    return soundCycle
+end
+local function CycleSound(idx, back)
+    local order = SoundCycle()
+    local pos = 1
+    for p, i in ipairs(order) do if i == idx then pos = p break end end
+    return order[Cycle(pos, #order, back)]
+end
+
 local function CreateRow(list, i)
     local r = CreateFrame("Frame", nil, list)
 
@@ -140,7 +166,7 @@ local function CreateRow(list, i)
     r.sound:SetScript("OnClick", function(self, btn)
         if not r.key then return end
         local c = GT.cfg()
-        local idx = Cycle(c.sounds[r.key] or 1, #GT.SOUNDS, btn == "RightButton")
+        local idx = CycleSound(c.sounds[r.key] or 1, btn == "RightButton")
         c.sounds[r.key] = idx
         self.label:SetText(SoundText(idx))
         GT.PlayHerbSound(r.key)
@@ -227,13 +253,23 @@ GT.panelBuilders.Nodes = function(panel, content)
     Line(-124)
 
     ------------------------------------------------------------- node list
-    local function caption(text, x)
+    local function caption(text, x, centre)
         local fs = GT.Font(content, nil, "OVERLAY", "GameFontDisableSmall")
-        fs:SetPoint("TOPLEFT", x, -130)
+        if centre then
+            fs:SetPoint("TOP", content, "TOPLEFT", centre, -130)      -- centred over its column
+        else
+            fs:SetPoint("TOPLEFT", x, -130)
+        end
         fs:SetText(GT.TR(text))
     end
     caption("On", X_CHECK); caption("Node", X_NAME); caption("Min", X_MIN)
-    caption("Col", X_COL); caption("Alert", X_ALERT - 3); caption("Sound", X_SND)
+    caption("Col", X_COL)
+    -- one caption over the alert checkbox + sound button
+    do
+        local fs = GT.Font(content, nil, "OVERLAY", "GameFontDisableSmall")
+        fs:SetPoint("TOP", content, "TOPLEFT", (X_ALERT + X_SND + SND_W) / 2, -130)
+        fs:SetText(GT.TR("Sound"))
+    end
 
     local list = GT:CreateScrollList(content, 288, ROW_H * NUM_ROWS, ROW_H, CreateRow, UpdateRow)
     list:SetPoint("TOPLEFT", content, "TOPLEFT", 0, -144)

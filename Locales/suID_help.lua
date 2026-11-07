@@ -37,7 +37,7 @@ Ngarobah minimap asli jadi peta gedé transparan nu nutupan layar, kalawan pilih
 - Profil: simpen sababaraha tampilan, pindah atawa hapus. Profil dipaké bareng ku sakabéh karakter; unggal karakter nyimpen pilihanana sorangan.
 - Buka konci / sered (handap): pindahkeun HUD maké beurit, pencét deui keur ngonci. Reset profil mulangkeun setélan baku.]]
 
-T.credits = H .. "GatherTimes 0.23.0" .. E .. [[
+T.credits = H .. "GatherTimes 0.24.1" .. E .. [[
 
 Nu nyieun: miRidinsa
 Website: https://github.com/ridinsa/

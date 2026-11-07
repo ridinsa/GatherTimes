@@ -285,6 +285,45 @@ local function SetMask(tex)
     settingMask = false
 end
 
+-- Opacity is one of 11 mask textures (a00 ... a10). Changing it must touch NOTHING but the mask: the old code
+-- ran the whole HUD apply (re-parent, re-anchor, re-size, zoom, overlay, pin layout) on every slider tick, so the
+-- Minimap was rebuilt while its new mask was still loading, which is what made 0 -> max unstable.
+local function ApplyMaskOnly()
+    if not active or not HUD.db then return end
+    local mask = MaskPath(HUD.db.alpha)
+    if appliedMask ~= mask then
+        SetMask(mask)
+        appliedMask = mask
+    end
+end
+
+-- A slider can fire several times in one frame while it is dragged: apply only the last value, once per frame.
+local maskDriver = CreateFrame("Frame")
+maskDriver:Hide()
+maskDriver:SetScript("OnUpdate", function(self)
+    self:Hide()
+    ApplyMaskOnly()
+end)
+local function QueueMask() maskDriver:Show() end
+
+-- Load every mask file once, up front, so swapping masks later never waits on the disk (a mask that is not
+-- loaded yet leaves the Minimap with the wrong mask for a few frames: the "shadow").
+local preloadFrame
+local function PreloadMasks()
+    if preloadFrame then return end
+    preloadFrame = CreateFrame("Frame", nil, UIParent)
+    preloadFrame:SetSize(1, 1)
+    preloadFrame:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 0, 0)
+    for step = 0, 10 do
+        local t = preloadFrame:CreateTexture(nil, "BACKGROUND")
+        t:SetSize(1, 1)
+        t:SetPoint("BOTTOMLEFT")
+        t:SetTexture(MaskPath(step / 10))
+        t:SetAlpha(0.01)
+    end
+end
+C_Timer.After(1, PreloadMasks)
+
 -- GatherTimes loads before SexyMap (it is not in OptionalDeps), so this hook sees SexyMap's own mask calls.
 hooksecurefunc(Minimap, "SetMaskTexture", function(_, tex)
     if settingMask then return end
@@ -330,6 +369,11 @@ local function ApplyArrow(show)
 end
 
 local function ConfigureMinimapInner(db)
+    -- Mask first: the Minimap is about to become 800 px wide, and with the stock mask still on it for even one
+    -- frame the whole stock circle shows (the shadow when the HUD is switched on).
+    PreloadMasks()
+    local mask = MaskPath(db.alpha)
+    if appliedMask ~= mask then SetMask(mask); appliedMask = mask end
     Minimap:SetParent(UIParent)
     Minimap:ClearAllPoints()
     Minimap:SetPoint("CENTER", UIParent, "CENTER", db.x, db.y)
@@ -338,8 +382,6 @@ local function ConfigureMinimapInner(db)
     Minimap:SetFrameStrata("BACKGROUND")
     Minimap:SetFrameLevel(1)
     Minimap:SetAlpha(1)
-    local mask = MaskPath(db.alpha)
-    if appliedMask ~= mask then SetMask(mask); appliedMask = mask end
     Minimap:EnableMouse(false)
     Minimap:EnableMouseWheel(false)
     if Minimap:GetZoom() ~= db.zoom then Minimap:SetZoom(db.zoom) end
@@ -498,7 +540,9 @@ end
 -- Single entry point for changing a profile setting (slash, options panel)
 function HUD.Set(key, value, fromUI)
     HUD.db[key] = value
-    if OVERLAY_KEYS[key] then
+    if key == "alpha" then
+        if active then QueueMask() end       -- mask swap only, see ApplyMaskOnly
+    elseif OVERLAY_KEYS[key] then
         if active then HUD.Overlay.Update() end
     elseif MAP_KEYS[key] then
         HUD.Refresh(true)
@@ -620,4 +664,5 @@ function HUD.OnUpdate(dt)
     Guard("tracking", HUD.Tracking.OnUpdate)               -- dragging the tracking button
     Guard("mover", HUD.MoverTick)                          -- live position while dragging the mover
     Guard("watcher", HUD.WatcherTick, dt)                      -- keeps the stock tracking button right (0.1 s)
+    Guard("skins", HUD.SkinSweep, dt)                          -- hides minimap skin frames SexyMap adds later (0.5 s)
 end

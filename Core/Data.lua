@@ -121,6 +121,8 @@ for i, key in ipairs(order) do
     if not DEFAULT_COLOR[key] then DEFAULT_COLOR[key] = (i - 1) % #COLORS + 1 end
 end
 
+local function SK(key, fallback) return (SOUNDKIT and SOUNDKIT[key]) or fallback end
+
 local SOUNDS = {
     { name = "Default",      id = 120 },
     { name = "Raid Warning", id = 8959 },
@@ -129,6 +131,15 @@ local SOUNDS = {
     { name = "Level Up",     id = 888 },
     { name = "Map Ping",     id = 3175 },
     { name = "None",         id = 0 },
+    -- added after "None" so "None" stays index 7 (saved settings / Reset rely on it).
+    -- Official WoW sounds, looked up by SOUNDKIT name first, numeric id as fallback.
+    { name = "Whisper",      id = SK("TELL_MESSAGE", 3081) },
+    { name = "Toast",        id = SK("UI_BNET_TOAST", 18019) },
+    { name = "Queue",        id = SK("PVP_THROUGH_QUEUE", 8459) },
+    { name = "Alarm 2",      id = SK("ALARM_CLOCK_WARNING_3", 18871) },
+    { name = "Auction",      id = SK("AUCTION_WINDOW_OPEN", 5274) },
+    { name = "Invite",       id = SK("IG_PLAYER_INVITE", 880) },
+    { name = "Popup",        id = SK("TUTORIAL_POPUP", 7355) },
 }
 
 -- exports

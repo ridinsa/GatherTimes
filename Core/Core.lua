@@ -46,6 +46,9 @@ SlashCmdList["GATHERTIMES"] = function(msg)
     elseif arg == "xp" then
         -- /gt xp : turn XP mode on or off (the bar shows the XP line).  /gt xp reset | /gt xp session  (UI\MiniXP.lua)
         if GT.MiniXP then GT.MiniXP.Slash((msg or ""):match("^%s*%S+%s*(.*)$") or "") end
+    elseif arg == "gfx" then
+        -- /gt gfx : list the graphics settings the quality slider uses and their values (Core\\Graphics.lua)
+        if GT.Gfx then GT.Gfx.Report() end
     elseif arg == "debug" then
         GT.debugLoot = not GT.debugLoot
         GT.cprint(GT.TR(GT.debugLoot and "Loot debug ON" or "Loot debug OFF"))

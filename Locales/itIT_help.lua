@@ -37,7 +37,7 @@ Trasforma la minimappa vera e propria in una grande mappa trasparente estesa sul
 - Profili: salva diversi aspetti, passa da uno all'altro o eliminali. I profili sono condivisi da tutti i personaggi; ogni personaggio ricorda il proprio.
 - Sblocca / trascina (in basso): posiziona l'HUD con il mouse, premi di nuovo per bloccarlo. Reimposta profilo ripristina i valori predefiniti.]]
 
-T.credits = H .. "GatherTimes 0.23.0" .. E .. [[
+T.credits = H .. "GatherTimes 0.24.1" .. E .. [[
 
 Autore: miRidinsa
 Sito web: https://github.com/ridinsa/

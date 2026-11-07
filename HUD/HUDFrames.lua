@@ -190,12 +190,24 @@ function HideAddonFrames()
             end
         end
         for _, r in ipairs({ Minimap:GetRegions() }) do
-            if r.IsObjectType and not r:GetName()
-               and (r:IsObjectType("Texture") or r:IsObjectType("FontString")) then
+            -- unnamed textures / text, or a named one as wide as the stock minimap (SexyMap names its border textures)
+            if r.IsObjectType and (r:IsObjectType("Texture") or r:IsObjectType("FontString"))
+               and (not r:GetName() or r:GetWidth() >= limit) then
                 HideFrame(r, "addon")
             end
         end
     end
+end
+
+-- SexyMap and other skins can create or resize their frames and textures after the HUD came up, and the scan above
+-- only ran when the HUD turned on. While the HUD is up, run it again twice a second.
+local sweepAcc = 0
+function HUD.SkinSweep(dt)
+    if not (HUD.IsActive() and HUD.db and HUD.db.hideAddons and SkinScanEnabled()) then sweepAcc = 0; return end
+    sweepAcc = sweepAcc + (dt or 0)
+    if sweepAcc < 0.5 then return end
+    sweepAcc = 0
+    HideAddonFrames()
 end
 
 local function HideDecorations()

@@ -91,6 +91,13 @@ local function InitCfg()
     if type(c.newSessionOnLogin) ~= "boolean" then c.newSessionOnLogin = false end   -- false = resume the last session
     c.fontScale = math.max(80, math.min(130, tonumber(c.fontScale) or 100))   -- text size, percent
     c.lowHPPct = tonumber(c.lowHPPct) or 35
+    -- performance helpers (Graphics.lua): quality level 0..3 with a backup of the player's own CVars, and the
+    -- last choices for screen effects / weather / camera zoom (nil = never touched, the game's value stays)
+    c.gfxLevel = GT.Clamp(c.gfxLevel, 0, 3, 0)
+    if type(c.gfxBackup) ~= "table" then c.gfxBackup = {} end
+    if type(c.fxScreen) ~= "boolean" then c.fxScreen = nil end
+    c.fxWeather = tonumber(c.fxWeather) and GT.Clamp(c.fxWeather, 0, 3, 3) or nil
+    c.fxZoom = tonumber(c.fxZoom) and GT.Clamp(c.fxZoom, 10, 40, 10) or nil
     c.sessions = (tonumber(c.sessions) or 0)
     if c.showArrow == nil then c.showArrow = true end
     if c.includeUnchecked == nil then c.includeUnchecked = false end
