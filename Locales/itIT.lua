@@ -3,7 +3,7 @@
 -- Keep every %s / %d in the same ORDER as the English text. A missing key just shows the English text.
 -- Texts that sit on buttons / tabs / table headers are kept SHORT on purpose (the buttons are only ~54 px wide);
 -- anything that is still too wide is shrunk automatically by GT.FitText (UI/Style.lua).
-local ADDON, GT = ...
+local _, GT = ...
 GT.locales = GT.locales or {}
 
 GT.locales.itIT = {
@@ -320,7 +320,6 @@ GT.locales.itIT = {
     ["Ring thickness: %s"] = "Spessore anello: %s",
     ["Ring smoothness: %s"] = "Levigatura anello: %s",
     ["Button size: %s"] = "Dimensione pulsante: %s",
-    ["Tip: \"Unlock / drag\" (bottom) places the HUD with the mouse."] = "Suggerimento: «Sblocca» (in basso) posiziona l'HUD col mouse.",
     ["Click a profile to select it, or type a new name (a new profile starts as a copy of the current one). The profile in use and \"Default\" cannot be deleted. Profiles are shared by all characters; each character remembers its own."] = "Clicca un profilo per sceglierlo o scrivi un nuovo nome (un nuovo profilo copia quello attuale). Il profilo in uso e «Default» non si possono eliminare. I profili sono condivisi da tutti i personaggi; ognuno ricorda il suo.",
     ["Ring colour..."] = "Colore...",
     ["Ring colour"] = "Colore anello",
@@ -334,7 +333,6 @@ GT.locales.itIT = {
     ["Frames"] = "Frame",
     ["Switch / new"] = "Cambia",
     ["Delete profile"] = "Elim. profilo",
-    ["Unlock / drag"] = "Sblocca",
     ["Reset profile"] = "Reset profilo",
     ["OK"] = "OK",
     ["Cancel"] = "Annulla",
@@ -367,15 +365,10 @@ GT.locales.itIT = {
     ["Deleted profile %s"] = "Profilo %s eliminato",
     ["Cannot delete: %s"] = "Impossibile eliminare: %s",
     ["The settings panel is unavailable (it failed to build)."] = "Pannello opzioni non disponibile (creazione fallita).",
-    ["HUD - drag me\n|cffffff00/gthud lock|r when done"] = "HUD - trascinami\nPoi |cffffff00/gthud lock|r",
-    ["Turn the HUD on first (/gthud on), then unlock."] = "Attiva prima l'HUD (/gthud on), poi sblocca.",
-    ["Unlocked: drag the blue handle. /gthud lock when done."] = "Sbloccato: trascina la maniglia blu. Poi /gthud lock.",
-    ["Locked at offset %d, %d"] = "Bloccato a scarto %d, %d",
     ["Current profile: |cffffff00%s|r. Available: %s"] = "Profilo: |cffffff00%s|r. Disponibili: %s",
     ["/gthud profile <name> switches (a new name copies the current profile); /gthud profile delete <name>"] = "/gthud profile <nome> cambia (un nuovo nome copia il profilo attuale); /gthud profile delete <nome>",
     ["Usage: /gthud profile delete <name>"] = "Uso: /gthud profile delete <nome>",
     ["Click to choose tracking - drag to move"] = "Clic: scegli ricerca - trascina: sposta",
-    ["Drag to move (/gthud lock when done)"] = "Trascina per spostare (poi /gthud lock)",
     ["Click to choose tracking"] = "Clic: scegli ricerca",
     ["Random Name"] = "Nome casuale",
     ["Disguise names"] = "Nascondi nomi",

@@ -1,5 +1,5 @@
 -- itIT_help.lua : testo italiano del pannello Aiuto (un blocco per argomento, vedi UI/Panels/PanelHelp.lua)
-local ADDON, GT = ...
+local _, GT = ...
 GT.locales = GT.locales or {}
 GT.locales.itIT = GT.locales.itIT or {}
 GT.helpText = GT.helpText or {}
@@ -30,14 +30,14 @@ Trasforma la minimappa vera e propria in una grande mappa trasparente estesa sul
 
 ]] .. H .. "Opzioni HUD (clic destro sul pulsante HUD)" .. E .. [[
 
-- Mappa: dimensione HUD, opacità mappa (0% = mappa vuota, si vedono solo i marker; 100% = opaca; 10 livelli), zoom minimappa, offset X / Y, tasto di scelta rapida.
+- Mappa: dimensione HUD, opacità mappa (0% = mappa vuota, si vedono solo i marker; 100% = opaca; 10 livelli), zoom minimappa, tasto di scelta rapida.
 - Cerchi: raggio, secondo cerchio, spessore, uniformità, stile del cerchio (linea, righe o punti: il pulsante li alterna), densità, colori dei cerchi (Colore cerchio... apre il selettore: cursori per ogni cerchio e pulsante Colore casuale per la scheda del cerchio aperta), lettere della bussola (N E S W), indicazione della direzione, lettura di raccolta con priorità ai punti pronti (punto pronto più vicino, altrimenti respawn più vicino) e lettura dell'avanzamento del percorso (passo attualmente pianificato). Ogni lettura può essere attivata o disattivata.
 - Tracciamento: pulsante di tracciamento mentre l'HUD è attivo (dimensioni 20-80 px e posizione) e cosa fa quando l'HUD è disattivato (auto, own o stock).
 - Opzioni: ruota la mappa con il giocatore, freccia del giocatore, nascondi HUD in sella, attivazione automatica con il tracciamento della raccolta, ripristina HUD dopo /reload o l'accesso, nascondi le skin degli addon della minimappa, diagnostica.
 - Profili: salva diversi aspetti, passa da uno all'altro o eliminali. I profili sono condivisi da tutti i personaggi; ogni personaggio ricorda il proprio.
-- Sblocca / trascina (in basso): posiziona l'HUD con il mouse, premi di nuovo per bloccarlo. Reimposta profilo ripristina i valori predefiniti.]]
+- Reimposta profilo ripristina i valori predefiniti.]]
 
-T.credits = H .. "GatherTimes 0.24.1" .. E .. [[
+T.credits = H .. "GatherTimes 0.24.2" .. E .. [[
 
 Autore: miRidinsa
 Sito web: https://github.com/ridinsa/
@@ -203,11 +203,9 @@ T.cmds = H .. "Comandi slash" .. E .. [[
 /gthud - attiva o disattiva l'HUD
 /gthud on | off
 /gthud config - apre le impostazioni dell'HUD
-/gthud unlock | lock - sposta l'HUD con il mouse
 /gthud size 800 - dimensione dell'HUD (da 150 a 1400)
 /gthud alpha 0.5 - opacità della mappa (da 0 a 1)
 /gthud zoom 3 - zoom della minimappa (da 0 a 5)
-/gthud offset 0 0 - posizione
 /gthud rotate - ruota con il giocatore attivo / disattivo
 /gthud ring 150 - raggio dell'anello in px (0 = disattivato)
 /gthud ring2 300 - secondo anello

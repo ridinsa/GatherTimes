@@ -4,7 +4,7 @@
 --   GT.IsLang("idID")              -> true when that language is selected
 -- Translations live in Locales\<code>.lua and fill GT.locales[code] = { ["English text"] = "translation" }.
 -- The language is chosen in Settings > Display (saved in GatherTimesDB._cfg.lang) and applied after a /reload.
-local ADDON, GT = ...
+local _, GT = ...
 
 GT.locales = GT.locales or {}
 GT.LANGS = {                      -- { code, name shown in the Settings > Display dropdown }

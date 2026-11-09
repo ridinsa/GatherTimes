@@ -1,5 +1,5 @@
 -- koKR_help.lua : 도움말 패널의 한국어 텍스트 (주제별 한 블록, UI/Panels/PanelHelp.lua 참고)
-local ADDON, GT = ...
+local _, GT = ...
 GT.locales = GT.locales or {}
 GT.locales.koKR = GT.locales.koKR or {}
 GT.helpText = GT.helpText or {}
@@ -30,14 +30,14 @@ T.hud = H .. "미니맵 HUD" .. E .. [[
 
 ]] .. H .. "HUD 설정 (HUD 버튼 우클릭)" .. E .. [[
 
-- 지도: HUD 크기, 지도 불투명도 (0%는 지도는 비어 있고 핀만 보임, 100%는 불투명; 10단계), 미니맵 확대, X / Y 오프셋, 키 지정.
+- 지도: HUD 크기, 지도 불투명도 (0%는 지도는 비어 있고 핀만 보임, 100%는 불투명; 10단계), 미니맵 확대, 키 지정.
 - 원: 반경, 두 번째 원, 두께, 부드러움, 원 스타일 (선, 줄무늬 또는 점: 버튼으로 순환), 원 밀도, 원 색상 (원 색상...을 누르면 선택 창이 열립니다. 각 원의 슬라이더와 열린 원 탭의 원 색상을 무작위로 정하는 버튼이 있습니다), 나침반 글자 (N E S W), 방향 표시, 준비 우선 채집 표시 (가장 가까운 준비 노드, 없으면 가장 가까운 재생성 노드), 경로 진행 표시 (현재 계획 경로의 단계). 각 표시를 개별적으로 켜거나 끌 수 있습니다.
 - 추적: HUD가 켜져 있을 때 추적 버튼 (크기 20-80 px 및 위치)과 HUD가 꺼져 있을 때의 동작 (auto, own 또는 stock).
 - 옵션: 플레이어를 따라 지도 회전, 플레이어 화살표, 탈것 탑승 중 HUD 숨기기, 채집 추적 시 자동 활성화, /reload 또는 로그인 후 HUD 복구, 미니맵 애드온 스킨 숨기기, 진단.
 - 프로필: 여러 모양을 저장, 전환 또는 삭제합니다. 프로필은 모든 캐릭터가 공유하지만 각 캐릭터는 개별 설정을 기억합니다.
-- 잠금 해제 / 이동 (아래): 마우스로 HUD를 배치하고 다시 눌러 고정합니다. 프로필 초기화는 기본값을 복원합니다.]]
+- 프로필 초기화는 기본값을 복원합니다.]]
 
-T.credits = H .. "GatherTimes 0.24.1" .. E .. [[
+T.credits = H .. "GatherTimes 0.24.2" .. E .. [[
 
 제작자: miRidinsa
 웹사이트: https://github.com/ridinsa/
@@ -203,11 +203,9 @@ T.cmds = H .. "슬래시 명령어" .. E .. [[
 /gthud - HUD 켜기 / 끄기
 /gthud on | off
 /gthud config - HUD 설정 열기
-/gthud unlock | lock - 마우스로 HUD 이동
 /gthud size 800 - HUD 크기(150~1400)
 /gthud alpha 0.5 - 지도 투명도(0~1)
 /gthud zoom 3 - 미니맵 확대(0~5)
-/gthud offset 0 0 - 위치
 /gthud rotate - 플레이어와 함께 회전 켜기 / 끄기
 /gthud ring 150 - 원의 반지름(px, 0 = 끄기)
 /gthud ring2 300 - 두 번째 원

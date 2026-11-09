@@ -1,5 +1,5 @@
 -- PanelTiming.lua : the "Timing" panel (learned respawn times, taken %, detection options)
-local ADDON, GT = ...
+local _, GT = ...
 GT.panelBuilders = GT.panelBuilders or {}
 
 local ROW_H, NUM_ROWS = 18, 9

@@ -1,6 +1,6 @@
 -- PanelNodes.lua : the "Nodes" panel (enable, minutes, colour, sound per herb / ore + group settings)
 -- Layout: [title / zone | list-all switch + type dropdown], group sliders, node list, select buttons.
-local ADDON, GT = ...
+local _, GT = ...
 GT.panelBuilders = GT.panelBuilders or {}
 
 local FLAT = "Interface\\Buttons\\WHITE8X8"
@@ -273,6 +273,20 @@ GT.panelBuilders.Nodes = function(panel, content)
 
     local list = GT:CreateScrollList(content, 288, ROW_H * NUM_ROWS, ROW_H, CreateRow, UpdateRow)
     list:SetPoint("TOPLEFT", content, "TOPLEFT", 0, -144)
+
+    -- ready sound even when out of the alert range (the sound checks this; the on-screen alert does not)
+    local soundOut = GT:CreateCheckLabel(content, "Out of range sound",
+        function() return GT.cfg().soundOutOfRange ~= false end,
+        function(v) GT.cfg().soundOutOfRange = v end, 270)
+    soundOut:SetPoint("TOPLEFT", list, "BOTTOMLEFT", 0, -6)
+    soundOut:HookScript("OnEnter", function(self)
+        GT.Tip:SetOwner(self, "ANCHOR_RIGHT")
+        GT.Tip:AddLine(GT.TR("Out of range sound"))
+        GT.Tip:AddLine(GT.TR("On: a node's sound plays when its timer ends, even if you are outside the Alert range."), 1, 1, 1, true)
+        GT.Tip:AddLine(GT.TR("Off: the sound waits until you are back inside the Alert range."), 1, 1, 1, true)
+        GT.Tip:Show()
+    end)
+    soundOut:HookScript("OnLeave", function() GT.Tip:Hide() end)
 
     local listed, lastSig = {}, nil
 

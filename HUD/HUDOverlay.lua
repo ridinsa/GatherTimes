@@ -1,5 +1,5 @@
 -- HUDOverlay.lua : rings, compass letters and the heading readout. Part of the HUD module (see HUD.lua).
-local addonName, GT = ...
+local _, GT = ...
 local HUD = GT.HUD
 
 ---------------------------------------------------------------------------
@@ -14,6 +14,9 @@ do
     local hasLine = false
     local rings = {}                    -- rings[i] = { segs = {...} }
     local letters = {}                  -- { N, E, S, W } FontStrings
+    local ringLabels = {}               -- "40 yd" captions on the rings (yard mode only)
+    local lastRadius                    -- map radius in yards the rings were last laid out for (yard mode)
+    local radiusAcc = 0
     local headingText
     local priorityText
     local lastFacing
@@ -39,7 +42,13 @@ do
         frame:EnableMouse(false)
         hasLine = frame.CreateLine ~= nil
 
-        for i = 1, 2 do rings[i] = { segs = {} } end
+        for i = 1, 2 do
+            rings[i] = { segs = {} }
+            local lb = GT.Font(frame, nil, "OVERLAY", "GameFontHighlightSmall")
+            lb:SetFont(GT.FontFile("Fonts\\FRIZQT__.TTF"), GT.FontSize(11), "OUTLINE")
+            lb:Hide()
+            ringLabels[i] = lb
+        end
 
         for i, def in ipairs(LETTER_DEFS) do
             local fs = GT.Font(frame, nil, "OVERLAY", "GameFontNormalLarge")
@@ -74,8 +83,20 @@ do
         return true
     end
 
+    -- Everything LayoutRing draws from, as one string. If it matches the last layout, the pieces are already right.
+    local function RingKey(radius, seg, thick, colors, style, density)
+        local parts = { radius, seg, thick, style or "solid", density or 24, hasLine and 1 or 0, #colors }
+        for _, c in ipairs(colors) do
+            parts[#parts + 1] = string.format("%.3f,%.3f,%.3f,%.3f", c[1] or 0, c[2] or 0, c[3] or 0, c[4] or 0)
+        end
+        return table.concat(parts, "|")
+    end
+
     local function LayoutRing(ring, radius, seg, thick, colors, style, density)
-        if radius <= 0 then HideSegs(ring, 1); return end
+        if radius <= 0 then HideSegs(ring, 1); ring.key = nil; return end
+        local key = RingKey(radius, seg, thick, colors, style, density)
+        if ring.key == key then return end
+        ring.key = key
         local step = TWO_PI / seg
         style = style or "solid"
         local n = math.max(1, math.min(seg, density or 24))
@@ -123,10 +144,60 @@ do
     -- Compass letters + heading
     ---------------------------------------------------------------------------
 
+    -- Ring radius on screen, in pixels. In pixel mode it is the saved value. In yard mode it is the saved yards
+    -- scaled by what the map shows right now (yards from centre to edge = half the HUD), so the ring keeps its real
+    -- distance at any HUD size or zoom. A ring farther out than the map sees is not drawn (returns 0).
+    local function RingPx(db, index, radiusYd)
+        if db.ringUnit ~= "yd" then return index == 1 and db.ring or db.ring2 end
+        local yd = index == 1 and db.ringYd or db.ring2Yd
+        if not yd or yd <= 0 then return 0 end
+        local half = HUD.EffectiveSize(db) / 2
+        local px = yd / (radiusYd or HUD.MapRadiusYards()) * half
+        if px > half then return 0 end
+        return px
+    end
+
     local function LetterRadius(db)
-        local half = db.size / 2
-        local r = (db.ring > 0) and (db.ring + 16) or (db.size * 0.3)
+        local size = HUD.EffectiveSize(db)
+        local half = size / 2
+        local ring = RingPx(db, 1)
+        local r = (ring > 0) and (ring + 16) or (size * 0.3)
         return math.min(r, half - 12)
+    end
+
+    -- Both rings (and their yard captions). Cheap when nothing changed: LayoutRing skips an unchanged ring.
+    local function LayoutRings(db)
+        local half = HUD.EffectiveSize(db) / 2
+        local seg = math.max(8, math.min(256, db.ringSegments))
+        local thick = math.max(1, db.ringThickness)
+        local yards = db.ringUnit == "yd"
+        local caps = db.scaleCaps                -- Eagle map: pixel rings captioned with the yards they stand for
+        local radiusYd = (yards or caps) and HUD.MapRadiusYards() or nil
+        lastRadius = radiusYd
+        for i = 1, 2 do
+            local px = math.min(RingPx(db, i, radiusYd), half)
+            LayoutRing(rings[i], px, seg, thick, Overlay.RingColors(i), db.ringStyle, db.ringDensity)
+            local lb = ringLabels[i]
+            if yards and px > 0 then
+                local c = Overlay.RingColor(i)
+                lb:SetText(GT.TRF("%d yd", math.floor((i == 1 and db.ringYd or db.ring2Yd) + 0.5)))
+                lb:SetTextColor(c[1], c[2], c[3], 1)
+                lb:ClearAllPoints()
+                lb:SetPoint("CENTER", frame, "CENTER", px * 0.7071, px * 0.7071)    -- upper right of the ring
+                lb:Show()
+            elseif caps and (i == 2 or half > 2) and (i == 1 or px > 0) then
+                -- ring 1 is the edge of the map (captioned even when its line is switched off), ring 2 the half-way ring
+                local capPx = i == 1 and (half - 2) or px
+                local c = Overlay.RingColor(i)
+                lb:SetText(GT.TRF("%d yd", math.floor(capPx / half * radiusYd + 0.5)))
+                lb:SetTextColor(c[1], c[2], c[3], 1)
+                lb:ClearAllPoints()
+                lb:SetPoint("CENTER", frame, "CENTER", capPx * 0.7071, capPx * 0.7071)
+                lb:Show()
+            else
+                lb:Hide()
+            end
+        end
     end
 
     -- facing: radians, 0 = north, increasing counter-clockwise (GetPlayerFacing)
@@ -148,7 +219,7 @@ do
     end
 
     local function Tick()
-        local db = HUD.db
+        local db = HUD.Cfg()
         local real = (GetPlayerFacing and GetPlayerFacing()) or 0
         if lastFacing and math.abs(real - lastFacing) < 0.002 then return end
         lastFacing = real
@@ -186,19 +257,20 @@ do
         end
         return ready or waiting
     end
-    Overlay.FindPriorityTimer = FindPriorityTimer
 
     local function UpdatePriorityText()
         local lines = {}
         local route = GT.UI and GT.UI.RouteOptimizer
-        local routeInfo = HUD.db.routeReadout and route and route.GetGuidanceInfo and route:GetGuidanceInfo()
+        local cfg = HUD.Cfg()
+        local routeInfo = cfg.routeReadout and route and route.GetGuidanceInfo and route:GetGuidanceInfo()
         if routeInfo then
-            local label = GT.nodes[routeInfo.key].label
+            local routeDef = GT.nodes[routeInfo.key]
+            local label = routeDef and routeDef.label or tostring(routeInfo.key)
             local distance = routeInfo.distance and (" - " .. GT.TRF("%d yd", math.floor(routeInfo.distance))) or ""
             lines[#lines + 1] = GT.TR("Route:") .. " " .. routeInfo.step .. "/" .. routeInfo.total
                 .. ": " .. label .. distance
         end
-        if HUD.db.priorityReadout then
+        if cfg.priorityReadout then
             local mapID = C_Map.GetBestMapForUnit("player")
             local candidate = mapID and FindPriorityTimer(GetServerTime(), mapID)
             if candidate then
@@ -220,7 +292,16 @@ do
     -- Called from HUD.OnUpdate (GatherTimes' update loop) on every frame.
     function Overlay.OnUpdate(dt)
         if not (frame and frame:IsShown()) then return end
-        if HUD.db.priorityReadout or HUD.db.routeReadout then
+        local cfg = HUD.Cfg()
+        if cfg.ringUnit == "yd" or cfg.scaleCaps then
+            -- the map's reach changes with zoom and indoors / outdoors: re-lay the rings when it does
+            radiusAcc = radiusAcc + dt
+            if radiusAcc >= 0.25 then
+                radiusAcc = 0
+                if HUD.MapRadiusYards() ~= lastRadius then LayoutRings(cfg) end
+            end
+        end
+        if cfg.priorityReadout or cfg.routeReadout then
             priorityElapsed = priorityElapsed + dt
             if priorityElapsed >= 1 then
                 priorityElapsed = priorityElapsed % 1
@@ -251,26 +332,24 @@ do
     end
 
     function Overlay.Update()
-        local db = HUD.db
+        local db = HUD.Cfg()
         if not db then return end
         EnsureFrame()
-        frame:SetSize(db.size, db.size)
-        priorityText:SetWidth(math.max(80, db.size - 24))
+        local size = HUD.EffectiveSize(db)
+        frame:SetSize(size, size)
+        priorityText:SetWidth(math.max(80, size - 24))
         priorityText:ClearAllPoints()
         priorityText:SetPoint("CENTER", frame, "CENTER", 0,
-            -math.min(LetterRadius(db) + 26, db.size / 2 - 20))
+            -math.min(LetterRadius(db) + 26, size / 2 - 20))
 
-        local half = db.size / 2
-        local seg = math.max(8, math.min(256, db.ringSegments))
-        local thick = math.max(1, db.ringThickness)
-        LayoutRing(rings[1], math.min(db.ring, half), seg, thick, Overlay.RingColors(1), db.ringStyle, db.ringDensity)
-        LayoutRing(rings[2], math.min(db.ring2, half), seg, thick, Overlay.RingColors(2), db.ringStyle, db.ringDensity)
+        local half = size / 2
+        LayoutRings(db)
 
         for i = 1, 4 do letters[i]:SetShown(db.dirs and true or false) end
         headingText:SetShown(db.heading and true or false)
         headingText:ClearAllPoints()
         headingText:SetPoint("CENTER", frame, "CENTER", 0, math.min(LetterRadius(db) + 30, half - 12))
-        if db.priorityReadout then
+        if db.priorityReadout or db.routeReadout then
             UpdatePriorityText()
         else
             priorityText:Hide()
@@ -285,8 +364,7 @@ do
         elseif db.dirs then
             PlaceLetters(db, 0)                         -- static north-up letters
         end
-        local faded = db.mountFade and IsMounted and IsMounted()
-        frame:SetShown(not faded)
+        frame:SetShown(not HUD.Faded())
     end
 
     function Overlay.Hide()

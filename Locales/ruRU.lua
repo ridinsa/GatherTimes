@@ -2,7 +2,7 @@
 -- Key = the English text used in the code, value = the Russian text.
 -- Keep every %s / %d in the same ORDER as the English text. A missing key just shows the English text.
 -- Counts are written as "label: N" (e.g. "групп: %d") so no Russian plural forms are needed.
-local ADDON, GT = ...
+local _, GT = ...
 GT.locales = GT.locales or {}
 
 GT.locales.ruRU = {
@@ -319,7 +319,6 @@ GT.locales.ruRU = {
     ["Ring thickness: %s"] = "Толщина: %s",
     ["Ring smoothness: %s"] = "Гладкость: %s",
     ["Button size: %s"] = "Кнопка: %s",
-    ["Tip: \"Unlock / drag\" (bottom) places the HUD with the mouse."] = "Совет: «Разблок.» (внизу) - размещение мышью.",
     ["Click a profile to select it, or type a new name (a new profile starts as a copy of the current one). The profile in use and \"Default\" cannot be deleted. Profiles are shared by all characters; each character remembers its own."] = "Нажмите на профиль, чтобы выбрать его, или введите новое имя (новый профиль создаётся как копия текущего). Используемый профиль и \"Default\" удалить нельзя. Профили общие для всех персонажей; каждый персонаж запоминает свой.",
     ["Ring colour..."] = "Цвет...",
     ["Ring colour"] = "Цвет кольца",
@@ -333,7 +332,6 @@ GT.locales.ruRU = {
     ["Frames"] = "Рамки",
     ["Switch / new"] = "Выбрать",
     ["Delete profile"] = "Удалить",
-    ["Unlock / drag"] = "Разблок.",
     ["Reset profile"] = "Сброс",
     ["OK"] = "OK",
     ["Cancel"] = "Отмена",
@@ -366,15 +364,10 @@ GT.locales.ruRU = {
     ["Deleted profile %s"] = "Профиль %s удалён",
     ["Cannot delete: %s"] = "Нельзя удалить: %s",
     ["The settings panel is unavailable (it failed to build)."] = "Панель настроек недоступна (не удалось создать).",
-    ["HUD - drag me\n|cffffff00/gthud lock|r when done"] = "HUD - перетащите\n|cffffff00/gthud lock|r потом",
-    ["Turn the HUD on first (/gthud on), then unlock."] = "Сначала включите HUD (/gthud on), затем разблокируйте.",
-    ["Unlocked: drag the blue handle. /gthud lock when done."] = "Разблокировано: тяните синюю рукоятку. /gthud lock, когда закончите.",
-    ["Locked at offset %d, %d"] = "Закреплено: %d, %d",
     ["Current profile: |cffffff00%s|r. Available: %s"] = "Текущий профиль: |cffffff00%s|r. Доступны: %s",
     ["/gthud profile <name> switches (a new name copies the current profile); /gthud profile delete <name>"] = "/gthud profile <имя> переключает профиль (новое имя копирует текущий); /gthud profile delete <имя>",
     ["Usage: /gthud profile delete <name>"] = "Использование: /gthud profile delete <имя>",
     ["Click to choose tracking - drag to move"] = "Клик: слежение - тяните: двигать",
-    ["Drag to move (/gthud lock when done)"] = "Тяните, чтобы двигать (/gthud lock)",
     ["Click to choose tracking"] = "Нажмите, чтобы выбрать слежение",
     ["Random Name"] = "Случайное имя",
     ["Disguise names"] = "Скрыть имена",

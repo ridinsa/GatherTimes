@@ -1,6 +1,6 @@
 -- HUDPins.lua : keeps the node pins right after the HUD resizes / zooms / rotates the Minimap.
 -- Part of the HUD module (see HUD.lua for the file layout).
-local addonName, GT = ...
+local _, GT = ...
 local HUD = GT.HUD
 
 ---------------------------------------------------------------------------
@@ -40,7 +40,6 @@ local function LayoutPins()
     end
     return false
 end
-HUD.LayoutPins = LayoutPins
 
 local function QueueRestyle()
     if restyleQueued then return end

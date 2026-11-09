@@ -1,5 +1,5 @@
 -- Data.lua
-local addonName, GT = ...
+local _, GT = ...
 
 local READY_LINGER = 120
 local MERGE_DIST = 0.006

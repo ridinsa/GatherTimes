@@ -8,6 +8,7 @@ Herb and ore respawn timers for World of Warcraft: learned spawn spots, gatherin
 - Full-screen minimap HUD (`/gt hud`)
 - Minimized one-line bar docked to the top of the screen
 - Per-zone yield statistics (`/gt yield`)
+- Broker button for Titan Panel, ChocolateBar and similar (optional)
 - 11 languages
 
 ## Supported clients
@@ -46,6 +47,11 @@ The in-game help (`?` button in the title bar) lists the rest.
 ## Building a release
 
 The `.pkgmeta` file is for the [BigWigs packager](https://github.com/BigWigsMods/packager). Pushing a tag such as `v0.23.0` runs `.github/workflows/release.yml`, which builds the zips and attaches them to a GitHub release. The libraries stay bundled in `Libs/`.
+
+## Development
+
+- `luacheck . --no-global` finds unused variables and similar slips (config in `.luacheckrc`, also run by CI on every push).
+- `TESTING.md` is the checklist of what has been tested on which client.
 
 ## Credits and licenses
 

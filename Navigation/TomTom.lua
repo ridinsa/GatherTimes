@@ -1,5 +1,5 @@
 -- TomTom.lua
-local addonName, GT = ...
+local _, GT = ...
 local UI = GT.UI
 local nodes = GT.nodes
 local order = GT.order

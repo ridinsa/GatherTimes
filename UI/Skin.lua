@@ -1,5 +1,5 @@
 -- Skin.lua : colour themes for GatherTimes windows, chosen in Settings > Display.
-local ADDON, GT = ...
+local _, GT = ...
 
 local function copy(c) return { c[1], c[2], c[3], c[4] } end
 local function lift(c, d)

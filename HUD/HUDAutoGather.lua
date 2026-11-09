@@ -1,6 +1,6 @@
 -- HUDAutoGather.lua : switches the HUD on while a gathering tracking spell is active, off again afterwards.
 -- Part of the HUD module (see HUD.lua for the file layout).
-local addonName, GT = ...
+local _, GT = ...
 local HUD = GT.HUD
 
 ---------------------------------------------------------------------------
@@ -59,9 +59,12 @@ end
 
 function HUD.CheckAutoGather()
     if not (HUD.db and HUD.db.autoGather) then return end
+    if HUD.EagleSuspended and HUD.EagleSuspended() then return end   -- Eagle Eye: the HUD comes back when it ends
     local ok, gathering = pcall(GatheringTrackingActive)
     if not ok then return end
+    if not gathering then HUD.ClearAutoSuppress() end
     if gathering and not HUD.IsActive() then
+        if HUD.AutoSuppressed() then return end
         HUD.SetEnabled(true, true)
     elseif not gathering and HUD.IsActive() and HUD.WasAutoEnabled() then
         HUD.SetEnabled(false, true)

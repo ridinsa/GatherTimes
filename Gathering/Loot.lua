@@ -1,5 +1,5 @@
 -- Loot.lua
-local addonName, GT = ...
+local _, GT = ...
 local SNAP_DIST = GT.SNAP_DIST
 local nodes = GT.nodes
 local order = GT.order

@@ -5,7 +5,7 @@
 -- Texts that sit on buttons / tabs / table headers are kept SHORT on purpose (the buttons are only ~54 px wide);
 -- anything that is still too wide is shrunk automatically by GT.FitText (UI/Style.lua).
 -- Sundanese uses the Latin alphabet, so it needs no special font.
-local ADDON, GT = ...
+local _, GT = ...
 GT.locales = GT.locales or {}
 
 GT.locales.suID = {
@@ -322,7 +322,6 @@ GT.locales.suID = {
     ["Ring thickness: %s"] = "Kandel ring: %s",
     ["Ring smoothness: %s"] = "Halus ring: %s",
     ["Button size: %s"] = "Ukuran tombol: %s",
-    ["Tip: \"Unlock / drag\" (bottom) places the HUD with the mouse."] = "Tip: “Buka/sered” (handap) pikeun nempatkeun HUD maké beurit.",
     ["Click a profile to select it, or type a new name (a new profile starts as a copy of the current one). The profile in use and \"Default\" cannot be deleted. Profiles are shared by all characters; each character remembers its own."] = "Klik profil keur milih, atawa ketik ngaran anyar (profil anyar nyalin nu ayeuna). Profil nu keur dipaké jeung \"Default\" teu bisa dipupus. Profil dipaké bareng ku kabéh karakter; unggal karakter nyimpen pilihanana sorangan.",
     ["Ring colour..."] = "Warna...",
     ["Ring colour"] = "Warna ring",
@@ -336,7 +335,6 @@ GT.locales.suID = {
     ["Frames"] = "Pigura",
     ["Switch / new"] = "Pindah/anyar",
     ["Delete profile"] = "Hapus profil",
-    ["Unlock / drag"] = "Buka/sered",
     ["Reset profile"] = "Reset profil",
     ["OK"] = "OK",
     ["Cancel"] = "Batal",
@@ -369,15 +367,10 @@ GT.locales.suID = {
     ["Deleted profile %s"] = "Profil %s dihapus",
     ["Cannot delete: %s"] = "Teu bisa dihapus: %s",
     ["The settings panel is unavailable (it failed to build)."] = "Panél setélan teu sayogi (gagal dijieun).",
-    ["HUD - drag me\n|cffffff00/gthud lock|r when done"] = "HUD - sered kuring\n|cffffff00/gthud lock|r lamun geus",
-    ["Turn the HUD on first (/gthud on), then unlock."] = "Hurungkeun HUD heula (/gthud on), tuluy buka konci.",
-    ["Unlocked: drag the blue handle. /gthud lock when done."] = "Konci dibuka: sered gagang biru. /gthud lock lamun geus.",
-    ["Locked at offset %d, %d"] = "Dikonci dina offset %d, %d",
     ["Current profile: |cffffff00%s|r. Available: %s"] = "Profil ayeuna: |cffffff00%s|r. Sayogi: %s",
     ["/gthud profile <name> switches (a new name copies the current profile); /gthud profile delete <name>"] = "/gthud profile <ngaran> pikeun pindah (ngaran anyar nyalin profil ayeuna); /gthud profile delete <ngaran>",
     ["Usage: /gthud profile delete <name>"] = "Cara maké: /gthud profile delete <ngaran>",
     ["Click to choose tracking - drag to move"] = "Klik pikeun milih lacak - sered pikeun mindahkeun",
-    ["Drag to move (/gthud lock when done)"] = "Sered pikeun mindahkeun (/gthud lock lamun geus)",
     ["Click to choose tracking"] = "Klik pikeun milih lacak",
     ["Random Name"] = "Ngaran acak",
     ["Disguise names"] = "Sumputkeun ngaran",

@@ -4,7 +4,7 @@
 -- Texts that sit on buttons / tabs / table headers are kept SHORT on purpose (the buttons are only ~54 px wide,
 -- about 4 Japanese characters); anything that is still too wide is shrunk automatically by GT.FitText (UI/Style.lua).
 -- Japanese needs a CJK font on a Western client: see GT.LANG_FONTS in Locales/Locales.lua.
-local ADDON, GT = ...
+local _, GT = ...
 GT.locales = GT.locales or {}
 
 GT.locales.jaJP = {
@@ -321,7 +321,6 @@ GT.locales.jaJP = {
     ["Ring thickness: %s"] = "リングの太さ：%s",
     ["Ring smoothness: %s"] = "リングの滑らかさ：%s",
     ["Button size: %s"] = "ボタンサイズ：%s",
-    ["Tip: \"Unlock / drag\" (bottom) places the HUD with the mouse."] = "ヒント：下の「ロック解除/移動」でマウスで HUD を配置できます。",
     ["Click a profile to select it, or type a new name (a new profile starts as a copy of the current one). The profile in use and \"Default\" cannot be deleted. Profiles are shared by all characters; each character remembers its own."] = "プロファイルをクリックして選択するか、新しい名前を入力してください (新規プロファイルは現在の設定のコピーになります)。使用中のプロファイルと「Default」は削除できません。プロファイルは全キャラクターで共有され、キャラクターごとに使用中のものを記憶します。",
     ["Ring colour..."] = "色...",
     ["Ring colour"] = "リングの色",
@@ -335,7 +334,6 @@ GT.locales.jaJP = {
     ["Frames"] = "フレーム",
     ["Switch / new"] = "切替/新規",
     ["Delete profile"] = "削除",
-    ["Unlock / drag"] = "解除/移動",
     ["Reset profile"] = "初期化",
     ["OK"] = "OK",
     ["Cancel"] = "取消",
@@ -368,15 +366,10 @@ GT.locales.jaJP = {
     ["Deleted profile %s"] = "プロファイル %s を削除しました",
     ["Cannot delete: %s"] = "削除できません：%s",
     ["The settings panel is unavailable (it failed to build)."] = "設定パネルを利用できません (作成に失敗しました)。",
-    ["HUD - drag me\n|cffffff00/gthud lock|r when done"] = "HUD - ドラッグして移動\n終わったら |cffffff00/gthud lock|r",
-    ["Turn the HUD on first (/gthud on), then unlock."] = "先に HUD をオンにして (/gthud on)、ロックを解除してください。",
-    ["Unlocked: drag the blue handle. /gthud lock when done."] = "ロック解除：青いハンドルをドラッグ。終わったら /gthud lock。",
-    ["Locked at offset %d, %d"] = "オフセット %d, %d で固定しました",
     ["Current profile: |cffffff00%s|r. Available: %s"] = "現在のプロファイル：|cffffff00%s|r。利用可能：%s",
     ["/gthud profile <name> switches (a new name copies the current profile); /gthud profile delete <name>"] = "/gthud profile <名前> で切替 (新しい名前は現在のプロファイルをコピー)；/gthud profile delete <名前>",
     ["Usage: /gthud profile delete <name>"] = "使い方：/gthud profile delete <名前>",
     ["Click to choose tracking - drag to move"] = "クリック：追跡を選択 - ドラッグ：移動",
-    ["Drag to move (/gthud lock when done)"] = "ドラッグで移動 (終わったら /gthud lock)",
     ["Click to choose tracking"] = "クリック：追跡を選択",
     ["Random Name"] = "ランダム名",
     ["Disguise names"] = "名前を隠す",

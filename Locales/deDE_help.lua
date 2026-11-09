@@ -1,5 +1,5 @@
 -- deDE_help.lua : deutscher Text des Hilfe-Fensters (ein Block pro Thema, siehe UI/Panels/PanelHelp.lua)
-local ADDON, GT = ...
+local _, GT = ...
 GT.locales = GT.locales or {}
 GT.locales.deDE = GT.locales.deDE or {}
 GT.helpText = GT.helpText or {}
@@ -30,14 +30,14 @@ Verwandelt die echte Minimap in eine große, durchscheinende Karte auf deinem Bi
 
 ]] .. H .. "HUD-Optionen (Rechtsklick auf die HUD-Schaltfläche)" .. E .. [[
 
-- Karte: HUD-Größe, Karten-Deckkraft (0 % = Karte unsichtbar, nur Marker werden angezeigt, 100 % = undurchsichtig; 10 Stufen), Minimap-Zoom, Versatz X / Y, Tastenbelegung.
+- Karte: HUD-Größe, Karten-Deckkraft (0 % = Karte unsichtbar, nur Marker werden angezeigt, 100 % = undurchsichtig; 10 Stufen), Minimap-Zoom, Tastenbelegung.
 - Ringe: Ringradius, zweiter Ring, Dicke, Glätte, Ringstil (Linie, Streifen oder Punkte: Schaltfläche schaltet die Stile durch), Ringdichte, Ringfarben (Ringfarbe... öffnet die Auswahl: Schieberegler für jeden Ring und eine Schaltfläche Zufallsfarbe für den geöffneten Ring-Tab), Kompassbuchstaben (N E S W), Richtungsanzeige, Bereit-zuerst-Sammelanzeige (nächster bereiter Punkt, andernfalls nächster Respawn) und Routenfortschrittsanzeige (aktueller geplanter Routenschritt). Jede Anzeige kann ein- oder ausgeschaltet werden.
 - Erfassung: die Erfassungsschaltfläche bei eingeschaltetem HUD (Größe 20-80 px und Position) sowie ihre Funktion bei ausgeschaltetem HUD (auto, own oder stock).
 - Optionen: Karte mit Spieler drehen, Spielerpfeil, HUD beim Reiten ausblenden, mit Sammelerfassung automatisch einschalten, HUD nach /reload oder Anmeldung wiederherstellen, Minimap-Addon-Skins ausblenden, Diagnose.
 - Profil: mehrere Darstellungen speichern, wechseln oder löschen. Profile gelten für alle Charaktere; jeder Charakter merkt sich sein eigenes.
-- Entsperren / Ziehen (unten): HUD mit der Maus positionieren, erneut drücken zum Sperren. Profil zurücksetzen stellt die Standardwerte wieder her.]]
+- Profil zurücksetzen stellt die Standardwerte wieder her.]]
 
-T.credits = H .. "GatherTimes 0.24.1" .. E .. [[
+T.credits = H .. "GatherTimes 0.24.2" .. E .. [[
 
 Autor: miRidinsa
 Website: https://github.com/ridinsa/
@@ -203,11 +203,9 @@ T.cmds = H .. "Slash-Befehle" .. E .. [[
 /gthud - HUD ein- oder ausschalten
 /gthud on | off
 /gthud config - HUD-Einstellungen öffnen
-/gthud unlock | lock - HUD mit der Maus verschieben
 /gthud size 800 - HUD-Größe (150 bis 1400)
 /gthud alpha 0.5 - Kartendeckkraft (0 bis 1)
 /gthud zoom 3 - Minimap-Zoom (0 bis 5)
-/gthud offset 0 0 - Position
 /gthud rotate - mit dem Spieler drehen an / aus
 /gthud ring 150 - Ringradius in Pixeln (0 = aus)
 /gthud ring2 300 - zweiter Ring

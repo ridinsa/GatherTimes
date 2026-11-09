@@ -18,6 +18,12 @@ do
     local DOT_TEXTURE = "Interface\\Buttons\\WHITE8X8"
     local DOT_MASK = "Interface\\CHARACTERFRAME\\TempPortraitAlphaMask"   -- round corners; if the client lacks it the dot stays square
 
+    -- 0 while the HUD's Eagle map hides the Gx labels, else 1 (HUD.lua: HUD.MiniLabelAlpha)
+    local function MiniAlpha()
+        local h = GT.HUD
+        return h and h.MiniLabelAlpha and h.MiniLabelAlpha() or 1
+    end
+
     local function NewPin(parent, size, yoff)
         local fr = CreateFrame("Frame", nil, parent)
         fr:SetSize(size, size)
@@ -41,8 +47,15 @@ do
         else
             fr:EnableMouse(true)
             fr:SetHitRectInsets(-10, -10, -4, -24)
-            fr:SetScript("OnEnter", function(self) if self.key and GT.ShowItemTooltip then GT.ShowItemTooltip(self, self.key) end end)
-            fr:SetScript("OnLeave", function() if GT.HideItemTooltip then GT.HideItemTooltip() end end)
+            -- hover: the game's own item tooltip for this herb / ore (right-click still opens the spot menu)
+            fr:SetScript("OnEnter", function(self)
+                local def = self.key and GT.nodes[self.key]
+                if not (def and GameTooltip) then return end
+                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                pcall(GameTooltip.SetHyperlink, GameTooltip, "item:" .. def.id)
+                GameTooltip:Show()
+            end)
+            fr:SetScript("OnLeave", function() GameTooltip:Hide() end)
             fr:SetScript("OnMouseUp", function(self, btn)
                 if btn == "RightButton" and self.spot and GT.OpenSpotMenu then
                     GT.OpenSpotMenu(self, self.spot, self.key)
@@ -165,6 +178,7 @@ do
                         p.styled = nil                       -- so the colour loop below styles the new frame
                     end
                     p.mini:Show()
+                    p.mini:SetAlpha(MiniAlpha())
                     HBDPins:AddMinimapIconMap(SPAWN_REF, p.mini, sp.mapID, sp.x, sp.y, false, false)
                 elseif p.mini then
                     HBDPins:RemoveMinimapIcon(SPAWN_REF, p.mini)
@@ -223,6 +237,17 @@ do
     end
     uiRefresh[#uiRefresh + 1] = function() RefreshMenuMouse() end
     GT.RefreshMenuMouse = RefreshMenuMouse      -- called when the Settings checkbox changes
+
+    -- Eagle map: hide / show every Gx label and every (G) timer text on the minimap (see HUD.MiniLabelAlpha)
+    function GT.RefreshMiniLabelAlpha()
+        local a = MiniAlpha()
+        for _, p in pairs(spawnPins) do if p.mini then p.mini:SetAlpha(a) end end
+        for _, key in ipairs(order) do
+            for _, n in ipairs(GatherTimesDB[key]) do
+                if n._miniFrame then n._miniFrame:SetAlpha(a) end
+            end
+        end
+    end
 
     -- same text size on every pin label (minimap and world map), used pins and pooled ones alike
     function GT.RestylePins()

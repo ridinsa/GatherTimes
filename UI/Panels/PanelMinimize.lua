@@ -6,7 +6,7 @@
 --   Chips : how the group chips look and which of them are shown, the urgency colours and the blink warning
 --   Fade  : fading the bar in combat or when the mouse is away
 --   XP    : the "XP" button after the dropdown
-local ADDON, GT = ...
+local _, GT = ...
 GT.panelBuilders = GT.panelBuilders or {}
 
 local BLINK_DEFAULT = 15            -- same default as UI\MiniBar.lua
@@ -71,7 +71,7 @@ GT.panelBuilders.Minimize = function(panel, content)
             cfg().miniAlwaysShow = v
             GT:ApplyAlwaysBar()
         end,
-        "On: after you open the addon (minimap button or /gt), the minimized bar stays on screen: while the main window and the other windows are open, and after you close them. Nothing is shown after a reload until you open the addon. Off: the bar appears only when you click the \"-\" button in the main window.")
+        "On: the minimized bar is on screen as soon as the addon loads, even with the main window closed, and it stays while you open and close the windows. The red x on the bar hides it until you open the addon or use /gt min. Off: the bar appears only when you click the \"-\" button in the main window.")
 
     Slider(bar, -26, "Bar size: %s", 60, 150, 5,
         function() return math.floor((ui.barScale or 1) * 100 + 0.5) end,
@@ -101,16 +101,22 @@ GT.panelBuilders.Minimize = function(panel, content)
         function(v) cfg().miniSummaryAll = v end,
         "On: the gold tooltip of the minimized bar lists every item. Off: it lists only the items ticked in the Nodes panel. The gold value always counts everything you loot.")
 
-    ---------------------------------------------------------------- Chips
-    Check(chips, 0, "Compact chips",
-        function() return cfg().miniCompact == true end,
+    -- auto width: each chip is sized to its text and shows the node count; off: only Gx and the timer
+    Check(bar, -140, "Auto width (show node count)",
+        function() return cfg().miniChipAuto ~= false end,
         function(v)
-            cfg().miniCompact = v
-            if GT.bar then GT:UpdateMiniBar() end
+            cfg().miniChipAuto = v
+            GT:UpdateMiniBar()
         end,
-        "On: each chip on the minimized bar shows only the coloured edge, the short group label (G2) and the timer, so many more chips fit before \"+N more\". The colour tells you which item it is. Off: the full group name.")
+        "On: each chip is sized to its text and shows the group and how many nodes you took in it, e.g. G1 12:34 /2. Off: each chip shows only Gx and the timer.")
 
-    Check(chips, -26, "Sort chips by urgency",
+    Check(bar, -166, "Chip tooltip",
+        function() return cfg().miniChipTip ~= false end,
+        function(v) cfg().miniChipTip = v end,
+        "On: hover a group chip to see the timer of every node you took in that group.")
+
+    ---------------------------------------------------------------- Chips
+    Check(chips, 0, "Sort chips by urgency",
         function() return cfg().miniSortUrgency ~= false end,
         function(v)
             cfg().miniSortUrgency = v
@@ -118,7 +124,7 @@ GT.panelBuilders.Minimize = function(panel, content)
         end,
         "On: the chips on the minimized bar are sorted by soonest ready (READY first, then the shortest timer), so the most useful chips are always visible instead of hiding behind \"+N more\". Off: the chips follow the table's order.")
 
-    Check(chips, -52, "Hide idle groups",
+    Check(chips, -26, "Hide idle groups",
         function() return cfg().miniHideIdle == true end,
         function(v)
             cfg().miniHideIdle = v
@@ -126,7 +132,7 @@ GT.panelBuilders.Minimize = function(panel, content)
         end,
         "On: the minimized bar shows only groups that are running or ready. Groups with no timer (Idle) are left out. Off: every known group is shown.")
 
-    Check(chips, -78, "Urgency colors",
+    Check(chips, -52, "Urgency colors",
         function() return cfg().miniUrgencyColors ~= false end,
         function(v)
             cfg().miniUrgencyColors = v
@@ -135,7 +141,7 @@ GT.panelBuilders.Minimize = function(panel, content)
         "On: the progress bar under a waiting chip is white, turns yellow at 60 seconds and red at 15 seconds. Off: it keeps the status colour.")
 
     -- blink warning: a chip pulses when its timer is at or below this many seconds
-    Slider(chips, -104, "Blink warning: %s", 0, 30, 1,
+    Slider(chips, -78, "Blink warning: %s", 0, 30, 1,
         function() return cfg().miniBlinkSecs or BLINK_DEFAULT end,
         function(v)
             cfg().miniBlinkSecs = v

@@ -1,5 +1,5 @@
 -- PanelTimers.lua : the "Timers" panel (live list of running node timers)
-local ADDON, GT = ...
+local _, GT = ...
 GT.panelBuilders = GT.panelBuilders or {}
 
 local FLAT = "Interface\\Buttons\\WHITE8X8"

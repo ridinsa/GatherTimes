@@ -1,5 +1,5 @@
 -- MainFrame.lua : the GatherTimes main window
-local ADDON, GT = ...
+local _, GT = ...
 
 local function CreateMinimapLauncher()
     if not Minimap or _G.GatherTimesMinimapButton then return end
@@ -317,7 +317,7 @@ function GT:CreateMainFrame()
                     if GT.ShowNameDisguiseFrame then
                         GT:ShowNameDisguiseFrame()
                     else
-                        GT.cprint("Random Name settings are not available.")
+                        GT.cprint(GT.TR("Random Name settings are not available."))
                     end
                 else
                     GT:ShowPanel(name)
@@ -400,7 +400,8 @@ function GT:CreateMainFrame()
             ui.minimized = false
             if GT.bar and not GT:AlwaysShowBar() then GT.bar:Hide() end
         end
-        -- "Always show" on: opening the addon brings the bar up with it, and it stays from then on
+        -- "Always show" on: opening the addon brings the bar up with it (also after the red x), and it stays
+        GT._barDismissed = nil
         if GT:AlwaysShowBar() then GT:ShowBarAlways() end
     end)
 
@@ -416,9 +417,13 @@ function GT:CreateMainFrame()
     end)
     CreateMinimapLauncher()
 
-    -- Startup.  "Always show minimized panel" on: nothing is shown after a reload; the addon (and with it the bar)
-    -- appears when you open it (minimap button or /gt).  Off: the main window shows as usual, and the bar appears
-    -- only from the "-" button, so a bar left open last session is not brought back.
+    -- Startup.  "Always show minimized panel" on (the default): the main window stays closed and the minimized bar is
+    -- up from the moment the addon loads, with the window closed; open the window from the "+", the minimap button
+    -- or /gt.  Off: the main window shows as usual, and the bar appears only from the "-" button, so a bar left open
+    -- last session is not brought back.
     ui.minimized = false
-    if self:AlwaysShowBar() then self.main:Hide() end
+    if self:AlwaysShowBar() then
+        self.main:Hide()
+        self:ShowBarAlways()
+    end
 end

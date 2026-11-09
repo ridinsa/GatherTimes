@@ -5,7 +5,7 @@
 --     toast  - small cards stacked on the right edge, newest on top (up to 3 at once)
 --     flash  - coloured glow around the screen edges + the text style
 --   GT.ShowScreenAlert(title, r, g, b [, icon [, detail]])  draws one alert in the style picked in the settings.
-local addonName, GT = ...
+local _, GT = ...
 
 local FLAT = "Interface\\Buttons\\WHITE8X8"
 local function FONT() return GT.FontFile("Fonts\\FRIZQT__.TTF") end   -- use a script-capable font when needed
@@ -302,12 +302,32 @@ function GT.CooldownOK(kind, key, ref, secs)
 end
 
 -- force = true skips the cool-down (used by the "Test alert" button)
+-- Gathering sounds are silent in the first minute after login (saved timers can run out while you are
+-- logged in in town).  Screen alerts are not affected.
+function GT.AfterLoginOK()
+    return GetServerTime() - (GT.loginServerTime or 0) >= 60
+end
+
+-- The ready SOUND: one per node when its timer reaches 0, whatever the alert range (out of range too).
+-- Not for estimated timers (~), not in the first minute after login, and in a group only the newest node you took.
+function GT.FireReadySound(key, node)
+    local soundNode = true
+    if node and GT.cfg().groupMode then
+        local sp = GT.SpawnOfNode(key, node)
+        if sp then
+            local newest
+            for _, n in ipairs((GT.GroupEntries(key, sp))) do
+                if not n.est and (not newest or n.time > newest.time) then newest = n end
+            end
+            if newest and newest ~= node then soundNode = false end
+        end
+    end
+    if soundNode and not (node and node.est) and GT.AfterLoginOK() then GT.PlayHerbSound(key) end
+end
+
+-- The on-screen READY alert only (one per group, cool-down).  force = true skips the cool-down (test button).
 function GT.FireReadyAlert(key, def, node, force)
-    -- nodes of one group become ready at different moments (you looted them at different times):
-    -- that must be ONE alert, not one per node
     if not force and not GT.CooldownOK("ready", key, node, 240) then return end
-    -- sound = per-node setting (Nodes tab), independent of the screen alert
-    GT.PlayHerbSound(key, true)
     if GT.cfg().screenAlert then
         local col = GT.Col(key)
         GT.ShowScreenAlert(def.label .. " " .. GT.TR("READY"), col[1], col[2], col[3], GT.NodeIcon(key),

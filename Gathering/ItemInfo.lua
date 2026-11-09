@@ -2,7 +2,7 @@
 --   shows: item id, icon id, bag / bank count, vendor price, auction price (Auctionator or TSM when installed),
 --   gathering difficulty with your skill, respawn, spots, session count and what the item is used for.
 --   (switch: "Item tooltip" checkbox in the Nodes panel; it covers all three places)
-local ADDON, GT = ...
+local _, GT = ...
 
 -- What each item is used for.  Alchemy recipes come from the Classic recipe list; ores list what they smelt into.
 -- (A herb with no entry is simply not shown in any recipe I could confirm.)

@@ -1,5 +1,5 @@
 -- Widgets.lua : flat widgets shared by the panels
-local ADDON, GT = ...
+local _, GT = ...
 
 local FLAT = "Interface\\Buttons\\WHITE8X8"
 

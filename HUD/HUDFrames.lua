@@ -1,10 +1,11 @@
 -- HUDFrames.lua : hiding the stock minimap decorations, addon skins / buttons and the stock tracking button
 -- while the HUD is up. Part of the HUD module (see HUD.lua for the file layout).
-local addonName, GT = ...
+local _, GT = ...
 local HUD = GT.HUD
 
 -- State private to this file
 local hidden = {}                   -- frame -> true when WE hid it
+local hookedHide, hidByOther, hidingNow = {}, {}, false   -- see HookHide: Hide() calls made by other addons
 local managed = {}                  -- frame -> "deco" | "addon" | "tracking"
 local hookedShow = {}
 local cachedAddonFrames = {}
@@ -58,12 +59,14 @@ local function ManagedShowHook(self)
     if not kind then return end
     if not HUD.IsActive() then
         -- HUD off: only the stock tracking frames matter, and only while the HUD's own button replaces them
-        if kind == "tracking" and HUD.db and HUD.db.tracking and HUD.UseOwnIdle and HUD.UseOwnIdle() then self:Hide() end
+        if kind == "tracking" and HUD.db and HUD.db.tracking and HUD.UseOwnIdle and HUD.UseOwnIdle() then
+            hidingNow = true; self:Hide(); hidingNow = false
+        end
         return
     end
     if kind == "deco" or kind == "tracking"
        or (kind == "addon" and HUD.db.hideAddons) then
-        self:Hide()
+        hidingNow = true; self:Hide(); hidingNow = false      -- our own re-hide, not another addon's
     end
 end
 
@@ -74,11 +77,37 @@ local function HookShow(f)
     end
 end
 
-local function HideFrame(f, kind)
+-- A Hide() call on a frame the HUD hid, made by anyone but the HUD, means another addon wants it hidden too.
+-- Those frames are not given back when the HUD turns off.
+local function HookHide(f)
+    if f.Hide and not hookedHide[f] then
+        hookedHide[f] = true
+        hooksecurefunc(f, "Hide", function(self)
+            if not hidingNow and hidden[self] then hidByOther[self] = true end
+        end)
+    end
+end
+
+local function HideFrameInner(f, kind)
     if not (f and f.IsShown) then return end
     managed[f] = managed[f] or kind
     HookShow(f)
-    if f:IsShown() then f:Hide(); hidden[f] = true end
+    HookHide(f)
+    if f:IsShown() then
+        hidingNow = true
+        f:Hide()
+        hidingNow = false
+        hidden[f] = true
+        hidByOther[f] = nil
+    end
+end
+
+-- Some frames refuse method calls from addons ("Wrong object type for function", "bad self"). One such frame must
+-- not abort the whole pass (an error while the HUD switches on makes ApplyHud roll the HUD back off), so every
+-- single frame goes through pcall and is skipped when it fails.
+local function HideFrame(f, kind)
+    local ok = pcall(HideFrameInner, f, kind)
+    if not ok then hidingNow = false end
 end
 
 -- Finding the addon minimap buttons means looking through _G. On setups with many addons that is tens of
@@ -149,8 +178,8 @@ local function RefreshAddonFrameCache()
         for _, n in ipairs(lib:GetButtonList()) do CacheIfFrame("LibDBIcon10_" .. n) end
     end
     for _, c in ipairs({ Minimap:GetChildren() }) do
-        local n = c.GetName and c:GetName()
-        if n and MatchesAddonName(n) then CacheIfFrame(n) end
+        local okn, n = pcall(function() return c.GetName and c:GetName() end)
+        if okn and n and MatchesAddonName(n) then CacheIfFrame(n) end
     end
     if scanning then
         -- a scan is already running but the cache was just wiped: restart it so nothing it already passed is lost
@@ -178,35 +207,48 @@ function HideAddonFrames()
         -- wide as the stock minimap, named frames only the latter.
         local limit = (HUD.OrigWidth() or HUD.MINIMAP_BASE_SIZE) * 0.9
         for _, c in ipairs({ Minimap:GetChildren() }) do
-            local name = c:GetName()
-            if name then
-                local skip = false
-                for _, pat in ipairs(ADDON_EXCLUDE) do
-                    if name:find(pat) then skip = true; break end
+            pcall(function()
+                local name = c:GetName()
+                if name then
+                    local skip = false
+                    for _, pat in ipairs(ADDON_EXCLUDE) do
+                        if name:find(pat) then skip = true; break end
+                    end
+                    if not skip and c:GetWidth() >= limit then HideFrame(c, "addon") end
+                elseif c:GetNumPoints() >= 2 or c:GetWidth() >= limit then
+                    HideFrame(c, "addon")
                 end
-                if not skip and c:GetWidth() >= limit then HideFrame(c, "addon") end
-            elseif c:GetNumPoints() >= 2 or c:GetWidth() >= limit then
-                HideFrame(c, "addon")
-            end
+            end)
         end
         for _, r in ipairs({ Minimap:GetRegions() }) do
-            -- unnamed textures / text, or a named one as wide as the stock minimap (SexyMap names its border textures)
-            if r.IsObjectType and (r:IsObjectType("Texture") or r:IsObjectType("FontString"))
-               and (not r:GetName() or r:GetWidth() >= limit) then
-                HideFrame(r, "addon")
-            end
+            pcall(function()
+                -- unnamed textures / text, or a named one as wide as the stock minimap (SexyMap names its border textures)
+                if r.IsObjectType and (r:IsObjectType("Texture") or r:IsObjectType("FontString"))
+                   and (not r:GetName() or r:GetWidth() >= limit) then
+                    HideFrame(r, "addon")
+                end
+            end)
         end
     end
 end
 
 -- SexyMap and other skins can create or resize their frames and textures after the HUD came up, and the scan above
 -- only ran when the HUD turned on. While the HUD is up, run it again twice a second.
-local sweepAcc = 0
+-- A new frame or texture on the Minimap shows up in its child / region count and is handled at once (next 0.25 s
+-- check); a frame that was only resized is caught by the full pass every 2 s.
+local sweepAcc, sweepFull, sweepCount = 0, 0, -1
 function HUD.SkinSweep(dt)
-    if not (HUD.IsActive() and HUD.db and HUD.db.hideAddons and SkinScanEnabled()) then sweepAcc = 0; return end
+    if not (HUD.IsActive() and HUD.db and HUD.db.hideAddons and SkinScanEnabled()) then
+        sweepAcc, sweepFull, sweepCount = 0, 0, -1
+        return
+    end
     sweepAcc = sweepAcc + (dt or 0)
-    if sweepAcc < 0.5 then return end
+    if sweepAcc < 0.25 then return end
+    sweepFull = sweepFull + sweepAcc
     sweepAcc = 0
+    local count = (Minimap:GetNumChildren() or 0) * 1000 + (Minimap:GetNumRegions() or 0)
+    if count == sweepCount and sweepFull < 2 then return end
+    sweepCount, sweepFull = count, 0
     HideAddonFrames()
 end
 
@@ -247,8 +289,9 @@ end
 
 local function ShowDecorations()
     for f in pairs(hidden) do
-        if StillWanted(f) then f:Show() end
+        if not hidByOther[f] and StillWanted(f) then f:Show() end
         hidden[f] = nil
+        hidByOther[f] = nil
     end
 end
 
@@ -443,7 +486,8 @@ local function WatcherTick(dt)
             if f:IsShown() then f:Hide() end
         end
         local btn = _G.GatherTimesHUDTrackingButton
-        if not (btn and btn:IsShown()) then HUD.Tracking.Update() end
+        -- a character that cannot track never gets the button: do not retry it ten times a second
+        if CanTrack() and not (btn and btn:IsShown()) then HUD.Tracking.Update() end
     elseif not CanTrack() or StockLooksFine() then       -- nothing to track, or all fine: check less often
         watcherWait = 0.5
     else

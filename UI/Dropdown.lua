@@ -4,7 +4,7 @@
 --              onSelect(index, text) runs when the user picks one
 --   maxRows  : rows shown before the list scrolls (default 10)
 --   dd:SetItems(list)  replace the entries at any time      dd:SetSelected(index)  set the shown entry
-local ADDON, GT = ...
+local _, GT = ...
 
 local FLAT = "Interface\\Buttons\\WHITE8X8"
 local ROW_H = 18

@@ -1,7 +1,7 @@
 -- idID.lua : Bahasa Indonesia
 -- Key = the English text used in the code, value = the Indonesian text.
 -- Keep every %s / %d in the same ORDER as the English text. A missing key just shows the English text.
-local ADDON, GT = ...
+local _, GT = ...
 GT.locales = GT.locales or {}
 
 GT.locales.idID = {
@@ -318,7 +318,6 @@ GT.locales.idID = {
     ["Ring thickness: %s"] = "Ketebalan cincin: %s",
     ["Ring smoothness: %s"] = "Kehalusan cincin: %s",
     ["Button size: %s"] = "Ukuran tombol: %s",
-    ["Tip: \"Unlock / drag\" (bottom) places the HUD with the mouse."] = "Tips: \"Buka kunci / seret\" (bawah) memindahkan HUD dengan mouse.",
     ["Click a profile to select it, or type a new name (a new profile starts as a copy of the current one). The profile in use and \"Default\" cannot be deleted. Profiles are shared by all characters; each character remembers its own."] = "Klik sebuah profil untuk memilihnya, atau ketik nama baru (profil baru dimulai sebagai salinan profil saat ini). Profil yang sedang dipakai dan \"Default\" tidak bisa dihapus. Profil dipakai oleh semua karakter; tiap karakter mengingat profilnya sendiri.",
     ["Ring colour..."] = "Warna cincin...",
     ["Ring colour"] = "Warna cincin",
@@ -332,7 +331,6 @@ GT.locales.idID = {
     ["Frames"] = "Frame",
     ["Switch / new"] = "Ganti / baru",
     ["Delete profile"] = "Hapus profil",
-    ["Unlock / drag"] = "Buka kunci / seret",
     ["Reset profile"] = "Reset profil",
     ["OK"] = "OK",
     ["Cancel"] = "Batal",
@@ -365,15 +363,10 @@ GT.locales.idID = {
     ["Deleted profile %s"] = "Profil %s dihapus",
     ["Cannot delete: %s"] = "Tidak bisa menghapus: %s",
     ["The settings panel is unavailable (it failed to build)."] = "Panel pengaturan tidak tersedia (gagal dibuat).",
-    ["HUD - drag me\n|cffffff00/gthud lock|r when done"] = "HUD - seret saya\n|cffffff00/gthud lock|r jika selesai",
-    ["Turn the HUD on first (/gthud on), then unlock."] = "Nyalakan HUD dulu (/gthud on), lalu buka kunci.",
-    ["Unlocked: drag the blue handle. /gthud lock when done."] = "Terbuka: seret gagang biru. /gthud lock jika selesai.",
-    ["Locked at offset %d, %d"] = "Terkunci di offset %d, %d",
     ["Current profile: |cffffff00%s|r. Available: %s"] = "Profil saat ini: |cffffff00%s|r. Tersedia: %s",
     ["/gthud profile <name> switches (a new name copies the current profile); /gthud profile delete <name>"] = "/gthud profile <nama> berganti profil (nama baru menyalin profil saat ini); /gthud profile delete <nama>",
     ["Usage: /gthud profile delete <name>"] = "Pemakaian: /gthud profile delete <nama>",
     ["Click to choose tracking - drag to move"] = "Klik untuk memilih pelacakan - seret untuk memindah",
-    ["Drag to move (/gthud lock when done)"] = "Seret untuk memindah (/gthud lock jika selesai)",
     ["Click to choose tracking"] = "Klik untuk memilih pelacakan",
     ["Random Name"] = "Nama Acak",
     ["Disguise names"] = "Sembunyikan nama",

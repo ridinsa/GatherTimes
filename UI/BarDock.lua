@@ -14,7 +14,7 @@
 --   * The frames are put back at logout / reload, because a frame the player moved with the mouse is saved by the
 --     game with the position it has at that moment.
 -- GatherTimesDB._ui.barDock = false turns the whole thing off (the bar then just covers the top of the screen).
-local ADDON, GT = ...
+local _, GT = ...
 
 local Dock = {}
 GT.BarDock = Dock

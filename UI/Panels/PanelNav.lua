@@ -1,5 +1,5 @@
 -- PanelNav.lua : the "Nav" panel  (sub-tabs: Route / Markers / Arrow)
-local ADDON, GT = ...
+local _, GT = ...
 GT.panelBuilders = GT.panelBuilders or {}
 -- NOTE: GT.UI is created by Util.lua, which loads AFTER this file, so it is read lazily (GT.UI.x)
 

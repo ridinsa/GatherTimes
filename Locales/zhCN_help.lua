@@ -1,5 +1,5 @@
 -- zhCN_help.lua : 帮助面板的简体中文文本 (每个主题一段, 参见 UI/Panels/PanelHelp.lua)
-local ADDON, GT = ...
+local _, GT = ...
 GT.locales = GT.locales or {}
 GT.locales.zhCN = GT.locales.zhCN or {}
 GT.helpText = GT.helpText or {}
@@ -30,14 +30,14 @@ T.hud = H .. "小地图 HUD" .. E .. [[
 
 ]] .. H .. "HUD 设置（右键点击 HUD 按钮）" .. E .. [[
 
-- 地图：HUD 大小、地图不透明度（0% = 地图空白，只显示标记；100% = 完全不透明；分 10 档）、小地图缩放、X / Y 偏移、按键绑定。
+- 地图：HUD 大小、地图不透明度（0% = 地图空白，只显示标记；100% = 完全不透明；分 10 档）、小地图缩放、按键绑定。
 - 圆环：圆环半径、第二个圆环、粗细、平滑度、圆环样式（线条、条纹或圆点：按钮可循环切换）、密度、圆环颜色（点击“圆环颜色...”打开拾色器：每个圆环各有滑块，并为当前标签的圆环提供随机颜色按钮）、罗盘字母（N E S W）、朝向读数、优先就绪采集读数（最近的就绪节点，否则显示最近的刷新点）以及路线进度读数（当前计划路线步骤）。每项读数都可单独启用或关闭。
 - 追踪：HUD 开启时的追踪按钮（大小 20-80 px 和位置），以及 HUD 关闭时的按钮行为（自动、自己的或默认）。
 - 选项：地图随玩家旋转、玩家箭头、骑乘时隐藏 HUD、采集追踪启用时自动开启、/reload 或登录后恢复 HUD、隐藏小地图插件皮肤、诊断。
 - 配置档：保存多种外观、切换或删除。所有角色共享配置档；每个角色分别记住自己的选择。
-- 解锁 / 拖动（底部）：用鼠标移动 HUD，再按一次锁定。重置配置档会恢复默认设置。]]
+- 重置配置档会恢复默认设置。]]
 
-T.credits = H .. "GatherTimes 0.24.1" .. E .. [[
+T.credits = H .. "GatherTimes 0.24.2" .. E .. [[
 
 作者：miRidinsa
 网站：https://github.com/ridinsa/
@@ -203,11 +203,9 @@ T.cmds = H .. "斜杠命令" .. E .. [[
 /gthud - 开启或关闭 HUD
 /gthud on | off
 /gthud config - 打开 HUD 设置
-/gthud unlock | lock - 用鼠标移动 HUD
 /gthud size 800 - HUD 大小（150 到 1400）
 /gthud alpha 0.5 - 地图不透明度（0 到 1）
 /gthud zoom 3 - 小地图缩放（0 到 5）
-/gthud offset 0 0 - 位置
 /gthud rotate - 随玩家旋转 开 / 关
 /gthud ring 150 - 圆环半径（px，0 = 关闭）
 /gthud ring2 300 - 第二个圆环

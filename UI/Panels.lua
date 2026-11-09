@@ -1,5 +1,5 @@
 -- Panels.lua : one sub-frame per button, only one visible at a time
-local ADDON, GT = ...
+local _, GT = ...
 
 GT.panels = {}
 GT.panelBuilders = GT.panelBuilders or {}   -- name -> function(panel, content)

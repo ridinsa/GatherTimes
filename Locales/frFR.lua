@@ -1,7 +1,7 @@
 -- frFR.lua : Français
 -- Key = the English text used in the code, value = the French text.
 -- Keep every %s / %d in the same ORDER as the English text. A missing key just shows the English text.
-local ADDON, GT = ...
+local _, GT = ...
 GT.locales = GT.locales or {}
 
 GT.locales.frFR = {
@@ -318,7 +318,6 @@ GT.locales.frFR = {
     ["Ring thickness: %s"] = "Épaisseur : %s",
     ["Ring smoothness: %s"] = "Lissage : %s",
     ["Button size: %s"] = "Bouton : %s",
-    ["Tip: \"Unlock / drag\" (bottom) places the HUD with the mouse."] = "Astuce : « Déverrouiller » (bas) place le HUD à la souris.",
     ["Click a profile to select it, or type a new name (a new profile starts as a copy of the current one). The profile in use and \"Default\" cannot be deleted. Profiles are shared by all characters; each character remembers its own."] = "Cliquez sur un profil pour le choisir, ou saisissez un nom (un nouveau profil copie l'actuel). Le profil actif et « Default » ne sont pas supprimables. Profils partagés par tous les personnages ; chacun retient le sien.",
     ["Ring colour..."] = "Couleur...",
     ["Ring colour"] = "Couleur",
@@ -332,7 +331,6 @@ GT.locales.frFR = {
     ["Frames"] = "Cadres",
     ["Switch / new"] = "Changer",
     ["Delete profile"] = "Suppr. profil",
-    ["Unlock / drag"] = "Déverrouiller",
     ["Reset profile"] = "RAZ profil",
     ["OK"] = "OK",
     ["Cancel"] = "Annul.",
@@ -365,15 +363,10 @@ GT.locales.frFR = {
     ["Deleted profile %s"] = "Profil %s supprimé",
     ["Cannot delete: %s"] = "Suppression impossible : %s",
     ["The settings panel is unavailable (it failed to build)."] = "Panneau de réglages indisponible.",
-    ["HUD - drag me\n|cffffff00/gthud lock|r when done"] = "HUD - déplacez-moi\n|cffffff00/gthud lock|r ensuite",
-    ["Turn the HUD on first (/gthud on), then unlock."] = "Activez d'abord le HUD (/gthud on).",
-    ["Unlocked: drag the blue handle. /gthud lock when done."] = "Déverrouillé : glissez la poignée bleue. /gthud lock ensuite.",
-    ["Locked at offset %d, %d"] = "Verrouillé : %d, %d",
     ["Current profile: |cffffff00%s|r. Available: %s"] = "Profil : |cffffff00%s|r. Dispo : %s",
     ["/gthud profile <name> switches (a new name copies the current profile); /gthud profile delete <name>"] = "/gthud profile <nom> change (un nouveau nom copie l'actuel) ; /gthud profile delete <nom>",
     ["Usage: /gthud profile delete <name>"] = "Usage : /gthud profile delete <nom>",
     ["Click to choose tracking - drag to move"] = "Clic : pistage - glissez : déplacer",
-    ["Drag to move (/gthud lock when done)"] = "Glissez pour déplacer (/gthud lock)",
     ["Click to choose tracking"] = "Clic : choisir le pistage",
     ["Random Name"] = "Nom aléatoire",
     ["Disguise names"] = "Masquer les noms",

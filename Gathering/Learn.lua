@@ -1,5 +1,5 @@
 -- Learn.lua
-local addonName, GT = ...
+local _, GT = ...
 local MERGE_DIST = GT.MERGE_DIST
 local nodes = GT.nodes
 local order = GT.order
@@ -248,7 +248,7 @@ function GT.MarkEmpty(sp, key, justNow)
     if node then
         if justNow then node.time = now
         else node.time = math.floor((node.time + def.timer + now) / 2) end
-        node._hasAlerted = nil
+        node._hasAlerted, node._soundDone = nil, nil
         node._leaveAlerted = nil
         node.est = not justNow
     else

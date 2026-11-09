@@ -1,5 +1,5 @@
 -- Translations added for newer settings, tooltips, and XP-bar text.
-local ADDON, GT = ...
+local _, GT = ...
 
 local codes = { "deDE", "frFR", "ruRU", "esES", "itIT", "idID", "suID", "koKR", "jaJP", "zhCN" }
 local rows = {

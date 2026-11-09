@@ -3,7 +3,7 @@
 -- Used by the main window, the Settings / Timers / Nodes / Timing panels and UI\Style.lua (GT.ShowButtonTip).
 -- The item tooltip (Gathering\ItemInfo.lua) and the skill tooltip (Gathering\Skills.lua) are NOT changed: they
 -- show over the inventory, the world map and the minimap, so they keep the game's own look.
-local ADDON, GT = ...
+local _, GT = ...
 
 local PAD, LINE_H, WRAP_W = 8, 14, 280
 local FLAT = "Interface\\Buttons\\WHITE8X8"
@@ -59,6 +59,14 @@ local function CleanText(text)
     if not LightSkin() then return text or "" end
     local t = (text or ""):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
     return t
+end
+
+-- change the text of line i in place (the tooltip keeps its shape; the caller calls Show again to re-measure)
+function Tip:SetLineTexts(i, left, right)
+    local l = self.lines[i]
+    if not l then return end
+    l.left:SetText(CleanText(left))
+    if right ~= nil then l.right:SetText(CleanText(right)) end
 end
 
 function Tip:AddLine(text, r, g, b, wrap)

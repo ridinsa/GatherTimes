@@ -4,7 +4,7 @@
 -- Texts that sit on buttons / tabs / table headers are kept SHORT on purpose (the buttons are only ~54 px wide,
 -- about 4 Chinese characters); anything that is still too wide is shrunk automatically by GT.FitText (UI/Style.lua).
 -- Chinese needs a CJK font on a Western client: see GT.LANG_FONTS in Locales/Locales.lua.
-local ADDON, GT = ...
+local _, GT = ...
 GT.locales = GT.locales or {}
 
 GT.locales.zhCN = {
@@ -324,7 +324,6 @@ GT.locales.zhCN = {
     ["Ring thickness: %s"] = "圆环粗细：%s",
     ["Ring smoothness: %s"] = "圆环平滑度：%s",
     ["Button size: %s"] = "按钮大小：%s",
-    ["Tip: \"Unlock / drag\" (bottom) places the HUD with the mouse."] = "提示：点击下方“解锁/拖动”可用鼠标摆放 HUD。",
     ["Click a profile to select it, or type a new name (a new profile starts as a copy of the current one). The profile in use and \"Default\" cannot be deleted. Profiles are shared by all characters; each character remembers its own."] = "点击配置文件进行选择，或输入新名称 (新配置会复制当前配置)。使用中的配置和“Default”不能删除。配置文件由所有角色共享，每个角色各自记住所用的配置。",
     ["Ring colour..."] = "颜色...",
     ["Ring colour"] = "圆环颜色",
@@ -338,7 +337,6 @@ GT.locales.zhCN = {
     ["Frames"] = "框体",
     ["Switch / new"] = "切换/新建",
     ["Delete profile"] = "删除配置",
-    ["Unlock / drag"] = "解锁/拖动",
     ["Reset profile"] = "重置配置",
     ["OK"] = "确定",
     ["Cancel"] = "取消",
@@ -371,15 +369,10 @@ GT.locales.zhCN = {
     ["Deleted profile %s"] = "已删除配置 %s",
     ["Cannot delete: %s"] = "无法删除：%s",
     ["The settings panel is unavailable (it failed to build)."] = "设置面板不可用 (创建失败)。",
-    ["HUD - drag me\n|cffffff00/gthud lock|r when done"] = "HUD - 请拖动我\n完成后输入 |cffffff00/gthud lock|r",
-    ["Turn the HUD on first (/gthud on), then unlock."] = "请先开启 HUD (/gthud on)，再解锁。",
-    ["Unlocked: drag the blue handle. /gthud lock when done."] = "已解锁：拖动蓝色手柄。完成后输入 /gthud lock。",
-    ["Locked at offset %d, %d"] = "已锁定，偏移 %d, %d",
     ["Current profile: |cffffff00%s|r. Available: %s"] = "当前配置：|cffffff00%s|r。可用：%s",
     ["/gthud profile <name> switches (a new name copies the current profile); /gthud profile delete <name>"] = "/gthud profile <名称> 切换 (新名称会复制当前配置)；/gthud profile delete <名称>",
     ["Usage: /gthud profile delete <name>"] = "用法：/gthud profile delete <名称>",
     ["Click to choose tracking - drag to move"] = "点击选择追踪 - 拖动移动",
-    ["Drag to move (/gthud lock when done)"] = "拖动移动 (完成后 /gthud lock)",
     ["Click to choose tracking"] = "点击选择追踪",
     ["Random Name"] = "随机名称",
     ["Disguise names"] = "隐藏名称",

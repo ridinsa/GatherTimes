@@ -1,5 +1,5 @@
 -- TooltipSkin.lua : apply the selected GatherTimes palette to Blizzard tooltips used by the addon.
-local ADDON, GT = ...
+local _, GT = ...
 
 local TOOLTIP_FRAMES = {
     "GameTooltip",

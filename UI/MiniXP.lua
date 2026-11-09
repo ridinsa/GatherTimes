@@ -3,7 +3,7 @@
 -- XP mode on: the bar then shows the XP information in one line in place of the gathering timers.
 -- It shows hero and pet battles to level, XP/hr, time to level, battle timer, pet capped, and the latest gain.
 -- Tracking runs all the time.  Nothing is saved between sessions.
-local ADDON, GT = ...
+local _, GT = ...
 local XP = {}
 GT.MiniXP = XP
 
@@ -85,8 +85,10 @@ local function CheckPetCap()
     local capped = IsPetCapped()
     if capped and not st.petCapAlerted then
         st.petCapAlerted = true
-        GT.cprint(RED .. GT.TR("Your pet is at your level and will not gain more XP until you level up.") .. "|r")
-        PlaySound((SOUNDKIT and SOUNDKIT.RAID_WARNING) or 8959)
+        -- chat message only while the "Show XP button" setting is on (no sound)
+        if XP.ButtonShown() then
+            GT.cprint(RED .. GT.TR("Your pet is at your level and will not gain more XP until you level up.") .. "|r")
+        end
     elseif not capped then
         st.petCapAlerted = false
     end
@@ -143,7 +145,6 @@ function XP.ShowTip(owner)
     tip:SetOwner(owner, "ANCHOR_BOTTOM")
     tip:AddLine(GT.TR("XP"), 1, 0.82, 0)
 
-    local rate = SessionRate()
     tip:AddLine(string.format("%s: %s %s, %s %s, %d %s, %s", GT.TR("Session"),
         GT.TR("hero"), FormatNumber(st.heroSession), GT.TR("pet"), FormatNumber(st.petSession),
         st.gains, GT.TR("gains"), FormatDuration(GetTime() - st.sessionStart)), 0.85, 0.85, 0.85)

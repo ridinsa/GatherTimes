@@ -1,5 +1,5 @@
 -- suID_help.lua : téks panél Pitulung dina Basa Sunda (hiji blok per topik, tingali UI/Panels/PanelHelp.lua)
-local ADDON, GT = ...
+local _, GT = ...
 GT.locales = GT.locales or {}
 GT.locales.suID = GT.locales.suID or {}
 GT.helpText = GT.helpText or {}
@@ -30,14 +30,14 @@ Ngarobah minimap asli jadi peta gedé transparan nu nutupan layar, kalawan pilih
 
 ]] .. H .. "Setélan HUD (klik katuhu tombol HUD)" .. E .. [[
 
-- Peta: ukuran HUD, opasitas peta (0% = peta kosong, ngan pin nu katingali; 100% = pinuh opak; 10 léngkah), zoom minimap, offset X / Y, tombol pintas.
+- Peta: ukuran HUD, opasitas peta (0% = peta kosong, ngan pin nu katingali; 100% = pinuh opak; 10 léngkah), zoom minimap, tombol pintas.
 - Cingcin: radius, cingcin kadua, kandel, lemesna garis, gaya cingcin (garis, belang atawa titik: tombolna muterkeun pilihan), kapadetan, warna cingcin (Warna cingcin... muka pamilih: slider keur unggal cingcin jeung tombol Warna acak keur tab nu keur dibuka), hurup kompas (N E S W), bacaan arah, bacaan ngumpulkeun nu ngutamakeun Siap (node siap pangdeukeutna, atawa respawn pangdeukeutna), jeung bacaan kamajuan rute (léngkah rute ayeuna). Unggal bacaan bisa dihurungkeun atawa dipareuman.
 - Tracking: tombol tracking waktu HUD hurung (ukuran 20-80 px jeung posisi) jeung nu dipigawéna waktu HUD pareum (otomatis, sorangan atawa baku).
 - Pilihan: puter peta nuturkeun pamaén, panah pamaén, nyumputkeun HUD waktu naék, hurungkeun otomatis bareng tracking ngumpulkeun, balikkeun HUD sanggeus /reload atawa login, nyumputkeun kulit minimap addon, diagnostik.
 - Profil: simpen sababaraha tampilan, pindah atawa hapus. Profil dipaké bareng ku sakabéh karakter; unggal karakter nyimpen pilihanana sorangan.
-- Buka konci / sered (handap): pindahkeun HUD maké beurit, pencét deui keur ngonci. Reset profil mulangkeun setélan baku.]]
+- Reset profil mulangkeun setélan baku.]]
 
-T.credits = H .. "GatherTimes 0.24.1" .. E .. [[
+T.credits = H .. "GatherTimes 0.24.2" .. E .. [[
 
 Nu nyieun: miRidinsa
 Website: https://github.com/ridinsa/
@@ -203,11 +203,9 @@ T.cmds = H .. "Paréntah slash" .. E .. [[
 /gthud - hurungkeun atawa pareuman HUD
 /gthud on | off
 /gthud config - buka setélan HUD
-/gthud unlock | lock - pindahkeun HUD ku mouse
 /gthud size 800 - ukuran HUD (150 nepi ka 1400)
 /gthud alpha 0.5 - opacity peta (0 nepi ka 1)
 /gthud zoom 3 - zoom minimap (0 nepi ka 5)
-/gthud offset 0 0 - posisi
 /gthud rotate - muter nuturkeun pamaén hurung / pareum
 /gthud ring 150 - radius cingcin dina px (0 = pareum)
 /gthud ring2 300 - cingcin kadua

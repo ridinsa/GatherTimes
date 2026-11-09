@@ -1,5 +1,5 @@
 -- Spawns.lua
-local addonName, GT = ...
+local _, GT = ...
 local MAX_SPAWNS = GT.MAX_SPAWNS
 local MERGE_DIST = GT.MERGE_DIST
 local nodes = GT.nodes

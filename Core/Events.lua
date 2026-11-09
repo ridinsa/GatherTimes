@@ -5,9 +5,9 @@ local uiRefresh = GT.uiRefresh
 local HUD = GT.HUD          -- minimap HUD module (HUD.lua): GatherTimes drives its events and updates from here
 
 -- A failing HUD handler must not take the loot / timer logic down with it.
-local function HUDEvent(event, a, b)
+local function HUDEvent(event, a, b, c)
     if not HUD then return end
-    local ok, err = pcall(HUD.OnEvent, event, a, b)
+    local ok, err = pcall(HUD.OnEvent, event, a, b, c)
     if not ok then GT.ReportError("HUD " .. event, err) end
 end
 
@@ -32,6 +32,10 @@ if not pcall(f.RegisterUnitEvent, f, "UNIT_HEALTH", "player") then f:RegisterEve
 pcall(f.RegisterEvent, f, "MINIMAP_UPDATE_TRACKING")
 pcall(f.RegisterEvent, f, "PLAYER_MOUNT_DISPLAY_CHANGED")
 pcall(f.RegisterUnitEvent, f, "UNIT_AURA", "player")
+pcall(f.RegisterUnitEvent, f, "UNIT_SPELLCAST_CHANNEL_START", "player")   -- Eagle Eye (HUD switches off / on)
+pcall(f.RegisterUnitEvent, f, "UNIT_SPELLCAST_CHANNEL_STOP", "player")
+pcall(f.RegisterUnitEvent, f, "UNIT_SPELLCAST_SUCCEEDED", "player")       -- fallback when the channel / buff is not reported
+pcall(f.RegisterUnitEvent, f, "UNIT_SPELLCAST_INTERRUPTED", "player")
 
 -- Everything ADDON_LOADED sets up.  Runs under pcall (see below).
 -- Part 1 is the saved data: if that fails the addon stays off (GT.ready false), because the timers cannot work
@@ -138,8 +142,10 @@ f:SetScript("OnEvent", function(_, event, msg, msg2, ...)
             end
         end
 
-    elseif event == "MINIMAP_UPDATE_TRACKING" or event == "PLAYER_MOUNT_DISPLAY_CHANGED" or event == "UNIT_AURA" then
-        HUDEvent(event, msg, msg2)
+    elseif event == "MINIMAP_UPDATE_TRACKING" or event == "PLAYER_MOUNT_DISPLAY_CHANGED" or event == "UNIT_AURA"
+        or event == "UNIT_SPELLCAST_CHANNEL_START" or event == "UNIT_SPELLCAST_CHANNEL_STOP"
+        or event == "UNIT_SPELLCAST_SUCCEEDED" or event == "UNIT_SPELLCAST_INTERRUPTED" then
+        HUDEvent(event, msg, msg2, (...))              -- SUCCEEDED is (unit, castGUID, spellID)
 
     elseif event == "UNIT_HEALTH" then
         if msg == "player" then GT.CheckHealth() end
@@ -158,14 +164,10 @@ f:SetScript("OnEvent", function(_, event, msg, msg2, ...)
     end
 end)
 
-local accum, hudAccum = 0, 0
+local accum = 0
 f:SetScript("OnUpdate", function(_, elap)
-    hudAccum = hudAccum + elap
-    if hudAccum >= 0.05 then
-        local hudElapsed = hudAccum
-        hudAccum = 0
-        if HUD then HUD.OnUpdate(hudElapsed) end -- HUD: compass / heading, tracking drag, mover, watcher
-    end
+    -- every frame: the HUD parts throttle themselves (overlay 0.03 s, watcher 0.1 s, skin sweep 0.5 s)
+    if HUD then HUD.OnUpdate(elap) end -- HUD: compass / heading, tracking drag, mover, watcher
     accum = accum + elap
     if accum > 1 then
         accum = 0

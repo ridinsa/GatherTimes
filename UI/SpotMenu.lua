@@ -3,7 +3,7 @@
 --       "This spot is empty" / "Group taken by someone" / "Move this spot to group: 1 2 3 ... New"
 --   * switched on/off with  Settings > General > World map  (cfg().menuMap)
 --   * the minimap never opens it (only world-map frames take mouse clicks)
-local ADDON, GT = ...
+local _, GT = ...
 
 local MAX_GROUP_BUTTONS = 12          -- group buttons 1..12, plus "New" (id 13)
 

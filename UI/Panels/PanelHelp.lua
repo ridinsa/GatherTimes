@@ -3,7 +3,7 @@
 -- A normal GatherTimes panel (Panels.lua): 300 x 400, right of the main window, not movable, closed by its header
 -- button, by opening another panel or by closing the main window. A row of 6 flat topic buttons across the top
 -- (same style as the HUD settings), the text below it in a scrollable area (mouse wheel or the thin scroll bar).
-local ADDON, GT = ...
+local _, GT = ...
 GT.panelBuilders = GT.panelBuilders or {}
 
 local FLAT = "Interface\\Buttons\\WHITE8X8"
@@ -35,7 +35,8 @@ Tracks when herbs and ore respawn in the zone you are in, remembers where the no
 - Minimap HUD On/Off button: left-click turns the HUD on / off, right-click opens the HUD settings. Its text is green while the HUD is on and grey while it is off.
 - The server and game-mode label appears below the timer table.
 - The 5 buttons at the bottom open the panels. Click the same button again to close its panel.
-- The - button in the title bar minimizes the window to a bar along the top of the screen. Right-click it for Minimize settings. In the bar: the item dropdown, one chip per group, the session gold and the "+" button, which brings the window back. Right-click the gold twice to reset the session (the summary is printed to chat first).
+- The - button in the title bar minimizes the window to a bar along the top of the screen. Right-click it for Minimize settings (tabs Bar, Chips, Fade and XP). In the bar: the item dropdown, the XP button, one chip per group, the session gold, the "+" button, which brings the window back, and a red x, which hides the bar until you open the window again or use /gt min. Right-click the gold twice to reset the session (the summary is printed to chat first).
+- XP button (on the bar): shows your hero and pet XP in one line instead of the timers: battles to level, XP per hour, time to level, the battle timer and the latest gain. Click it again, or pick an item in the dropdown, to go back. /gt xp does the same. Minimize settings > XP hides the button. Nothing is saved between sessions.
 - Drag the title bar to move the window. The title shows the zone you are in.
 - The ? button in the title bar opens this help.]] }
 
@@ -73,7 +74,7 @@ Per node: Now = the respawn time in use. Learned (n) = the range measured from y
 ]] .. H .. "Settings" .. E .. [[
 
 - General: on-screen alert and Alert time, minimum and maximum ready-alert distance (0 disables that bound), alert when chat announces maintenance (flash colour 1-7), low health warning (Hardcore), Ready status lasts, and Only show timers and pins of the zone I am in.
-- Display: map text size, window size, see-through while moving, keep windows visible (ESC does not close them), and item tooltip on hover. Graphics quality (Off / Low / Very low / Minimal) lowers view distance, particles, ground clutter, shadows, water and sky detail for a slow PC; Off puts your own settings back. Screen effects turns off the ghost screen effect and invisibility's edge effect. Weather density (Off / Low / Medium / High) and Max camera zoom (1.0x to 4.0x) are also here. Some graphics changes only fully apply after /console gxrestart. The language dropdown is under Look; it takes effect after a UI reload (shown as "w/reload").
+- Display: map text size, window size, see-through while moving, keep windows visible (ESC does not close them), and item tooltip on hover. Graphics quality (Off / Low / Very low / Minimal) lowers view distance, particles, ground clutter, shadows, water and sky detail for a slow PC; Off puts your own settings back. Screen effects turns off the ghost screen effect and invisibility's edge effect. Drunken haze turns off the blur drunkenness draws over the screen (it is the game's full screen glow, so it also removes that glow everywhere). Weather density (Off / Low / Medium / High) and Max camera zoom (1.0x to 4.0x) are also here. Some graphics changes only fully apply after /console gxrestart. The language dropdown is under Look; it takes effect after a UI reload (shown as "w/reload").
 - Look: Language, Frame skin (colour themes for the windows and tooltips; Pastel Pink and Sakura use dark text, and their text has a thin outline), Font (Friz Quadrata, Arial Narrow, Skurri, Morpheus, or Friends when the client has it) and Font size (80% to 130%). Korean, Chinese, Japanese and Russian keep their own font, so the font choice is replaced by a note for them.
 - Tools: status of the addon and its helpers, Import GatherMate2, Clear learned spawn points, Export my spots / Import spots (share spots with friends), Copy debug report (one block of text for a bug report), Reset timers, Start a new session at login, and the error log.
 
@@ -118,6 +119,7 @@ Settings > Tools > Export my spots (or /gt export) shows your own spots as one l
 - HereBeDragons: needed for pins on the map and minimap. Install it.
 - GatherMate2: Settings > Tools > Import GatherMate2 adds its known node locations.
 - TomTom: lets the arrow and route waypoints show up.
+- A Broker display (Titan Panel, ChocolateBar, Bazooka...): shows a GatherTimes button with the ready count. Left-click opens the window, right-click turns the HUD on / off.
 
 ]] .. H .. "Something is wrong?" .. E .. [[
 
@@ -140,12 +142,13 @@ Turns the real minimap into a big see-through map across your screen, with optio
 
 ]] .. H .. "HUD settings (right-click the HUD button)" .. E .. [[
 
-- Map: HUD size, map opacity (0% = the map is blank and only the pins show, 100% = opaque; 10 steps), minimap zoom, offset X / Y, keybinding.
-- Rings: ring radius, second ring, thickness, smoothness, ring style (line, stripes or dots: the button cycles them), ring density, ring colours (Ring colour... opens the picker: sliders for each ring, and a Random colour button for the ring whose tab is open), compass letters (N E S W), heading readout, Ready-first gathering readout (nearest ready node, otherwise nearest respawn), and route progress readout (current planned route step). Each readout can be switched on or off.
+- Map: HUD size, map opacity (0% = the map is blank and only the pins show, 100% = opaque; 10 steps), minimap zoom, keybinding.
+- Rings: ring radius, second ring (the Unit button at the top right switches them between pixels and yards: in yards a ring keeps its real distance at any HUD size or zoom, is labelled, and is hidden when it is farther than the map shows), thickness, smoothness, ring style (line, stripes or dots: the button cycles them), ring density, ring colours (Ring colour... opens the picker: sliders for each ring, and a Random colour button for the ring whose tab is open), compass letters (N E S W), heading readout, Ready-first gathering readout (nearest ready node, otherwise nearest respawn), and route progress readout (current planned route step). Each readout can be switched on or off.
 - Track: the tracking button while the HUD is on (size 20-80 px and position) and what it does while the HUD is off (auto, own or stock).
 - Options: rotate map with player, player arrow, hide HUD while mounted, auto-enable with gathering tracking, restore HUD after /reload or login, hide minimap addon skins, diagnostics.
+- Eagle: the map shown during a remote view: a hunter's Eagle Eye and Eyes of the Beast, a shaman's Far Sight, a priest's Mind Vision, a warlock's Eye of Kilrogg. The HUD stays on but turns into a smaller map with its own size, opacity, zoom, rotation and an optional ring; compass letters are hidden. Hover tooltips on the map lets the game's own herb / ore tooltips show when you point at a blip (clicks pass through to the world; the map does not ping). Key Bindings > AddOns has keys for zoom in, zoom out and next size (saved size, bigger, smaller). Distance scale labels the edge of the map and a ring half-way in with the yards they stand for (it follows the zoom and indoors / outdoors). Nearest node readout shows the closest known node, READY or time left, and its distance. Preview Eagle map shows it without casting Eagle Eye. Switch it off to have the HUD turn off during Eagle Eye instead.
 - Profile: save several looks, switch or delete them. Profiles are shared by all characters; each character remembers its own.
-- Unlock / drag (bottom): place the HUD with the mouse, press again to lock. Reset profile restores the defaults.]] }
+- Reset profile restores the defaults.]] }
 
 TOPICS[#TOPICS + 1] = { "cmds", "Cmds", H .. "Slash commands" .. E .. [[
 
@@ -157,13 +160,15 @@ TOPICS[#TOPICS + 1] = { "cmds", "Cmds", H .. "Slash commands" .. E .. [[
 /gt debug - loot detection messages on / off
 /gt profile start | stop | report - profile the timer loop
 /gt hud - minimap HUD (see below)
-/gt min - minimize to the bar, or bring the window back
+/gt min (or /gt minimize) - minimize to the bar, or bring the window back
 /gt dock - the bar pushes the game's top frames down (on) or only covers them (off)
+/gt xp - XP mode on the minimized bar (also: /gt xp reset, /gt xp session)
 /gt export - show your own spots as text to share
 /gt import - import spots from a friend's text
 /gt report - debug report to copy into a bug report
 /gt gfx - graphics quality level and the graphics settings this client has
 /gthud - same as /gt hud
+/gathertimes - same as /gt
 /hun - Random Name (see Panels > Settings > Random Name)
 
 ]] .. H .. "HUD commands" .. E .. [[
@@ -171,13 +176,12 @@ TOPICS[#TOPICS + 1] = { "cmds", "Cmds", H .. "Slash commands" .. E .. [[
 /gthud - toggle the HUD
 /gthud on | off
 /gthud config - open the HUD settings
-/gthud unlock | lock - move the HUD with the mouse
 /gthud size 800 - HUD size (150 to 1400)
 /gthud alpha 0.5 - map opacity (0 to 1)
 /gthud zoom 3 - minimap zoom (0 to 5)
-/gthud offset 0 0 - position
 /gthud rotate - rotate with player on / off
-/gthud ring 150 - ring radius in px (0 = off)
+/gthud ring 150 - ring radius in px, or in yards when /gthud ringunit yd is set (0 = off)
+/gthud ringunit px | yd - ring radius unit
 /gthud ring2 300 - second ring
 /gthud ringthick 2 - ring thickness (1 to 10)
 /gthud ringseg 96 - ring smoothness (8 to 256)
@@ -194,7 +198,9 @@ TOPICS[#TOPICS + 1] = { "cmds", "Cmds", H .. "Slash commands" .. E .. [[
 /gthud arrow - player arrow on / off
 /gthud addons - hide minimap addon skins / buttons on / off
 /gthud skins - list the minimap skin frames and textures (for bug reports)
+/gthud skins hide <n> | show <n> | mark | diff - hide or show one listed piece; mark, then diff, shows what changed when a skin arc appears
 /gthud scan - deep scan for minimap addons on / off
+/gthud eagle - Eagle Eye map on / off (also: preview, size, zoom, alpha, rotate, ring, scale, nearest, hover, debug)
 /gthud mountfade - hide HUD while mounted on / off
 /gthud autogather - auto-enable with gathering tracking on / off
 /gthud restore - restore HUD after /reload or login on / off
@@ -204,7 +210,7 @@ TOPICS[#TOPICS + 1] = { "cmds", "Cmds", H .. "Slash commands" .. E .. [[
 /gthud reset - reset the current profile
 /gthud help - show command help]] }
 
-TOPICS[#TOPICS + 1] = { "credits", "Credits", H .. "GatherTimes 0.24.1" .. E .. [[
+TOPICS[#TOPICS + 1] = { "credits", "Credits", H .. "GatherTimes 0.24.2" .. E .. [[
 
 Author: miRidinsa
 Website: https://github.com/ridinsa/

@@ -1,5 +1,5 @@
 -- HUDTracking.lua : the HUD's own tracking button. Part of the HUD module (see HUD.lua).
-local addonName, GT = ...
+local _, GT = ...
 local HUD = GT.HUD
 
 ---------------------------------------------------------------------------
@@ -27,7 +27,7 @@ do
     local TEX_HILITE = "Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight"
     local TEX_NONE   = "Interface\\Icons\\INV_Misc_Map_01"   -- shown (dimmed) while nothing is being tracked
 
-    local button, ownMenu
+    local button
     local dragging, dragEnd = false, 0
 
     ---------------------------------------------------------------------------
@@ -195,6 +195,20 @@ do
         return nil
     end
 
+    -- Classic Era tracking abilities by spell ID, so the last-resort name lookup also works on non-English clients
+    -- (the buff's name is already in the client language; only the English prefixes below were not).
+    local TRACKING_SPELL_IDS = {
+        [2580] = true, [2383] = true, [2481] = true,                              -- Find Minerals / Herbs / Treasure
+        [1494] = true, [19883] = true, [19884] = true, [19885] = true,            -- Track Beasts / Humanoids / Undead / Hidden
+        [19880] = true, [19878] = true, [19882] = true, [19879] = true,           -- Track Elementals / Demons / Giants / Dragonkin
+        [5500] = true, [5502] = true, [5225] = true,                              -- Sense Demons / Sense Undead / Track Humanoids (druid)
+    }
+
+    local function LooksLikeTracking(bf)
+        if bf.spellId and TRACKING_SPELL_IDS[bf.spellId] then return true end
+        return bf.name:find("^Find ") or bf.name:find("^Track ") or bf.name:find("^Sense ")
+    end
+
     local nameCache = {}
 
     local function ActiveName(tex)
@@ -208,10 +222,10 @@ do
         end
         local sb = SpellbookName(want, tex)
         if sb then nameCache[ck] = sb; return sb end
-        -- last resort: the one buff that is named like a tracking ability (English client names)
+        -- last resort: the one buff that is a tracking ability (by spell ID, or an English-style name)
         local found
         for _, bf in ipairs(buffs) do
-            if bf.name:find("^Find ") or bf.name:find("^Track ") or bf.name:find("^Sense ") then
+            if LooksLikeTracking(bf) then
                 if found then return nil end      -- more than one candidate: don't guess
                 found = bf.name
             end
@@ -243,52 +257,112 @@ do
     -- Menu
     ---------------------------------------------------------------------------
 
-    local function OpenOwnMenu(anchor)
-        if not (_G.UIDropDownMenu_Initialize and _G.ToggleDropDownMenu and _G.UIDropDownMenu_AddButton) then return end
-        if #ReadTypes() == 0 then return end        -- this client lists no tracking types: an empty menu helps nobody
-        if not ownMenu then
-            ownMenu = CreateFrame("Frame", "GatherTimesHUDTrackingMenu", UIParent, "UIDropDownMenuTemplate")
+    -- A flat popup list (no UIDropDownMenu): used on clients that list tracking types, where SetTracking is an
+    -- ordinary call. UIDropDownMenu opened from addon code can taint Blizzard's own menus.
+    local flatMenu, flatCatcher
+    local flatRows = {}
+    local ROW_H = 20
+
+    local function CloseFlatMenu()
+        if flatMenu then flatMenu:Hide() end
+    end
+
+    local function EnsureFlatMenu()
+        if flatMenu then return end
+        flatMenu = GT:CreateFlatFrame("GatherTimesHUDTrackingFlatMenu", UIParent, 190, ROW_H + 4)
+        flatMenu:SetFrameStrata("DIALOG")
+        flatMenu:SetFrameLevel(60)
+        flatMenu:SetClampedToScreen(true)
+        flatMenu:Hide()
+        flatCatcher = CreateFrame("Button", nil, UIParent)       -- click anywhere else to close
+        flatCatcher:SetAllPoints(UIParent)
+        flatCatcher:SetFrameStrata("DIALOG")
+        flatCatcher:SetFrameLevel(59)
+        flatCatcher:Hide()
+        flatCatcher:SetScript("OnClick", CloseFlatMenu)
+        flatMenu:SetScript("OnShow", function() flatCatcher:Show() end)
+        flatMenu:SetScript("OnHide", function() flatCatcher:Hide() end)
+    end
+
+    local function FlatRow(i)
+        local row = flatRows[i]
+        if row then return row end
+        row = CreateFrame("Button", nil, flatMenu)
+        row:SetHeight(ROW_H)
+        row:SetPoint("TOPLEFT", flatMenu, "TOPLEFT", 2, -2 - (i - 1) * ROW_H)
+        row:SetPoint("TOPRIGHT", flatMenu, "TOPRIGHT", -2, -2 - (i - 1) * ROW_H)
+        row.hl = row:CreateTexture(nil, "BACKGROUND")
+        row.hl:SetAllPoints()
+        row.hl:SetTexture("Interface\\Buttons\\WHITE8X8")
+        row.hl:SetVertexColor(0.3, 0.3, 0.3, 0.6)
+        row.hl:Hide()
+        row.icon = row:CreateTexture(nil, "ARTWORK")
+        row.icon:SetSize(16, 16)
+        row.icon:SetPoint("LEFT", 4, 0)
+        row.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+        row.text = GT.Font(row, nil, "OVERLAY", "GameFontHighlightSmall")
+        row.text:SetPoint("LEFT", row.icon, "RIGHT", 6, 0)
+        row.text:SetPoint("RIGHT", -22, 0)
+        row.text:SetJustifyH("LEFT")
+        row.text:SetWordWrap(false)
+        row.check = row:CreateTexture(nil, "OVERLAY")
+        row.check:SetSize(14, 14)
+        row.check:SetPoint("RIGHT", -4, 0)
+        row.check:SetTexture("Interface\\Buttons\\UI-CheckBox-Check")
+        row:SetScript("OnEnter", function(self) self.hl:Show() end)
+        row:SetScript("OnLeave", function(self) self.hl:Hide() end)
+        row:SetScript("OnClick", function(self)
+            local t = self.entry
+            CloseFlatMenu()
+            if not t then return end
+            local _, _, setTracking = API()
+            if setTracking then pcall(setTracking, t.id, not t.active) end
+            Tracking.Refresh()
+        end)
+        flatRows[i] = row
+        return row
+    end
+
+    -- true when the menu was handled here (opened or closed); false: this client lists no tracking types
+    local function OpenFlatMenu(anchor)
+        local list = ReadTypes()
+        if #list == 0 then return false end
+        EnsureFlatMenu()
+        if flatMenu:IsShown() then flatMenu:Hide(); return true end
+        for i, t in ipairs(list) do
+            local row = FlatRow(i)
+            row.entry = t
+            row.icon:SetTexture(t.texture)
+            row.text:SetText(t.name)
+            row.check:SetShown(t.active)
+            row:Show()
         end
-        _G.UIDropDownMenu_Initialize(ownMenu, function(_, level)
-            for _, t in ipairs(ReadTypes()) do
-                local info = _G.UIDropDownMenu_CreateInfo and _G.UIDropDownMenu_CreateInfo() or {}
-                info.text = t.name
-                info.icon = t.texture
-                info.checked = t.active
-                info.isNotRadio = true
-                info.func = function()
-                    local _, _, setTracking = API()
-                    if setTracking then pcall(setTracking, t.id, not t.active) end
-                    Tracking.Refresh()
-                end
-                _G.UIDropDownMenu_AddButton(info, level)
-            end
-        end, "MENU")
-        _G.ToggleDropDownMenu(1, nil, ownMenu, anchor, 0, -5)
+        for i = #list + 1, #flatRows do flatRows[i]:Hide(); flatRows[i].entry = nil end
+        flatMenu:SetHeight(4 + #list * ROW_H)
+        flatMenu:ClearAllPoints()
+        flatMenu:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -5)
+        flatMenu:Show()
+        return true
     end
 
     local function OpenMenu(anchor)
-        -- Blizzard's own dropdown is always correct for the running client build
+        if OpenFlatMenu(anchor) then return end
+        -- Classic Era lists no tracking types and tracks by casting spells, which only Blizzard's own (secure)
+        -- dropdown can do, so that client keeps using it.
         local dd = _G.MiniMapTrackingDropDown
         if dd and dd.initialize and _G.ToggleDropDownMenu then
-            local list = _G.DropDownList1
-            local wasOpen = list and list:IsShown() and _G.UIDROPDOWNMENU_OPEN_MENU == dd
-            if pcall(_G.ToggleDropDownMenu, 1, nil, dd, anchor, 0, -5) then
-                -- closing an already open menu is a success too; otherwise make sure something actually opened
-                if wasOpen or not list or list:IsShown() then return end
-            end
+            pcall(_G.ToggleDropDownMenu, 1, nil, dd, anchor, 0, -5)
         end
-        OpenOwnMenu(anchor)
     end
 
     ---------------------------------------------------------------------------
     -- Placement
     ---------------------------------------------------------------------------
 
-    -- Default spot: next to the right edge of the HUD, kept on-screen whatever the HUD size or offset.
+    -- Default spot: next to the right edge of the HUD (which is always centred), kept on-screen whatever the HUD size.
     local function DefaultOffset(db)
-        local half = math.min(db.size / 2, UIParent:GetWidth() / 2 - db.x)
-        return db.x + math.max(0, half - 40), db.y
+        local half = math.min(HUD.EffectiveSize(db) / 2, UIParent:GetWidth() / 2)
+        return math.max(0, half - 40), 0
     end
 
     local function BtnScale(db)
@@ -313,27 +387,19 @@ do
         end
     end
 
-    -- Drag. HUD on: only while the HUD is unlocked (/gthud unlock), saved as trackingX/Y.
+    -- Drag. HUD on: not draggable (trackingX/Y are set in the HUD settings, Track tab).
     --       HUD off: always draggable, saved as idleX/idleY relative to the minimap's top-left.
     local function DragUpdate()
         local db = HUD.db
         if not (db and button) then return end
+        if HUD.IsActive() then return end
         local L = HUD.LIMITS
         local cx, cy = GetCursorPosition()
-        if HUD.IsActive() then
-            local ux, uy = UIParent:GetCenter()
-            if not ux then return end
-            local scale = UIParent:GetEffectiveScale()
-            local dx, dy = DefaultOffset(db)
-            db.trackingX = HUD.Clamp(HUD.Round(cx / scale - ux - dx), L.trackingX[1], L.trackingX[2])
-            db.trackingY = HUD.Clamp(HUD.Round(cy / scale - uy - dy), L.trackingY[1], L.trackingY[2])
-        else
-            local left, top = Minimap:GetLeft(), Minimap:GetTop()
-            if not left then return end
-            local mES, bES = Minimap:GetEffectiveScale(), button:GetEffectiveScale()
-            db.idleX = HUD.Clamp(HUD.Round((cx - left * mES) / bES - 12), L.idleX[1], L.idleX[2])
-            db.idleY = HUD.Clamp(HUD.Round((cy - top * mES) / bES + 12), L.idleY[1], L.idleY[2])
-        end
+        local left, top = Minimap:GetLeft(), Minimap:GetTop()
+        if not left then return end
+        local mES, bES = Minimap:GetEffectiveScale(), button:GetEffectiveScale()
+        db.idleX = HUD.Clamp(HUD.Round((cx - left * mES) / bES - 12), L.idleX[1], L.idleX[2])
+        db.idleY = HUD.Clamp(HUD.Round((cy - top * mES) / bES + 12), L.idleY[1], L.idleY[2])
         Tracking.Place()
     end
 
@@ -358,8 +424,6 @@ do
         end
         if not HUD.IsActive() then
             GameTooltip:AddLine(GT.TR("Click to choose tracking - drag to move"), 0.8, 0.8, 0.8)
-        elseif HUD.IsUnlocked and HUD.IsUnlocked() then
-            GameTooltip:AddLine(GT.TR("Drag to move (/gthud lock when done)"), 0.8, 0.8, 0.8)
         else
             GameTooltip:AddLine(GT.TR("Click to choose tracking"), 0.8, 0.8, 0.8)
         end
@@ -401,7 +465,7 @@ do
         b:SetScript("OnEnter", ShowTooltip)
         b:SetScript("OnLeave", function() GameTooltip:Hide() end)
         b:SetScript("OnDragStart", function(self)
-            if HUD.IsActive() and not (HUD.IsUnlocked and HUD.IsUnlocked()) then return end
+            if HUD.IsActive() then return end
             dragging = true                 -- DragUpdate runs from Tracking.OnUpdate (HUD.OnUpdate)
         end)
         b:SetScript("OnDragStop", function(self)
@@ -421,6 +485,7 @@ do
     function Tracking.Hide()
         if not button then return end
         dragging = false
+        CloseFlatMenu()
         button:Hide()
         if GameTooltip:GetOwner() == button then GameTooltip:Hide() end
     end

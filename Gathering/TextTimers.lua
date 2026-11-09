@@ -66,6 +66,7 @@ function GT.CreateTextTimer(node, nodeKey)
     mf.nodeKey = nodeKey
     mf.label:SetText("")
     mf:Show()
+    mf:SetAlpha((GT.HUD and GT.HUD.MiniLabelAlpha and GT.HUD.MiniLabelAlpha()) or 1)   -- hidden while the Eagle map hides labels
     node._miniFrame = mf
     node._txtMini = nil
     local wf = GetWorldFrame()

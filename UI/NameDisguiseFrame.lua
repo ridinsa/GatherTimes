@@ -1,6 +1,6 @@
 -- NameDisguiseFrame.lua : the "Random Name" window (right-click the main window's Settings button).
 -- It only talks to the HideUnitNames module through _G.GatherTimesNameDisguise.
-local ADDON, GT = ...
+local _, GT = ...
 
 local FRAME_H = 400
 local ALPHA_MIN = 0.2                      -- never fully invisible: the window must stay findable
@@ -171,7 +171,7 @@ function GT:ShowNameDisguiseFrame()
     -- Random Name uses the same side slot as the regular panels; close those first.
     if self.HidePanels then self:HidePanels() end
     local api = _G.GatherTimesNameDisguise
-    if not (api and api.GetDB and api.SetEnabled) then self.cprint("Name Disguise module is not loaded."); return end
+    if not (api and api.GetDB and api.SetEnabled) then self.cprint(GT.TR("Name Disguise module is not loaded.")); return end
 
     -- Keep Random Name tied to the main window: it closes with the main window and with its Settings panel.
     local settingsPanel = self.panels and self.panels.Settings

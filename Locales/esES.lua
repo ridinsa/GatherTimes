@@ -3,7 +3,7 @@
 -- Keep every %s / %d in the same ORDER as the English text. A missing key just shows the English text.
 -- Texts that sit on buttons / tabs / table headers are kept SHORT on purpose (the buttons are only ~54 px wide);
 -- anything that is still too wide is shrunk automatically by GT.FitText (UI/Style.lua).
-local ADDON, GT = ...
+local _, GT = ...
 GT.locales = GT.locales or {}
 
 GT.locales.esES = {
@@ -320,7 +320,6 @@ GT.locales.esES = {
     ["Ring thickness: %s"] = "Grosor del anillo: %s",
     ["Ring smoothness: %s"] = "Suavizado del anillo: %s",
     ["Button size: %s"] = "Tamaño del botón: %s",
-    ["Tip: \"Unlock / drag\" (bottom) places the HUD with the mouse."] = "Consejo: «Desbloquear» (abajo) coloca el HUD con el ratón.",
     ["Click a profile to select it, or type a new name (a new profile starts as a copy of the current one). The profile in use and \"Default\" cannot be deleted. Profiles are shared by all characters; each character remembers its own."] = "Haz clic en un perfil para elegirlo o escribe un nombre nuevo (un perfil nuevo copia el actual). El perfil en uso y «Default» no se pueden borrar. Los perfiles son comunes a todos los personajes; cada uno recuerda el suyo.",
     ["Ring colour..."] = "Color...",
     ["Ring colour"] = "Color del anillo",
@@ -334,7 +333,6 @@ GT.locales.esES = {
     ["Frames"] = "Marcos",
     ["Switch / new"] = "Cambiar",
     ["Delete profile"] = "Borrar perfil",
-    ["Unlock / drag"] = "Desbloquear",
     ["Reset profile"] = "Reiniciar perfil",
     ["OK"] = "OK",
     ["Cancel"] = "Cancelar",
@@ -367,15 +365,10 @@ GT.locales.esES = {
     ["Deleted profile %s"] = "Perfil %s borrado",
     ["Cannot delete: %s"] = "No se puede borrar: %s",
     ["The settings panel is unavailable (it failed to build)."] = "Panel de ajustes no disponible (error al crearlo).",
-    ["HUD - drag me\n|cffffff00/gthud lock|r when done"] = "HUD - arrástrame\nLuego |cffffff00/gthud lock|r",
-    ["Turn the HUD on first (/gthud on), then unlock."] = "Activa antes el HUD (/gthud on) y luego desbloquea.",
-    ["Unlocked: drag the blue handle. /gthud lock when done."] = "Desbloqueado: arrastra el asa azul. Luego /gthud lock.",
-    ["Locked at offset %d, %d"] = "Bloqueado en desfase %d, %d",
     ["Current profile: |cffffff00%s|r. Available: %s"] = "Perfil: |cffffff00%s|r. Disponibles: %s",
     ["/gthud profile <name> switches (a new name copies the current profile); /gthud profile delete <name>"] = "/gthud profile <nombre> cambia (un nombre nuevo copia el perfil actual); /gthud profile delete <nombre>",
     ["Usage: /gthud profile delete <name>"] = "Uso: /gthud profile delete <nombre>",
     ["Click to choose tracking - drag to move"] = "Clic: elegir rastreo - arrastrar: mover",
-    ["Drag to move (/gthud lock when done)"] = "Arrastra para mover (luego /gthud lock)",
     ["Click to choose tracking"] = "Clic: elegir rastreo",
     ["Random Name"] = "Nombre aleatorio",
     ["Disguise names"] = "Ocultar nombres",

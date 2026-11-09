@@ -13,7 +13,7 @@
 -- Imported: every spot becomes an "imported" spot with no hits, exactly like the GatherMate2 import, so it never
 -- pushes out a spot you learned yourself, and the first loot next to it snaps onto it (GT.FindNearestImported).
 -- A spot within MERGE_DIST of one you already have counts as known and is left alone.
-local addonName, GT = ...
+local _, GT = ...
 local nodes = GT.nodes
 local order = GT.order
 

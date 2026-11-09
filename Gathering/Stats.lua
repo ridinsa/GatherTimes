@@ -1,5 +1,5 @@
 -- Stats.lua
-local addonName, GT = ...
+local _, GT = ...
 local nodes = GT.nodes
 local order = GT.order
 
@@ -259,7 +259,8 @@ end
 
 -- total gold value of this session, in copper (the same prices as the summary)
 local goldCache = { items = -1, copper = 0, t = 0 }
-function GT.SessionGoldText()
+-- withIcon = true: the gold coin icon instead of the letter g (the minimized bar); plain "g" stays for text boxes
+function GT.SessionGoldText(withIcon)
     local items = 0
     for _, key in ipairs(order) do items = items + (stats.counts[key] or 0) end
     for _, n in pairs(stats.other) do items = items + (n or 0) end
@@ -280,7 +281,9 @@ function GT.SessionGoldText()
         goldCache.items, goldCache.copper, goldCache.t = items, value, now
     end
     -- gold only: silver and copper are not shown
-    return string.format("%dg", math.floor(goldCache.copper / 10000))
+    local g = math.floor(goldCache.copper / 10000)
+    if withIcon then return g .. "|TInterface\\MoneyFrame\\UI-GoldIcon:0:0:2:0|t" end
+    return string.format("%dg", g)
 end
 
 -- the session of this character is kept in GatherTimesDB._session, so a reload or a new login resumes it

@@ -1,5 +1,5 @@
 -- frFR_help.lua : texte français du panneau Aide (un bloc par sujet, voir UI/Panels/PanelHelp.lua)
-local ADDON, GT = ...
+local _, GT = ...
 GT.locales = GT.locales or {}
 GT.locales.frFR = GT.locales.frFR or {}
 GT.helpText = GT.helpText or {}
@@ -30,14 +30,14 @@ Transforme la vraie minicarte en une grande carte translucide sur votre écran, 
 
 ]] .. H .. "Réglages du HUD (clic droit sur le bouton HUD)" .. E .. [[
 
-- Carte : taille du HUD, opacité de la carte (0 % = carte vide, seuls les repères sont visibles ; 100 % = opaque ; 10 niveaux), zoom de la minicarte, décalage X / Y, raccourci clavier.
+- Carte : taille du HUD, opacité de la carte (0 % = carte vide, seuls les repères sont visibles ; 100 % = opaque ; 10 niveaux), zoom de la minicarte, raccourci clavier.
 - Anneaux : rayon, deuxième anneau, épaisseur, lissage, style (ligne, rayures ou points : le bouton les fait défiler), densité, couleurs des anneaux (Couleur de l’anneau... ouvre le sélecteur : curseurs pour chaque anneau et bouton Couleur aléatoire pour l’onglet d’anneau ouvert), lettres de la boussole (N E S O), indicateur de cap, indicateur de récolte « prêts en premier » (point prêt le plus proche, sinon prochaine réapparition) et indicateur de progression de l’itinéraire (étape planifiée actuelle). Chaque indicateur peut être activé ou désactivé.
 - Suivi : bouton de suivi lorsque le HUD est actif (taille 20-80 px et position) et comportement lorsque le HUD est inactif (auto, own ou stock).
 - Options : faire pivoter la carte avec le joueur, flèche du joueur, masquer le HUD à cheval, activation automatique avec le suivi de récolte, restaurer le HUD après /reload ou connexion, masquer les habillages des addons de minicarte, diagnostics.
 - Profil : enregistrer plusieurs apparences, passer de l’une à l’autre ou les supprimer. Les profils sont partagés par tous les personnages ; chacun mémorise le sien.
-- Déverrouiller / déplacer (en bas) : positionnez le HUD à la souris, puis appuyez de nouveau pour le verrouiller. Réinitialiser le profil restaure les valeurs par défaut.]]
+- Réinitialiser le profil restaure les valeurs par défaut.]]
 
-T.credits = H .. "GatherTimes 0.24.1" .. E .. [[
+T.credits = H .. "GatherTimes 0.24.2" .. E .. [[
 
 Auteur : miRidinsa
 Site web : https://github.com/ridinsa/
@@ -203,11 +203,9 @@ T.cmds = H .. "Commandes slash" .. E .. [[
 /gthud - active ou désactive le HUD
 /gthud on | off
 /gthud config - ouvre les réglages du HUD
-/gthud unlock | lock - déplace le HUD à la souris
 /gthud size 800 - taille du HUD (150 à 1400)
 /gthud alpha 0.5 - opacité de la carte (0 à 1)
 /gthud zoom 3 - zoom de la minicarte (0 à 5)
-/gthud offset 0 0 - position
 /gthud rotate - rotation avec le joueur activée / désactivée
 /gthud ring 150 - rayon de l'anneau en px (0 = désactivé)
 /gthud ring2 300 - deuxième anneau

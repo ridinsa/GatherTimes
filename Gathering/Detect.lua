@@ -1,5 +1,5 @@
 -- Detect.lua
-local addonName, GT = ...
+local _, GT = ...
 local UI = GT.UI
 local nodes = GT.nodes
 local order = GT.order
@@ -189,7 +189,7 @@ function GT.CheckProximity()
                         local list = GT.GroupEntries(key, sp)
                         local readyEntry
                         for _, n in ipairs(list) do
-                            if def.timer - (now - n.time) <= 0 and (not readyEntry or n.time < readyEntry.time) then
+                            if def.timer - (now - n.time) <= 0 and not n.est and (not readyEntry or n.time < readyEntry.time) then
                                 readyEntry = n
                             end
                         end

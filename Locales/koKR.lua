@@ -4,7 +4,7 @@
 -- Texts that sit on buttons / tabs / table headers are kept SHORT on purpose (the buttons are only ~54 px wide,
 -- about 4 Hangul letters); anything that is still too wide is shrunk automatically by GT.FitText (UI/Style.lua).
 -- Hangul needs a Korean font on a Western client: see GT.LANG_FONTS in Locales/Locales.lua.
-local ADDON, GT = ...
+local _, GT = ...
 GT.locales = GT.locales or {}
 
 GT.locales.koKR = {
@@ -322,7 +322,6 @@ GT.locales.koKR = {
     ["Ring thickness: %s"] = "링 두께: %s",
     ["Ring smoothness: %s"] = "링 부드러움: %s",
     ["Button size: %s"] = "버튼 크기: %s",
-    ["Tip: \"Unlock / drag\" (bottom) places the HUD with the mouse."] = "팁: 아래 “잠금 해제”로 마우스로 HUD를 배치합니다.",
     ["Click a profile to select it, or type a new name (a new profile starts as a copy of the current one). The profile in use and \"Default\" cannot be deleted. Profiles are shared by all characters; each character remembers its own."] = "프로필을 클릭해 선택하거나 새 이름을 입력하세요 (새 프로필은 현재 설정을 복사합니다). 사용 중인 프로필과 “Default”는 삭제할 수 없습니다. 프로필은 모든 캐릭터가 공유하며, 캐릭터마다 자기 프로필을 기억합니다.",
     ["Ring colour..."] = "색상...",
     ["Ring colour"] = "링 색상",
@@ -336,7 +335,6 @@ GT.locales.koKR = {
     ["Frames"] = "프레임",
     ["Switch / new"] = "전환/신규",
     ["Delete profile"] = "프로필 삭제",
-    ["Unlock / drag"] = "잠금 해제",
     ["Reset profile"] = "프로필 초기화",
     ["OK"] = "확인",
     ["Cancel"] = "취소",
@@ -369,15 +367,10 @@ GT.locales.koKR = {
     ["Deleted profile %s"] = "프로필 %s을(를) 삭제했습니다",
     ["Cannot delete: %s"] = "삭제할 수 없음: %s",
     ["The settings panel is unavailable (it failed to build)."] = "설정 패널을 사용할 수 없습니다 (생성 실패).",
-    ["HUD - drag me\n|cffffff00/gthud lock|r when done"] = "HUD - 드래그하세요\n끝나면 |cffffff00/gthud lock|r",
-    ["Turn the HUD on first (/gthud on), then unlock."] = "먼저 HUD를 켜세요 (/gthud on). 그다음 잠금을 해제하세요.",
-    ["Unlocked: drag the blue handle. /gthud lock when done."] = "잠금 해제됨: 파란 손잡이를 드래그하세요. 끝나면 /gthud lock.",
-    ["Locked at offset %d, %d"] = "오프셋 %d, %d에서 고정됨",
     ["Current profile: |cffffff00%s|r. Available: %s"] = "현재 프로필: |cffffff00%s|r. 사용 가능: %s",
     ["/gthud profile <name> switches (a new name copies the current profile); /gthud profile delete <name>"] = "/gthud profile <이름> 전환 (새 이름은 현재 프로필을 복사); /gthud profile delete <이름>",
     ["Usage: /gthud profile delete <name>"] = "사용법: /gthud profile delete <이름>",
     ["Click to choose tracking - drag to move"] = "클릭: 추적 선택 - 드래그: 이동",
-    ["Drag to move (/gthud lock when done)"] = "드래그하여 이동 (끝나면 /gthud lock)",
     ["Click to choose tracking"] = "클릭: 추적 선택",
     ["Random Name"] = "무작위 이름",
     ["Disguise names"] = "이름 가리기",

@@ -1,5 +1,5 @@
 -- idID_help.lua : Bahasa Indonesia text of the Help panel (one block per topic id, see UI/Panels/PanelHelp.lua)
-local ADDON, GT = ...
+local _, GT = ...
 GT.locales = GT.locales or {}
 GT.locales.idID = GT.locales.idID or {}
 GT.helpText = GT.helpText or {}
@@ -30,14 +30,14 @@ Mengubah minimap sungguhan menjadi peta besar tembus pandang yang membentang di 
 
 ]] .. H .. "Kontrol HUD (klik kanan tombol HUD)" .. E .. [[
 
-- Peta: ukuran HUD, opasitas peta (0% = peta kosong dan hanya pin yang terlihat, 100% = buram; 10 tingkat), zoom minimap, offset X / Y, pintasan tombol.
+- Peta: ukuran HUD, opasitas peta (0% = peta kosong dan hanya pin yang terlihat, 100% = buram; 10 tingkat), zoom minimap, pintasan tombol.
 - Lingkaran: radius lingkaran, lingkaran kedua, ketebalan, kehalusan, gaya lingkaran (garis, garis-garis, atau titik: tombol menggilir pilihannya), kepadatan lingkaran, warna lingkaran (Warna lingkaran... membuka pemilih: penggeser untuk setiap lingkaran dan tombol Warna acak untuk tab lingkaran yang terbuka), huruf kompas (N E S W), tampilan arah hadap, tampilan pengumpulan siap-terlebih-dahulu (node siap terdekat, atau respawn terdekat), serta tampilan progres rute (langkah rute terencana saat ini). Setiap tampilan dapat diaktifkan atau dinonaktifkan.
 - Pelacakan: tombol pelacakan saat HUD aktif (ukuran 20-80 px dan posisi) dan fungsinya saat HUD nonaktif (auto, own, atau stock).
 - Opsi: putar peta bersama pemain, panah pemain, sembunyikan HUD saat sedang menunggang, aktifkan otomatis bersama pelacakan pengumpulan, pulihkan HUD setelah /reload atau login, sembunyikan skin addon minimap, diagnostik.
 - Profil: simpan beberapa tampilan, beralih atau hapus. Profil digunakan bersama semua karakter; setiap karakter mengingat profilnya sendiri.
-- Buka kunci / seret (bawah): atur posisi HUD dengan mouse, tekan lagi untuk mengunci. Atur ulang profil memulihkan nilai default.]]
+- Atur ulang profil memulihkan nilai default.]]
 
-T.credits = H .. "GatherTimes 0.24.1" .. E .. [[
+T.credits = H .. "GatherTimes 0.24.2" .. E .. [[
 
 Penulis: miRidinsa
 Situs web: https://github.com/ridinsa/
@@ -203,11 +203,9 @@ T.cmds = H .. "Perintah slash" .. E .. [[
 /gthud - aktifkan / nonaktifkan HUD
 /gthud on | off
 /gthud config - buka pengaturan HUD
-/gthud unlock | lock - pindahkan HUD dengan mouse
 /gthud size 800 - ukuran HUD (150 sampai 1400)
 /gthud alpha 0.5 - opasitas peta (0 sampai 1)
 /gthud zoom 3 - zoom minimap (0 sampai 5)
-/gthud offset 0 0 - posisi
 /gthud rotate - putar mengikuti pemain aktif / nonaktif
 /gthud ring 150 - jari-jari cincin dalam px (0 = mati)
 /gthud ring2 300 - cincin kedua

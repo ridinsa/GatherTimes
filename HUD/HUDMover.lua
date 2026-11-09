@@ -1,5 +1,5 @@
 -- HUDMover.lua : the /gthud unlock drag handle. Part of the HUD module (see HUD.lua for the file layout).
-local addonName, GT = ...
+local _, GT = ...
 local HUD = GT.HUD
 local Print = HUD.Print
 
@@ -47,6 +47,10 @@ end
 function HUD.SetUnlocked(state)
     if state then
         if not HUD.IsActive() then return Print(GT.TR("Turn the HUD on first (/gthud on), then unlock.")) end
+        -- the Eagle map is always centred and the mover would move the normal HUD, which is not on screen then
+        if HUD.EagleMapUp and HUD.EagleMapUp() then
+            return Print(GT.TR("The Eagle Eye map is up and is always centred. Unlock after Eagle Eye ends (or stop the preview)."))
+        end
         EnsureMover()
         mover:ClearAllPoints()
         mover:SetPoint("CENTER", UIParent, "CENTER", HUD.db.x, HUD.db.y)

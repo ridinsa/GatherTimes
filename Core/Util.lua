@@ -1,5 +1,5 @@
 -- Util.lua
-local addonName, GT = ...
+local _, GT = ...
 
 local HBDPins = (LibStub and LibStub("HereBeDragons-Pins-2.0", true))
 local HBD = (LibStub and LibStub("HereBeDragons-2.0", true))

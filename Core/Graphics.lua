@@ -3,7 +3,7 @@
 --   * screen effects on / off, weather density, maximum camera zoom
 -- Everything goes through console variables (CVars). A CVar this client does not have is skipped, never an error.
 -- The player's own values are remembered the first time the quality slider leaves "Off" and put back on "Off".
-local ADDON, GT = ...
+local _, GT = ...
 local Gfx = {}
 GT.Gfx = Gfx
 
@@ -115,6 +115,18 @@ function Gfx.SetScreenFx(on)
 end
 
 ---------------------------------------------------------------------------
+-- Drunken haze: the blur / glow drawn over the whole screen. The game draws it with its full screen glow
+-- (ffxGlow), so switching it off also removes that glow everywhere (spell bloom, bright lights).
+---------------------------------------------------------------------------
+
+function Gfx.GetHaze() return Get("ffxGlow") ~= "0" end
+function Gfx.SetHaze(on)
+    local c = Cfg()
+    if c then c.fxHaze = on and true or false end
+    Set("ffxGlow", on and 1 or 0)
+end
+
+---------------------------------------------------------------------------
 -- Weather density (0 = none .. 3 = full) and maximum camera zoom (tenths: 10 = 1.0x .. 40 = 4.0x)
 ---------------------------------------------------------------------------
 
@@ -146,9 +158,7 @@ function Gfx.Reapply()
     local c = Cfg()
     if not c then return end
     if (c.gfxLevel or 0) > 0 then ApplyLevel(c.gfxLevel) end
-    -- Drunken haze was removed. If it had been switched off here, give the game's full screen glow back once.
-    if c.fxHaze == false then Set("ffxGlow", 1) end
-    c.fxHaze = nil
+    if c.fxHaze ~= nil then Gfx.SetHaze(c.fxHaze) end
     if c.fxScreen ~= nil then Gfx.SetScreenFx(c.fxScreen) end
     if c.fxWeather ~= nil then Gfx.SetWeather(c.fxWeather) end
     if c.fxZoom ~= nil then Gfx.SetZoom(c.fxZoom) end

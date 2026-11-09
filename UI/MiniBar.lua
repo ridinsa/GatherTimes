@@ -14,7 +14,7 @@
 --     down to miniFadeAlpha percent; the mouse over the bar always brings it back to full strength
 --   * urgency colours (miniUrgencyColors): the progress bar of a waiting chip goes white, then yellow, then red as the timer drops
 -- State (GatherTimesDB._ui): minimized (bool), barDock (bool, push the game frames down).
-local ADDON, GT = ...
+local _, GT = ...
 
 local FLAT = "Interface\\Buttons\\WHITE8X8"
 local BAR_H = 24            -- height of the bar
@@ -31,7 +31,6 @@ local PROG_H = 2            -- progress bar along the bottom of a chip
 local TEXT_PAD, MID_GAP = 6, 14
 local IN_GAP = 5            -- space between the group name and its status inside a chip (was MID_GAP)
 local MAX_ITEMS = 24        -- chips considered; the rest is summed up as "+N more"
-local MAX_ITEMS_COMPACT = 48   -- compact chips are narrow, so more of them are considered
 local BLINK_SECS = 15        -- a chip starts blinking when its timer is at or below this many seconds (cfg: miniBlinkSecs, 0 = off)
 local FAST_SECS = 5          -- ... and blinks faster in the last few seconds
 local YELLOW_SECS = 60       -- urgency colours: the progress bar turns yellow at or below this many seconds ...
@@ -64,7 +63,6 @@ function GT.BuildMiniBarData()
     local n = 0
     local total = #items
     local cfgOpt = (GT.cfg and GT.cfg()) or {}
-    local compact = cfgOpt.miniCompact == true
     -- optional: leave out idle groups (no timer running and nothing ready); only running / ready groups remain
     local idleHidden = 0
     if cfgOpt.miniHideIdle == true and total > 0 then
@@ -106,20 +104,20 @@ function GT.BuildMiniBarData()
         items = sortItems
     end
     if total > 0 then
-        n = math.min(total, compact and MAX_ITEMS_COMPACT or MAX_ITEMS)
+        n = math.min(total, MAX_ITEMS)
         for i = 1, n do
             local it, r = items[i], Rec(i)
             local col = GT.Col(it.key)
             local status, sr, sg, sb = GT.MainRowStatus(it)
-            -- compact: only the short group label ("G2"); the item is told apart by the coloured edge
-            r.label, r.lr, r.lg, r.lb = (compact and it.glabel or it.text), col[1], col[2], col[3]
+            -- label: the short group name ("G2"); the timer is the status; the node count follows (auto width)
+            r.label, r.lr, r.lg, r.lb = (it.glabel or it.text), col[1], col[2], col[3]
+            r.count = (it.ready or 0) + (it.waiting or 0)
+            r.key, r.gi = it.key, it.gi
             r.status = status
-            -- compact: "Idle" and "Ready" stay as words; while waiting only the timer is shown (in the status colour);
-            -- a mix of ready and waiting nodes shows "ready/total" with the soonest timer
-            if it.ready == 0 and it.waiting > 0 then
-                r.status = ""
-            elseif it.ready > 0 and it.waiting > 0 then
-                r.status = it.ready .. "/" .. (it.ready + it.waiting)
+            -- "Idle" and "Ready" stay as words.  While nodes are waiting the status is the soonest timer; if some
+            -- of them are ready too, "+N" in front says how many (e.g. "+1 12:34 /2"), see StatusText
+            if it.waiting > 0 then
+                r.status = (it.ready > 0) and ("+" .. it.ready) or ""
             end
             r.sr, r.sg, r.sb = sr, sg, sb
             r.timer = it.minLeft and GT.FormatMmss(it.minLeft) or nil
@@ -154,9 +152,64 @@ function GT.BuildMiniBarData()
     if countId and GetItemCount then
         bags = "< |cffffd100" .. (GetItemCount(countId) or 0) .. "|r"     -- "<" opens the strip to the left
     end
-    local gold = GT.SessionGoldText and GT.SessionGoldText()
+    local gold = GT.SessionGoldText and GT.SessionGoldText(true)
     if gold == "" then gold = nil end
     return n, total, bags, gold, countId, idleHidden      -- countId: the item the bags text counts (its icon is shown)
+end
+
+-- every node timer of one group in the current zone, in loot order (ready = 0 or less)
+function GT.GroupNodeTimers(key, gi, mapID)
+    local out = {}
+    local res = mapID and gi and GT.ComputeGroups(key, mapID)
+    local group = res and res.groups[gi]
+    if not group then return out end
+    local inGroup = {}
+    for _, sp in ipairs(group) do inGroup[sp] = true end
+    for _, node in ipairs(GatherTimesDB[key]) do
+        if node._left and node.mapID == mapID then
+            local sp = GT.SpawnOfNode(key, node)
+            if sp and inGroup[sp] then out[#out + 1] = { left = node._left, est = node.est, time = node.time or 0 } end
+        end
+    end
+    -- oldest loot first
+    table.sort(out, function(a, b) if a.time ~= b.time then return a.time < b.time end return a.left < b.left end)
+    return out
+end
+
+-- chip tooltip: the group and the timer of every node taken in it (option: miniChipTip)
+-- refresh = true: the tooltip of this chip is already open (called every second): only the texts change
+local function ShowChipTip(owner, refresh)
+    local r = owner.rec
+    local def = r and r.key and GT.nodes[r.key]
+    if not def then return end
+    local list = GT.GroupNodeTimers(r.key, r.gi, C_Map.GetBestMapForUnit("player"))
+    local tip = GT.Tip
+    local title = def.label .. " " .. (r.label or "")
+    local shape = #list                                 -- the number of node lines (0 = the "no timer" line)
+    if refresh and tip.owner == owner and tip.frame:IsShown() and owner.tipShape == shape then
+        tip:SetLineTexts(1, title)
+        if shape == 0 then tip:SetLineTexts(2, GT.TR("No timer running")) end
+        for i, t in ipairs(list) do
+            local text
+            if t.left <= 0 then text = GT.TR("Ready")
+            else text = (t.est and "~" or "") .. GT.FormatMmss(t.left) end
+            tip:SetLineTexts(i + 1, GT.TRF("Looted %s", date("%H:%M", t.time)), text)
+        end
+        tip:Show()
+        return
+    end
+    -- below the hovered chip, sized to its content (the default placement: under the owner)
+    tip:SetOwner(owner, "ANCHOR_BOTTOM")
+    tip:AddLine(title, 1, 0.82, 0)
+    if shape == 0 then tip:AddLine(GT.TR("No timer running"), 0.6, 0.6, 0.6) end
+    for i, t in ipairs(list) do
+        local text
+        if t.left <= 0 then text = GT.TR("Ready")
+        else text = (t.est and "~" or "") .. GT.FormatMmss(t.left) end
+        tip:AddDoubleLine(GT.TRF("Looted %s", date("%H:%M", t.time)), text, 1, 1, 1, 1, 1, 1)
+    end
+    owner.tipShape = shape
+    tip:Show()
 end
 
 -- ---------------------------------------------------------------- chips
@@ -221,8 +274,21 @@ function GT:ApplyBarFade()
 end
 
 local function NewChip(f)
-    local chip = CreateFrame("Frame", nil, f)       -- no mouse: right-click goes to the bar itself
+    local chip = CreateFrame("Frame", nil, f)
     chip:SetHeight(CELL_H)
+    -- hover: the chip tooltip (option miniChipTip); right-click still restores the main window as on the bar
+    chip:EnableMouse(true)
+    chip:SetScript("OnEnter", function(s)
+        s.hovered = true
+        if GT.cfg().miniChipTip ~= false then ShowChipTip(s) end
+    end)
+    chip:SetScript("OnLeave", function(s)
+        s.hovered = false
+        GT.Tip:Hide()
+    end)
+    chip:SetScript("OnMouseUp", function(_, button)
+        if button == "RightButton" then GT:SetMinimized(false) end
+    end)
 
     chip.bg = chip:CreateTexture(nil, "BACKGROUND")
     chip.bg:SetAllPoints()
@@ -270,9 +336,13 @@ local function Measure(fs, text)
     return fs:GetStringWidth() or 0
 end
 
-local function StatusText(r)
-    if r.status == "" then return r.timer or "" end          -- waiting: just the timer
-    return r.status .. (r.timer and (" " .. WHITE .. r.timer .. "|r") or "")
+-- status column: the status word and/or the timer, then (auto width) the node count, e.g. "12:34 /2"
+local function StatusText(r, withCount)
+    local s
+    if r.status == "" then s = r.timer or ""          -- waiting: just the timer
+    else s = r.status .. (r.timer and (" " .. WHITE .. r.timer .. "|r") or "") end
+    if withCount and r.count and r.count > 0 then s = s .. (s ~= "" and " " or "") .. "/" .. r.count end
+    return s
 end
 
 -- Session summary tooltip on the gold text (same text as the Show summary panel / chat summary). Right-click resets the session.
@@ -395,8 +465,8 @@ local function Layout(f, n, total, bags, gold, iconId, idleHidden)
     -- while the strip is open the arrow turns to ">" (click to close); the numbers are in the strip
     if bags and f.bagsOpen then bags = ">" end
 
-    -- right side, from the right edge: "+" button, gold, bags, then the strip (when open)
-    local right = 3 + BTN_W + 8
+    -- right side, from the right edge: red "x", "+" button, gold, bags, then the strip (when open)
+    local right = 3 + BTN_W + 2 + BTN_W + 8
     local goldW = gold and Measure(f.gold, GOLD .. gold .. "|r") or 0
     f.gold:SetShown(gold ~= nil)
     if gold then
@@ -476,10 +546,15 @@ local function Layout(f, n, total, bags, gold, iconId, idleHidden)
     -- widest status / timer at the CURRENT font style and size.  Nothing is shrunk or clipped, so a timer is never
     -- cut off; when the chips do not fit on the bar, fewer of them are shown and the rest goes into "+N more".
     local labelW, statusW = 0, 0
+    local auto = GT.cfg and GT.cfg().miniChipAuto ~= false     -- auto width: the node count is shown and sizes the chip
     for i = 1, n do
         local chip = f.chips[i] or NewChip(f)
-        local lw = Measure(chip.label, recs[i].label)
-        if lw > labelW then labelW = lw end
+        -- measured again only when the text or the font size changes (the font is set again on every measure)
+        local text = recs[i].label
+        local fpath, fsize, fflags = chip.label:GetFont()
+        local mkey = text .. "|" .. tostring(fpath) .. "|" .. tostring(fsize) .. "|" .. tostring(fflags)
+        if chip.mKey ~= mkey then chip.mKey, chip.mW = mkey, Measure(chip.label, text) end
+        if chip.mW > labelW then labelW = chip.mW end
     end
     if n > 0 then
         -- sized for the status words that are on the bar right now plus the longest timer in use.  Digits are not
@@ -503,7 +578,7 @@ local function Layout(f, n, total, bags, gold, iconId, idleHidden)
                         local sample = string.rep(d, longest - 3) .. ":" .. d .. d
                         text = (text ~= "" and (text .. " ") or "") .. sample
                     end
-                    local sw = Measure(fs, text)
+                    local sw = Measure(fs, auto and (text .. " /88") or text)
                     if sw > statusW then statusW = sw end
                 end
             end
@@ -527,6 +602,7 @@ local function Layout(f, n, total, bags, gold, iconId, idleHidden)
     for i, chip in ipairs(f.chips) do
         if i <= shown then
             local r = recs[i]
+            chip.rec = r
             chip:ClearAllPoints()
             chip:SetPoint("TOPLEFT", f, "TOPLEFT", lead + (i - 1) * (cellW + GAP), y)
             chip:SetSize(cellW, CELL_H)
@@ -553,13 +629,18 @@ local function Layout(f, n, total, bags, gold, iconId, idleHidden)
                 chip.prog:Hide()
             end
             -- fixed size: full-size font (chosen style and size), natural width, never shrunk or clipped
-            pcall(GT.FitText, chip.label, 10000)
-            chip.label:SetText(r.label)
-            pcall(GT.FitText, chip.status, 10000)
-            chip.status:SetText(StatusText(r))
+            -- the label's font is restored only when its text changes; the status font is never shrunk, so it is not refitted each second
+            if chip.shownLabel ~= r.label then
+                pcall(GT.FitText, chip.label, 10000)
+                chip.label:SetText(r.label)
+                chip.shownLabel = r.label
+            end
+            chip.status:SetText(StatusText(r, auto))
             chip:Show()
         else
             chip.blink = nil
+            chip.hovered = nil                          -- hidden: no hover any more (no OnLeave fires for a hidden frame)
+            if GT.Tip.owner == chip then GT.Tip:Hide() end
             chip:Hide()
         end
     end
@@ -698,8 +779,21 @@ function GT:CreateMiniBar()
     GT:RegisterSkinUpdater(function() PaintBarBackground(f) end)
     PaintBarBackground(f)
 
+    -- red "x" at the far right, after the "+": hides the bar (UI\MiniBar.lua GT:CloseBar)
+    local closeBtn = self:CreateFlatButton(f, "x", BTN_W, BTN_W)
+    closeBtn:SetPoint("RIGHT", f, "RIGHT", -3, 0)
+    closeBtn:SetScript("OnClick", function() GT:CloseBar() end)
+    closeBtn:HookScript("OnEnter", function(b)
+        GT.ShowButtonTip(b, "Close the bar", "Hides the minimized bar until you open the addon or use /gt min")
+    end)
+    closeBtn:HookScript("OnLeave", function() GT.Tip:Hide() end)
+    f.closeBtn = closeBtn
+    local function PaintCloseX() closeBtn.label:SetTextColor(1, 0.2, 0.2) end
+    PaintCloseX()
+    GT:RegisterSkinUpdater(PaintCloseX)
+
     local restore = self:CreateFlatButton(f, "+", BTN_W, BTN_W)
-    restore:SetPoint("RIGHT", f, "RIGHT", -3, 0)
+    restore:SetPoint("RIGHT", closeBtn, "LEFT", -2, 0)
     restore:SetScript("OnClick", function() GT:SetMinimized(false) end)
     f.restore = restore
 
@@ -709,7 +803,7 @@ function GT:CreateMiniBar()
     end)
 
     -- refresh once a second (the main window is hidden, so its own update loop is not running)
-    local acc = 0
+    local acc, tipAcc = 0, 0
     f:SetScript("OnUpdate", function(s, elapsed)
         -- blink: smooth pulse every frame for the chips whose timer is nearly 0
         local t = GetTime()
@@ -721,6 +815,15 @@ function GT:CreateMiniBar()
             end
         end
         StepFade(s, elapsed)                            -- auto-fade (combat / mouse away), smooth every frame
+        tipAcc = tipAcc + elapsed
+        if tipAcc >= 0.25 then
+            tipAcc = 0
+            for _, chip in ipairs(s.chips) do
+                if chip.hovered and chip:IsShown() and chip:IsMouseOver() and GT.cfg().miniChipTip ~= false then
+                    ShowChipTip(chip, true)             -- the node timers, live while the tooltip is open
+                end
+            end
+        end
         acc = acc + elapsed
         if acc < 1 then return end
         acc = 0
@@ -758,14 +861,25 @@ end
 
 function GT:ShowBarAlways()
     if not self.main then return end
+    if self._barDismissed then return end            -- closed with the red x: stays closed until the addon is opened again
     local ok, bar = pcall(self.CreateMiniBar, self)
     if not ok then GT.ReportError("mini bar", bar); return end
     bar:Show()
 end
 
+-- the red "x" on the bar: hide the bar, leave the main window alone
+function GT:CloseBar()
+    local ui = GatherTimesDB and GatherTimesDB._ui
+    self._barDismissed = true
+    if ui then ui.minimized = false end
+    if self.bar then self.bar:Hide() end
+    if self.Tip then self.Tip:Hide() end
+end
+
 -- called when the option is switched: on shows the bar, off hides it unless the window is minimized
 function GT:ApplyAlwaysBar()
     if self:AlwaysShowBar() then
+        self._barDismissed = nil
         self:ShowBarAlways()
     else
         local ui = GatherTimesDB and GatherTimesDB._ui
@@ -777,6 +891,7 @@ function GT:SetMinimized(on)
     local ui = GatherTimesDB and GatherTimesDB._ui
     if not (ui and self.main) then return end
     if on then
+        self._barDismissed = nil            -- minimizing brings the bar back even after the red x
         local ok, bar = pcall(self.CreateMiniBar, self)
         if not ok then GT.ReportError("mini bar", bar); return end      -- main window stays as it is
         ui.minimized = true

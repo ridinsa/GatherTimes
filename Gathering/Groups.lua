@@ -1,5 +1,5 @@
 -- Groups.lua
-local addonName, GT = ...
+local _, GT = ...
 local MERGE_DIST = GT.MERGE_DIST
 local nodes = GT.nodes
 local spawnBySid = GT.spawnBySid

@@ -3,4 +3,13 @@
     <Binding name="GATHERTIMES_HUD_TOGGLE" header="GATHERTIMES" category="ADDONS">
         if GatherTimesAddon and GatherTimesAddon.HUD then GatherTimesAddon.HUD.Toggle() end
     </Binding>
+    <Binding name="GATHERTIMES_EAGLE_ZOOM_IN">
+        if GatherTimesAddon and GatherTimesAddon.HUD then GatherTimesAddon.HUD.EagleZoom(1) end
+    </Binding>
+    <Binding name="GATHERTIMES_EAGLE_ZOOM_OUT">
+        if GatherTimesAddon and GatherTimesAddon.HUD then GatherTimesAddon.HUD.EagleZoom(-1) end
+    </Binding>
+    <Binding name="GATHERTIMES_EAGLE_SIZE">
+        if GatherTimesAddon and GatherTimesAddon.HUD then GatherTimesAddon.HUD.EagleNextSize() end
+    </Binding>
 </Bindings>

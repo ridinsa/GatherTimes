@@ -1,5 +1,5 @@
 -- Config.lua
-local addonName, GT = ...
+local _, GT = ...
 local COLORS = GT.COLORS
 local DEFAULT_COLOR = GT.DEFAULT_COLOR
 local SOUNDS = GT.SOUNDS
@@ -61,6 +61,7 @@ local function InitCfg()
     c.uiScale = tonumber(c.uiScale) or 0.85
     c.moveAlpha = math.max(0.1, math.min(0.9, tonumber(c.moveAlpha) or 0.35))
     if c.chime == nil then c.chime = true end
+    if c.soundOutOfRange == nil then c.soundOutOfRange = true end   -- ready sound even outside the alert range
     if not GT.IsValidLang(c.lang) then c.lang = "enUS" end        -- interface language (Locales\)
     c.chimeRange = tonumber(c.chimeRange) or 35
     if c.msgDetect == nil then c.msgDetect = true end
@@ -96,6 +97,7 @@ local function InitCfg()
     c.gfxLevel = GT.Clamp(c.gfxLevel, 0, 3, 0)
     if type(c.gfxBackup) ~= "table" then c.gfxBackup = {} end
     if type(c.fxScreen) ~= "boolean" then c.fxScreen = nil end
+    if type(c.fxHaze) ~= "boolean" then c.fxHaze = nil end
     c.fxWeather = tonumber(c.fxWeather) and GT.Clamp(c.fxWeather, 0, 3, 3) or nil
     c.fxZoom = tonumber(c.fxZoom) and GT.Clamp(c.fxZoom, 10, 40, 10) or nil
     c.sessions = (tonumber(c.sessions) or 0)
@@ -103,7 +105,6 @@ local function InitCfg()
     if c.includeUnchecked == nil then c.includeUnchecked = false end
     if type(c.miniSummaryAll) ~= "boolean" then c.miniSummaryAll = true end     -- minimized bar tooltip: all items / checked items only
     if type(c.miniSortUrgency) ~= "boolean" then c.miniSortUrgency = true end     -- minimized bar chips: soonest-ready first
-    if type(c.miniCompact) ~= "boolean" then c.miniCompact = false end             -- minimized bar chips: short label (G2) + timer only
     if type(c.miniHideIdle) ~= "boolean" then c.miniHideIdle = false end           -- minimized bar: only running / ready groups
     c.miniBlinkSecs = GT.Clamp(c.miniBlinkSecs, 0, 30, 15)         -- minimized bar: blink at or below this many seconds (0 = off)
     c.miniBgAlpha = GT.Clamp(c.miniBgAlpha, 0, 100, 95)            -- minimized bar: background opacity, percent
@@ -111,7 +112,7 @@ local function InitCfg()
     if type(c.miniFadeMouse) ~= "boolean" then c.miniFadeMouse = false end        -- minimized bar: fade while the mouse is not over it
     c.miniFadeAlpha = GT.Clamp(c.miniFadeAlpha, 0, 100, 30)        -- minimized bar: opacity while faded, percent
     if type(c.miniUrgencyColors) ~= "boolean" then c.miniUrgencyColors = true end -- minimized bar: white / yellow / red progress bar
-    if type(c.miniAlwaysShow) ~= "boolean" then c.miniAlwaysShow = false end       -- minimized bar: open by itself when the addon loads
+    if type(c.miniAlwaysShow) ~= "boolean" then c.miniAlwaysShow = true end        -- minimized bar: open by itself when the addon loads
     if c.showSpawns == nil then c.showSpawns = false end
     -- speed is a divisor ("Leave now" = distance / speed, route costs): 0 or less would make every alert fire at once
     c.speed = GT.Clamp(c.speed, 1, 40, 11)                 -- yards per second
@@ -139,7 +140,6 @@ local function InitCfg()
     if c.showMiniPins == nil then c.showMiniPins = true end
     c.readyLinger = math.max(30, math.min(1800, tonumber(c.readyLinger) or GT.READY_LINGER or 120))  -- seconds a node stays READY before it goes Idle
     c.pinSize = tonumber(c.pinSize) or 16
-    c.miniPinSize = tonumber(c.miniPinSize) or 12
     for key, def in pairs(nodes) do
         local t = tonumber(c.timers[key])
         if t and t > 0 then
@@ -225,7 +225,7 @@ function GT.MigrateRealm(db, realm, now)
             if next(r) == nil then other[rname] = nil end
         end
     end
-    db._dbVersion = DB_VERSION
+    db._dbVersion = math.max(tonumber(db._dbVersion) or 0, DB_VERSION)   -- an older version never lowers the stamp
     return parked
 end
 
@@ -308,6 +308,7 @@ function GT.SanitizeDB()
                 -- or /reload a timer that already alerted must not alert again.  Only `true` is a valid value.
                 if n._hasAlerted ~= true then n._hasAlerted = nil end
                 if n._leaveAlerted ~= true then n._leaveAlerted = nil end
+                if n._soundDone ~= true then n._soundDone = nil end
             end
         end
     end

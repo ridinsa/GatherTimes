@@ -1,7 +1,7 @@
 -- PanelSummary.lua : the "Show summary" panel (button in the Timers panel). It opens beside the main window, like the
 -- other panels, and does not move. The text is the session summary (GT.FormatStats) in a box you can copy from:
 -- click the box, Ctrl+A, Ctrl+C. The text refreshes every time the panel opens.
-local ADDON, GT = ...
+local _, GT = ...
 GT.panelBuilders = GT.panelBuilders or {}
 
 GT.panelBuilders.Summary = function(panel, content)

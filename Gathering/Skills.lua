@@ -1,5 +1,5 @@
 -- Skills.lua : skill needed to gather each node
-local ADDON, GT = ...
+local _, GT = ...
 
 -- Classic skill needed to pick / mine each node.  { min } or { min, max } for nodes that share a loot item:
 --   * Swiftthistle has no node of its own: it comes out of Mageroyal (50) and Briarthorn (70) nodes

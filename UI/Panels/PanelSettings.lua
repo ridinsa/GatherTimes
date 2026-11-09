@@ -1,5 +1,5 @@
 -- PanelSettings.lua : the "Settings" panel (sub-tabs: General / Display / Tools / Look)
-local ADDON, GT = ...
+local _, GT = ...
 GT.panelBuilders = GT.panelBuilders or {}
 
 local function ZoneName(mapID)
@@ -73,7 +73,7 @@ GT.panelBuilders.Settings = function(panel, content)
         function() return cfg().screenAlert end,
         function(v)
             cfg().screenAlert = v
-            if v then GT.FireReadyAlert("dreamfoil", GT.nodes.dreamfoil, { _dist = 42 }, true) end
+            if v then GT.FireReadySound("dreamfoil", { _dist = 42 }); GT.FireReadyAlert("dreamfoil", GT.nodes.dreamfoil, { _dist = 42 }, true) end
         end,
         "Show an on-screen alert when a resource respawn timer finishes. Turning it on shows a sample alert.")
     Slider(general, -22, "Alert time: %s", 2, 10, 1,
@@ -215,12 +215,15 @@ GT.panelBuilders.Settings = function(panel, content)
     Check(display, -206, "Screen effects (death, invisibility)",
         function() return gfx.GetScreenFx() end, function(v) gfx.SetScreenFx(v) end,
         "Untick to turn off the ghost screen effect and the edge effect of invisibility.")
-    Slider(display, -230, "Weather density: %s", 0, 3, 1,
+    Check(display, -228, "Drunken haze (full screen glow)",
+        function() return gfx.GetHaze() end, function(v) gfx.SetHaze(v) end,
+        "Untick to remove the blur that drunkenness draws over the screen. The game draws it with its full screen glow, so this also turns off that glow everywhere (spell bloom, bright lights).")
+    Slider(display, -252, "Weather density: %s", 0, 3, 1,
         function() return gfx.GetWeather() end,
         function(v) gfx.SetWeather(v) end,
         function(v) return GT.TR(({ [0] = "off", "Low", "Medium", "High" })[v] or tostring(v)) end,
         "How much rain, snow and dust is drawn. Off removes it.")
-    Slider(display, -264, "Max camera zoom: %s", 10, 40, 1,
+    Slider(display, -286, "Max camera zoom: %s", 10, 40, 1,
         function() return gfx.GetZoom() end,
         function(v) gfx.SetZoom(v) end,
         function(v) return string.format("%.1fx", v / 10) end,
@@ -260,7 +263,7 @@ GT.panelBuilders.Settings = function(panel, content)
     GT.MakeFitting(skinLabel, 64)
     skinLabel:SetText(GT.TR("Frame skin:"))
     local skinNames = {}
-    for i, skin in ipairs(GT.SKINS) do skinNames[i] = skin.name end
+    for i, skin in ipairs(GT.SKINS) do skinNames[i] = GT.TR(skin.name) end
     local skinDD = GT:CreateDropdown(look, 190, 18, skinNames, function(index)
         ui.skin = GT.ApplySkin(GT.SKINS[index].key)
     end, 4)

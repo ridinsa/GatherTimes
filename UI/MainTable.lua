@@ -3,7 +3,7 @@
 --   * one item picked in the main dropdown -> ALL its groups, G1 .. Gn (no item name), timer or not
 --   * "All checked"                        -> ALL groups of ALL checked items with spots here, with the item name
 -- The table grows and shrinks with the number of rows up to 9; more than 9 scroll (mouse wheel + thin bar).
-local ADDON, GT = ...
+local _, GT = ...
 
 local FLAT = "Interface\\Buttons\\WHITE8X8"
 local ROW_H, VISIBLE = 20, 9
@@ -66,6 +66,7 @@ local function NewItem(key, text, glabel)
     if not it then it = {}; pool[poolN] = it end
     it.key, it.text, it.ready, it.waiting, it.minLeft = key, text, 0, 0, nil
     it.glabel = glabel or text         -- short label ("G2") for the compact minimized bar
+    it.gi = nil                        -- group index in the current zone (chip tooltip)
     return it
 end
 local function Finish(n) for i = n + 1, #itemsOut do itemsOut[i] = nil end end
@@ -79,6 +80,7 @@ local function BuildSingle(key, mapID)
     local spots = 0
     for i, g in ipairs(res.groups) do
         itemsOut[i] = NewItem(key, GT.GroupLabels[i])
+        itemsOut[i].gi = i
         spots = spots + #g
     end
     Finish(#res.groups)
@@ -130,6 +132,7 @@ local function BuildChecked(mapID)
                         n = n + 1
                         local it = NewItem(key, label .. " " .. GT.GroupLabels[gi], GT.GroupLabels[gi])
                         it.ord = n
+                        it.gi = gi
                         itemsOut[n] = it
                         spots = spots + #g
                     end

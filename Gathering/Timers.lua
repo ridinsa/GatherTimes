@@ -1,5 +1,5 @@
 -- Timers.lua
-local addonName, GT = ...
+local _, GT = ...
 local READY_LINGER = GT.READY_LINGER
 local UI = GT.UI
 local nodes = GT.nodes
@@ -130,7 +130,7 @@ local function ProcessNode(nodeKey, nodeDef, list, i, now, curMap)
             UI.lastLeave = now
             -- the "leave now" ping only plays for node types that have a sound set (not "None")
             local snd = GT.SOUNDS[c.sounds[nodeKey] or 1]
-            if snd and snd.id ~= 0 then pcall(PlaySound, 3175, "Master") end
+            if snd and snd.id ~= 0 and not node.est and GT.AfterLoginOK() and d <= c.chimeRange then pcall(PlaySound, 3175, "Master") end
             if c.screenAlert then
                 local col = GT.Col(nodeKey)
                 local gl = GT.GroupLabelForNode(nodeKey, node)
@@ -145,17 +145,21 @@ local function ProcessNode(nodeKey, nodeDef, list, i, now, curMap)
     -- labels follow the main dropdown (picked item / all checked); alerts above do not
     local visible = GT.IsShown(nodeKey) and ((not c.zoneOnly) or node.mapID == curMap)
     if left <= 0 then
-        if not node._hasAlerted then
-            local r = c.alertRange
-            if node.time + nodeDef.timer <= (GT.loginServerTime or 0) then
-                node._hasAlerted = true          -- ran out before login: still shown as READY, but no alert / sound
-            elseif GT.CanReadyAlert(nodeKey, node) and (r <= 0 or (node._dist and node._dist <= r)) then
-                node._hasAlerted = true
-                GT.FireReadyAlert(nodeKey, nodeDef, node)
-            end
+        if node.time + nodeDef.timer <= (GT.loginServerTime or 0) then
+            node._hasAlerted, node._soundDone = true, true   -- ran out before login: still shown as READY, but no alert / sound
+        elseif c.alertItems[nodeKey] ~= false and not node._hasAlerted and not node._soundDone
+            and (c.soundOutOfRange or GT.CanReadyAlert(nodeKey, node)) then
+            -- the sound: every node once when its timer reaches 0, even when you are out of the alert range
+            node._soundDone = true
+            GT.FireReadySound(nodeKey, node)
+        end
+        -- the on-screen alert keeps the alert range: it waits until you are in range
+        if not node._hasAlerted and c.alertItems[nodeKey] ~= false and GT.CanReadyAlert(nodeKey, node) then
+            node._hasAlerted = true
+            GT.FireReadyAlert(nodeKey, nodeDef, node)
         end
     else
-        node._hasAlerted = nil
+        node._hasAlerted, node._soundDone = nil, nil
     end
     local hideSibling = c.groupMode and node._primary == false
     if visible and not hideSibling then
