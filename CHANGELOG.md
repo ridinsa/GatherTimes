@@ -1,6 +1,42 @@
 # GatherTimes
 
+## 0.24.3 (2026-11-10)
+
+New
+- Random Name: "Hide target-of-target in combat" option (on by default)
+- Random Name: also replaces your name and pet name on name plates
+- Random Name: also turns off guardian/minion name settings while active
+- HUD: "Preview HUD" button and a list of key bindings
+- Eagle map: "Same zoom and rings as the HUD" option
+- Minimize > Chips: yellow/red warning time sliders
+- Reset session / Reset learned timings now ask for confirmation
+
+Changes
+- Changing language asks for confirmation before reloading
+- Clicking the text next to a check box toggles it
+- Removing a timer needs Shift + right-click
+- Built-in arrow removed; navigation uses TomTom only
+- Random Name uses less CPU and memory
+- Map pin hover shows the item name only (faster)
+- HUD profile Delete acts on the profile selected in the list
+
+Fixes
+- Low health warning only shows on Hardcore characters
+- Graphics "Off" no longer overwrites settings you changed in the game menu
+- Camera dragging sometimes not working while the HUD was on
+- Apply/auto-apply learned times now needs 5 samples, as the legend says
+- Taken % and misses are correct after resetting learned timings
+- Nodes panel: typed times go to the right node, "13,5" accepted
+- Slider values stay in range when settings load
+- Settings > Tools status text no longer overlaps buttons
+
 ## 0.24.2 (2026-11-08)
+
+- New: the Eagle map uses the HUD's zoom and rings (HUD settings > Eagle, "Same zoom and rings as the HUD"; on by default). A ring set in pixels is scaled to the smaller map so it stands for the same distance; a ring set in yards is the same as on the HUD. The Eagle zoom keys then change the HUD's zoom. Off keeps the separate Eagle zoom and the edge / half-way rings.
+- Fix: dragging the mouse to turn the camera sometimes did nothing while the HUD was on. The full-screen HUD map never takes mouse clicks now: the normal HUD ignores the mouse completely, and the Eagle map only watches the mouse move (for the herb / ore tooltips). If the game or another addon switches the Minimap's mouse back on, it is put right on the next frame instead of up to half a second later.
+- New: the Gx group labels and the (G) timer texts on the minimap are hidden while the HUD is off and shown while it is on (HUD settings > Options, "Hide Gx and (G) timers while the HUD is off"; on by default). The world map keeps its labels.
+- New: the same labels are hidden on the Eagle Eye map (HUD settings > Eagle, "Hide Gx and (G) timers on the map"; on by default), and come back when the Eagle map ends.
+- Change: HUD settings > Options: "Rotate map with player" and "Show player arrow" share one row to make room for the new checkbox.
 
 - Change: Help panel brought up to date with the addon. The minimized bar entry now lists the XP button, the red x and the Minimize settings tabs (Bar, Chips, Fade, XP); new XP button entry; the command list gains `/gt xp` (`reset`, `session`), `/gathertimes`, `/gt minimize`, `/gthud skins hide | show | mark | diff` and `/gthud eagle debug`; the Credits tab shows 0.24.2.
 - Known issue: the translated Help texts (all languages except English) do not cover everything the English Help does yet (Eagle map, graphics quality, yard rings, XP, newer commands). Only their version number was updated; the rest is shown as it was.

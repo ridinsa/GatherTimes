@@ -66,6 +66,22 @@ end
 
 local function ApplyLevel(level)
     for _, row in ipairs(PRESETS) do Push(row[1], row[2][level]) end
+    -- remember what the game ended up with: "Off" later puts back only the settings that still hold these values
+    local c = Cfg()
+    if c then
+        c.gfxApplied = {}
+        for _, row in ipairs(PRESETS) do
+            local v = Get(row[1])
+            if v ~= nil then c.gfxApplied[row[1]] = tostring(v) end
+        end
+    end
+end
+
+local function SameValue(a, b)
+    if a == nil or b == nil then return false end
+    local x, y = tonumber(a), tonumber(b)
+    if x and y then return math.abs(x - y) < 0.0001 end
+    return tostring(a) == tostring(b)
 end
 
 function Gfx.GetLevel()
@@ -78,13 +94,19 @@ function Gfx.SetLevel(level)
     if not c then return end
     level = math.max(0, math.min(3, math.floor(tonumber(level) or 0)))
     if level == 0 then
-        -- back to what the player had before: master first, then the sub-settings
-        local backup = c.gfxBackup or {}
+        -- back to what the player had before: master first, then the sub-settings.  A setting the player changed
+        -- since (in the game's own Graphics menu) is left alone.  Decided first: setting the master slider rewrites the others.
+        local backup, applied = c.gfxBackup or {}, c.gfxApplied
+        local restore = {}
         for _, row in ipairs(PRESETS) do
             local v = backup[row[1]]
-            if v ~= nil then Push(row[1], v) end
+            if v ~= nil and (applied == nil or applied[row[1]] == nil or SameValue(Get(row[1]), applied[row[1]])) then
+                restore[#restore + 1] = { row[1], v }
+            end
         end
+        for _, r in ipairs(restore) do Push(r[1], r[2]) end
         c.gfxBackup = {}
+        c.gfxApplied = nil
     else
         if next(c.gfxBackup or {}) == nil then
             c.gfxBackup = {}

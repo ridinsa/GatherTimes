@@ -136,8 +136,7 @@ function GT.ClearWaypoints()
     pcall(GT.UI.DismissRouteWaypoint)
     pcall(GT.UI.StopTomTomAutoNearest)
     if GT.cfg().tomTomAutoNearest then
-        GT.cfg().tomTomAutoNearest = false               -- otherwise it would put the arrow back
+        GT.cfg().tomTomAutoNearest = false               -- otherwise it would put the waypoint back
         for _, fn in ipairs(GT.uiRefresh) do pcall(fn) end   -- refresh the Nav checkbox
     end
-    GT.PlaceArrow()
 end

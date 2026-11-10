@@ -346,6 +346,19 @@ function GT.ResetSessionStats()
     return summary
 end
 
+-- Is this a Hardcore character?  The game's own answer first; a realm name with "Hardcore" in it also counts. A client that
+-- cannot tell (no such call) answers true, so the warning is not lost there.
+function GT.IsHardcore()
+    local gameRules = _G.C_GameRules
+    if gameRules and gameRules.IsHardcoreActive then
+        local ok, active = pcall(gameRules.IsHardcoreActive)
+        if ok and active then return true end
+        local realm = GetRealmName and GetRealmName() or ""
+        return type(realm) == "string" and realm:lower():find("hardcore", 1, true) ~= nil
+    end
+    return true
+end
+
 local lowWarned = false; local lowLast = 0
 function GT.CheckHealth()
     local c = GT.cfg()
@@ -355,7 +368,7 @@ function GT.CheckHealth()
     if not max or max <= 0 then return end
     local pct = UnitHealth("player") / max * 100
     if pct < c.lowHPPct then
-        if not lowWarned and (GetTime() - lowLast) > 8 then
+        if not lowWarned and (GetTime() - lowLast) > 8 and GT.IsHardcore() then
             lowWarned = true
             lowLast = GetTime()
             GT.ShowScreenAlert(GT.TRF("LOW HEALTH %d%%", pct), 1, 0.2, 0.2)

@@ -88,8 +88,8 @@ local function RootCheck(parent, x, y, text, key)
         function(v) HUD.SetRoot(key, v) end)
 end
 
-local function Px(v) return v .. " px" end
-local function PxOrOff(v) return v == 0 and GT.TR("off") or (v .. " px") end
+local function Px(v) return GT.TRF("%d px", v) end
+local function PxOrOff(v) return v == 0 and GT.TR("off") or GT.TRF("%d px", v) end
 
 -- ----------------------------------------------------------------------------------------------- ring colour
 local swatch, swatch2
@@ -274,9 +274,30 @@ local function BuildKeybind(f, y)
     local clear  = Button(f, "Clear", 94, 194, y - 22)
     local capturing = false
 
+    -- every GatherTimes key with what it does (the names are the game's own binding names)
+    local BIND_LIST = { "GATHERTIMES_HUD_TOGGLE", "GATHERTIMES_EAGLE_ZOOM_IN", "GATHERTIMES_EAGLE_ZOOM_OUT", "GATHERTIMES_EAGLE_SIZE" }
+    local bindRows = {}
+    for i = 1, #BIND_LIST do
+        local fs = GT.Font(f, nil, "OVERLAY", "GameFontHighlightSmall")
+        fs:SetPoint("TOPLEFT", 2, y - 50 - (i - 1) * 16)
+        fs:SetWidth(COL_W - 4)
+        fs:SetJustifyH("LEFT")
+        fs:SetWordWrap(false)
+        GT.MakeFitting(fs, COL_W - 4)
+        bindRows[i] = fs
+    end
+    local function UpdateList()
+        for i, action in ipairs(BIND_LIST) do
+            local k1 = GetBindingKey(action)
+            local keyText = k1 and (GetBindingText(k1) or k1) or GT.TR("Not bound")
+            bindRows[i]:SetText(GT.TR(_G["BINDING_NAME_" .. action] or action) .. ":  " .. keyText)
+        end
+    end
+
     local function Update()
         keyBtn.label:SetText(capturing and GT.TR("Press a key...  (Esc = cancel)") or BoundKeyText())
         GT:SetButtonActive(keyBtn, capturing)
+        UpdateList()
     end
 
     local function StopCapture()
@@ -326,6 +347,22 @@ end
 -- ----------------------------------------------------------------------------------------------- tabs
 local function BuildMap(f)
     Heading(f, 0, 0, "Minimap")
+    -- Preview: shows the HUD while this panel is open, even when the HUD is off (nothing is saved; closing the panel ends it)
+    local pv = Button(f, "", 120, COL_W - 120, 0)
+    local function PreviewLabel()
+        pv.label:SetText(GT.TR(HUD.Previewing() and "Stop preview" or "Preview HUD"))
+        GT:SetButtonActive(pv, HUD.Previewing())
+    end
+    pv:SetScript("OnClick", function() HUD.Preview(not HUD.Previewing()) end)
+    pv:HookScript("OnEnter", function(self)
+        GT.Tip:SetOwner(self, "ANCHOR_TOP")
+        GT.Tip:AddLine(GT.TR("Preview HUD"))
+        GT.Tip:AddLine(GT.TR("Show the HUD while this panel is open, even if it is off. Nothing is saved; closing the panel ends the preview."), 0.85, 0.85, 0.85, true)
+        GT.Tip:Show()
+    end)
+    pv:HookScript("OnLeave", function() GT.Tip:Hide() end)
+    refreshers[#refreshers + 1] = PreviewLabel
+    PreviewLabel()
     KeySlider(f, 0, -22, "HUD size: %s", "size", 150, HUD.MaxSize(), 10, Px)
     -- the opacity is one of the 11 mask textures Masks\a00.tga ... a10.tga (0% = blank, 100% = opaque)
     Slider(f, 0, -60, "Map opacity: %s", 0, 10, 1,
@@ -493,10 +530,12 @@ local function BuildEagle(f)
     KeyCheck(f, 144, -184, "Nearest node readout",    "eagleNearest")
     KeyCheck(f, 0,   -206, "Hover tooltips on the map", "eagleHover")
     KeyCheck(f, 0,   -228, "Hide Gx and (G) timers on the map", "eagleHideLabels")
+    KeyCheck(f, 0,   -250, "Same zoom and rings as the HUD", "eagleSync")
 end
 
 local function BuildProfiles(f)
     local nameBox
+    local selected                                  -- the profile clicked in the list: the one Delete acts on
 
     Heading(f, 0, 0, "Profiles")
     local current = GT.Font(f, nil, "OVERLAY", "GameFontHighlightSmall")
@@ -521,7 +560,7 @@ local function BuildProfiles(f)
         r:SetScript("OnEnter", function(s) s.hl:Show() end)
         r:SetScript("OnLeave", function(s) s.hl:Hide() end)
         r:SetScript("OnClick", function(s)
-            if s.item and nameBox then nameBox:SetText(s.item) end   -- select: then Switch or Delete
+            if s.item and nameBox then selected = s.item; nameBox:SetText(s.item) end   -- select: then Switch or Delete
         end)
         return r
     end
@@ -536,9 +575,12 @@ local function BuildProfiles(f)
     nameBox:SetPoint("TOPLEFT", 0, -172)
     nameBox:SetJustifyH("LEFT")
     nameBox:SetMaxLetters(24)
+    -- typing a name (instead of clicking a row) means the highlighted profile is no longer the target
+    nameBox:SetScript("OnTextChanged", function(_, byUser) if byUser then selected = nil end end)
 
     local function ApplyName()
-        local name = strtrim(nameBox:GetText() or "")
+        local raw = (nameBox:GetText() or ""):gsub("|", "")   -- "|" would break the colour codes in the text
+        local name = strtrim(raw)
         if name == "" then return end
         local created = HUD.ProfileSwitch(name)
         HUD.Print(GT.TRF(created and "Created and switched to profile %s" or "Switched to profile %s", name))
@@ -550,12 +592,18 @@ local function BuildProfiles(f)
 
     local del = Button(f, "Delete profile", 138, 0, -200)
     GT:SetConfirmClick(del, "Delete profile", function()
-        local name = strtrim(nameBox:GetText() or "")
-        if name == "" then return HUD.Print(GT.TR("Select the profile to delete first.")) end
+        local name = selected                         -- the profile highlighted in the list, not whatever is typed
+        if not name then return HUD.Print(GT.TR("Select the profile to delete first.")) end
         local ok, err = HUD.ProfileDelete(name)
         HUD.Print(ok and GT.TRF("Deleted profile %s", name) or GT.TRF("Cannot delete: %s", tostring(err)))
-        if ok then nameBox:SetText(HUD.ProfileCurrent()) end
+        if ok then selected = nil; nameBox:SetText(HUD.ProfileCurrent()) end
         Config.Refresh()
+    end)
+    -- the first click names the profile it will delete; the second click (label back to normal) deletes it
+    del:HookScript("OnClick", function(self)
+        if selected and self.label:GetText() == GT.TR("Click again!") then
+            HUD.Print(GT.TRF("Click Delete profile again to remove profile %s.", selected))
+        end
     end)
     Note(f, 0, -228, COL_W,
         "Click a profile to select it, or type a new name (a new profile starts as a copy of the current one). The profile in use and \"Default\" cannot be deleted. Profiles are shared by all characters; each character remembers its own.")
@@ -614,6 +662,7 @@ end
 function Config.Init()
     if built then return end
     panel = GT:CreatePanel("HUD")
+    panel:HookScript("OnHide", function() HUD.Preview(false) end)
     built = true
 end
 

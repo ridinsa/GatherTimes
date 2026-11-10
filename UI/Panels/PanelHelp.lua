@@ -87,6 +87,7 @@ The open resource dropdown shows your bag count beside each item; the selected i
 Right-click the Settings button in the main window to open it (right-click again closes it). It disguises your own name on your screen, for streaming or screenshots. Other players still see your real name.
 - Disguise names: turns the disguise on or off. While it is on, other players' names are hidden too (through the game's name settings, put back when you turn it off).
 - Hide party / raid names: separately hides party and raid name labels on your screen.
+- Hide target-of-target in combat: while the disguise is on, the target-of-target frame is hidden during combat and comes back when combat ends (on by default).
 - Fake player name / Fake pet name: the names shown instead. Type a name and press Enter or Apply. Up to 12 characters.
 - Randomize Names: picks new random names and a fake level. The Random level range slider sets the level's maximum. Opacity fades the window background while keeping its text readable.
 - Shown on: your unit frames (also when you target yourself or your pet), unit tooltip, character window title and chat. When the disguise is on, matching character names are also hidden in item tooltips.
@@ -210,7 +211,7 @@ TOPICS[#TOPICS + 1] = { "cmds", "Cmds", H .. "Slash commands" .. E .. [[
 /gthud reset - reset the current profile
 /gthud help - show command help]] }
 
-TOPICS[#TOPICS + 1] = { "credits", "Credits", H .. "GatherTimes 0.24.2" .. E .. [[
+TOPICS[#TOPICS + 1] = { "credits", "Credits", H .. "GatherTimes 0.24.3" .. E .. [[
 
 Author: miRidinsa
 Website: https://github.com/ridinsa/

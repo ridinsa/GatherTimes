@@ -9,6 +9,14 @@ end
 
 local function Confirm(btn, text, fn) GT:SetConfirmClick(btn, text, fn) end
 
+-- drop every navigation target that points at timer data: TomTom waypoints, the active route, the Next: line.
+-- (ClearWaypoints also switches auto-nearest off, like the Clear waypoint button does.)
+local function ClearNavigation()
+    pcall(GT.ClearWaypoints)
+    if GT.UI and GT.UI.RouteOptimizer and GT.UI.RouteOptimizer:IsActive() then pcall(GT.UI.RouteOptimizer.Clear, GT.UI.RouteOptimizer) end
+    GT.routeTarget = nil
+end
+
 GT.panelBuilders.Settings = function(panel, content)
     local cfg = GT.cfg
     local ui = GatherTimesDB._ui
@@ -31,7 +39,7 @@ GT.panelBuilders.Settings = function(panel, content)
         frame:HookScript("OnLeave", function() GT.Tip:Hide() end)
     end
     local function AddSub(id, text, x)
-        local b = GT:CreateFlatButton(content, text, 68, 20)
+        local b = GT:CreateFlatButton(content, text, 70, 20)
         b:SetPoint("TOPLEFT", x, 0)
         b:SetScript("OnClick", function() ShowSub(id) end)
         tabs[id] = b
@@ -43,9 +51,9 @@ GT.panelBuilders.Settings = function(panel, content)
         return f
     end
     local general = AddSub("general", "General", 0)
-    local display = AddSub("display", "Display", 70)
-    local look    = AddSub("look",    "Look",    140)
-    local tools   = AddSub("tools",   "Tools",   210)
+    local display = AddSub("display", "Display", 72)
+    local look    = AddSub("look",    "Look",    144)
+    local tools   = AddSub("tools",   "Tools",   216)
 
     local function Check(parent, y, text, get, set, description)
         local cb = GT:CreateCheckLabel(parent, text, get, set)
@@ -136,7 +144,7 @@ GT.panelBuilders.Settings = function(panel, content)
         "Show a warning when your health drops below the selected threshold on Hardcore characters.")
     Slider(general, -210, "Warn below: %s", 10, 80, 5,
         function() return cfg().lowHPPct end, function(v) cfg().lowHPPct = v end,
-        function(v) return v .. "% HP" end,
+        function(v) return GT.TRF("%d%% HP", v) end,
         "Set the health percentage that triggers the Hardcore low-health warning.")
 
     Check(general, -246, "Only show timers and pins of the zone I am in",
@@ -240,11 +248,24 @@ GT.panelBuilders.Settings = function(panel, content)
         langNames[i] = l[2]
         if l[1] == (cfg().lang or "enUS") then langIndex = i end
     end
-    local langDD = GT:CreateDropdown(look, 190, 18, langNames, function(index)
+    -- changing the language reloads the UI, so it asks first (Cancel puts the old language back in the list)
+    local pendingLang, langDD
+    StaticPopupDialogs["GATHERTIMES_CHANGE_LANGUAGE"] = {
+        text = "%s", button1 = ACCEPT, button2 = CANCEL, timeout = 0, whileDead = true, hideOnEscape = true,
+        preferredIndex = 3,
+        OnAccept = function()
+            if pendingLang then cfg().lang = pendingLang; ReloadUI() end
+        end,
+        OnCancel = function()
+            pendingLang = nil
+            if langDD then langDD:SetSelected(langIndex) end
+        end,
+    }
+    langDD = GT:CreateDropdown(look, 190, 18, langNames, function(index)
         local code = GT.LANGS[index][1]
         if cfg().lang == code then return end
-        cfg().lang = code
-        ReloadUI()
+        pendingLang = code
+        StaticPopup_Show("GATHERTIMES_CHANGE_LANGUAGE", GT.TR("Change the interface language and reload the UI?"))
     end, 6)
     langDD:SetPoint("TOPLEFT", 70, 2 + lookOffset)
     langDD:SetSelected(langIndex)
@@ -318,6 +339,7 @@ GT.panelBuilders.Settings = function(panel, content)
     local status = GT.Font(tools, nil, "OVERLAY", "GameFontHighlightSmall")
     status:SetPoint("TOPLEFT", 2, 0)
     status:SetWidth(284)
+    status:SetHeight(134)                  -- the buttons start at -140: a long text is cut instead of running into them
     status:SetJustifyH("LEFT")
     status:SetJustifyV("TOP")
     status:SetWordWrap(true)
@@ -327,6 +349,7 @@ GT.panelBuilders.Settings = function(panel, content)
     local clr = Button(tools, "Clear learned spawns", 138, 150, -140)
     Confirm(clr, "Clear learned spawns", function()
         GT.ClearSpawns()
+        ClearNavigation()
         GT.cprint(GT.TR("Learned spawn points cleared."))
         refreshTools()
     end)
@@ -350,6 +373,7 @@ GT.panelBuilders.Settings = function(panel, content)
             for _, n in ipairs(list) do pcall(GT.RemoveTextTimer, n) end
             wipe(list)
         end
+        ClearNavigation()
         GT.UpdateList()
         GT.cprint(GT.TR("Timer data wiped (your settings are kept)."))
     end)

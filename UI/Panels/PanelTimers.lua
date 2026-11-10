@@ -13,11 +13,13 @@ end
 
 -- left-click: TomTom waypoint to that node
 local function SetWaypoint(key, node)
-    if not (TomTom and TomTom.AddWaypoint) then
-        GT.cprint(GT.TR("TomTom is not installed."))
+    if not GT.UI.TomTomAvailable() then
+        GT.cprint(GT.TR("TomTom is not installed, or the TomTom option is off."))
         return
     end
     if GT.listWp and TomTom.RemoveWaypoint then pcall(TomTom.RemoveWaypoint, TomTom, GT.listWp) end
+    if GT.navWp and TomTom.RemoveWaypoint then pcall(TomTom.RemoveWaypoint, TomTom, GT.navWp) end
+    GT.navWp = nil                                   -- the last click wins: one GatherTimes click waypoint at a time
     local ok, uid = pcall(TomTom.AddWaypoint, TomTom, node.mapID, node.x, node.y,
         { title = GT.nodes[key].label, persistent = false, minimap = true, world = true,
           crazy = true, from = "GatherTimes" })
@@ -57,14 +59,15 @@ local function CreateRow(list, i)
         GT.Tip:AddLine(GT.nodes[self.key].label)
         local z = ZoneName(self.node.mapID)
         if z then GT.Tip:AddLine(z, 1, 1, 1) end
-        GT.Tip:AddLine(GT.TR("Left-click: TomTom waypoint"), 0.7, 0.7, 0.7)
-        GT.Tip:AddLine(GT.TR("Right-click: remove this timer"), 0.7, 0.7, 0.7)
+        if GT.UI.TomTomAvailable() then GT.Tip:AddLine(GT.TR("Left-click: TomTom waypoint"), 0.7, 0.7, 0.7) end
+        GT.Tip:AddLine(GT.TR("Shift + right-click: remove this timer"), 0.7, 0.7, 0.7)
         GT.Tip:Show()
     end)
     b:SetScript("OnLeave", function() hl:Hide(); GT.Tip:Hide() end)
     b:SetScript("OnClick", function(self, button)
         if not self.key then return end
         if button == "RightButton" then
+            if not IsShiftKeyDown() then return end      -- removing needs Shift: a stray right-click deletes nothing
             GT.RemoveNodeRef(self.key, self.node)
             GT.UpdateList()
         else
@@ -109,7 +112,7 @@ local function NextText()
         if g then tag = " [G" .. g .. "]" end
     end
     return GT.TRF("Next: %s%s - %s - %d yd",
-        GT.nodes[rt.key].label, tag, GT.TargetStatus(rt), math.floor(rt.dist or 0))
+        GT.nodes[rt.key].label, tag, rt.kind == "spawn" and GT.TR("no timer yet") or GT.TargetStatus(rt), math.floor(rt.dist or 0))
 end
 
 -- keep the stats box short: first lines + the Total line
@@ -148,10 +151,12 @@ GT.panelBuilders.Timers = function(panel, content)
     stats:SetWidth(284)
     stats:SetJustifyH("LEFT")
     stats:SetJustifyV("TOP")
+    stats:SetWordWrap(false)
+    GT.MakeFitting(stats, 284)               -- shrink long lines instead of wrapping them down into the buttons
 
     local reset = GT:CreateFlatButton(content, "Reset session", 92, 20)
     reset:SetPoint("BOTTOMLEFT", content, "BOTTOMLEFT", 0, 0)
-    reset:SetScript("OnClick", function() GT.ResetSessionStats() end)
+    GT:SetConfirmClick(reset, "Reset session", function() GT.ResetSessionStats() end)
     AddButtonTip(reset, "Reset session", "Print the current session summary, then start a fresh session.")
 
     local summary = GT:CreateFlatButton(content, "Show summary", 92, 20)

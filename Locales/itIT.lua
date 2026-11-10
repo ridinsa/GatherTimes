@@ -120,7 +120,6 @@ GT.locales.itIT = {
     ["Route:"] = "Percorso:",
     ["No node in range."] = "Nessun punto nel raggio.",
     ["TomTom waypoint set to %s (%d yd)"] = "Waypoint TomTom impostato su %s (%d yd)",
-    ["Arrow set to %s (%d yd)"] = "Freccia impostata su %s (%d yd)",
     ["Map / minimap pins refreshed."] = "Marker di mappa / minimappa aggiornati.",
     ["No route planned"] = "Nessun percorso",
     ["Step %d/%d, %.0f yd total"] = "Passo %d/%d, %.0f yd",

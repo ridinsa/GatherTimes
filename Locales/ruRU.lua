@@ -119,7 +119,6 @@ GT.locales.ruRU = {
     ["Route:"] = "Путь:",
     ["No node in range."] = "Нет точек поблизости.",
     ["TomTom waypoint set to %s (%d yd)"] = "Метка TomTom: %s (%d яр)",
-    ["Arrow set to %s (%d yd)"] = "Стрелка: %s (%d яр)",
     ["Map / minimap pins refreshed."] = "Метки карты / миникарты обновлены.",
     ["No route planned"] = "Нет маршрута",
     ["Step %d/%d, %.0f yd total"] = "Шаг %d/%d, всего %.0f яр",

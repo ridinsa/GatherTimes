@@ -23,7 +23,7 @@ local function AddTip(frame, title, description, anchor)
     frame:HookScript("OnLeave", function() GT.Tip:Hide() end)
 end
 
--- nearest enabled spawn in range -> TomTom waypoint (or the plain arrow if TomTom is missing)
+-- nearest enabled spawn in range -> TomTom waypoint (without TomTom: only the route target, shown on the Timers panel)
 local function WaypointToNearest()
     local curMap = C_Map.GetBestMapForUnit("player")
     local best, bestD, bestKey
@@ -42,17 +42,19 @@ local function WaypointToNearest()
     if not best then GT.cprint(GT.TR("No node in range.")); return end
 
     local label = GT.nodes[bestKey].label
-    if TomTom and TomTom.AddWaypoint then
+    if GT.UI.TomTomAvailable() then
         if GT.navWp and TomTom.RemoveWaypoint then pcall(TomTom.RemoveWaypoint, TomTom, GT.navWp) end
+        if GT.listWp and TomTom.RemoveWaypoint then pcall(TomTom.RemoveWaypoint, TomTom, GT.listWp) end
+        GT.listWp = nil                              -- the last click wins: one GatherTimes click waypoint at a time
         local ok, uid = pcall(TomTom.AddWaypoint, TomTom, best.mapID, best.x, best.y,
             { title = label, persistent = false, minimap = true, world = true,
               crazy = true, from = "GatherTimes" })
         GT.navWp = ok and uid or nil
         GT.cprint(GT.TRF("TomTom waypoint set to %s (%d yd)", label, math.floor(bestD)))
     else
+        -- no TomTom: the target still shows on the Timers panel ("Next:"), but no waypoint can be drawn
         GT.routeTarget = { ref = best, kind = "spawn", mapID = best.mapID, x = best.x, y = best.y, dist = bestD }
-        GT.PlaceArrow()
-        GT.cprint(GT.TRF("Arrow set to %s (%d yd)", label, math.floor(bestD)))
+        GT.cprint(GT.TR("TomTom is not installed, or the TomTom option is off."))
     end
 end
 
@@ -67,7 +69,7 @@ GT.panelBuilders.Nav = function(panel, content)
     end
 
     local function AddSub(id, text, x, description)
-        local b = GT:CreateFlatButton(content, text, 92, 20)
+        local b = GT:CreateFlatButton(content, text, 94, 20)
         b:SetPoint("TOPLEFT", x, 0)
         b:SetScript("OnClick", function() ShowSub(id) end)
         AddTip(b, text, description, "ANCHOR_TOP")
@@ -94,7 +96,7 @@ GT.panelBuilders.Nav = function(panel, content)
             function() return cfg()[key] end,
             function(v) cfg()[key] = v; if after then after() end end)
         s:SetPoint("TOPLEFT", 0, y)
-        AddTip(s, label:gsub(": %%s.*$", ""), description)
+        AddTip(s.slider, label:gsub(": %%s.*$", ""), description)
         GT.uiRefresh[#GT.uiRefresh + 1] = function() s:Refresh() end
         return s
     end
@@ -185,15 +187,12 @@ GT.panelBuilders.Nav = function(panel, content)
 
     ----------------------------------------------------------------- Arrow
     Check(arrow, -4,  "Use TomTom integration", function() return cfg().tomtom end,
-        function(v) cfg().tomtom = v; if not v then GT.UI.ClearAllTomTomWaypoints() end end,
+        function(v) cfg().tomtom = v; if not v then GT.ClearWaypoints() end end,   -- all waypoints + auto-nearest (refreshes the checkbox)
         "Use TomTom for navigation waypoints. Turning this off clears GatherTimes waypoints.")
-    Check(arrow, -26, "Show arrow to nearest node", function() return cfg().showArrow end,
-        function(v) cfg().showArrow = v; pcall(GT.RefreshArrowVisibility) end,
-        "Show the on-screen direction arrow pointing to your current target.")
-    Check(arrow, -48, "Auto-advance arrow to next route node", function() return cfg().routeAutoArrow end,
+    Check(arrow, -26, "Auto-advance arrow to next route node", function() return cfg().routeAutoArrow end,
         function(v) cfg().routeAutoArrow = v end,
         "Automatically point to the next route stop when you reach the current one.")
-    Check(arrow, -70, "Auto-set waypoint to nearest node", function() return cfg().tomTomAutoNearest end,
+    Check(arrow, -48, "Auto-set waypoint to nearest node", function() return cfg().tomTomAutoNearest end,
         function(v)
             cfg().tomTomAutoNearest = v
             if v then
@@ -205,15 +204,15 @@ GT.panelBuilders.Nav = function(panel, content)
             end
         end,
         "Keep a TomTom waypoint set to the nearest enabled node within the distance threshold.")
-    Slider(arrow, -98, "Arrow distance threshold: %s yd", 10, 500, 10, "routeRange",
+    Slider(arrow, -76, "Arrow distance threshold: %s yd", 10, 500, 10, "routeRange",
         "Maximum distance used when selecting nearby nodes for route and waypoint targets.")
-    Button(arrow, "Clear waypoint", 138, 0, -140, function()
+    Button(arrow, "Clear waypoint", 138, 0, -118, function()
         GT.ClearWaypoints()
         GT.cprint(GT.TR("Waypoint cleared."))
     end, "Remove GatherTimes waypoints from TomTom.")
-    Button(arrow, "Waypoint to nearest", 138, 150, -140, WaypointToNearest,
+    Button(arrow, "Waypoint to nearest", 138, 150, -118, WaypointToNearest,
         "Set a TomTom waypoint or direction arrow to the nearest enabled node within range.")
-    Note(arrow, -170, "Needs TomTom. Points to the nearest enabled node in range and follows the active route.")
+    Note(arrow, -148, "Needs TomTom. Points to the nearest enabled node in range and follows the active route.")
 
     ------------------------------------------------------------- show/update
     panel:SetScript("OnShow", function() ShowSub(active) end)
@@ -222,7 +221,9 @@ GT.panelBuilders.Nav = function(panel, content)
         t = t + elapsed
         if t >= 1 then
             t = 0
-            status:SetText(GT.TR("Route:") .. " " .. GT.UI.RouteOptimizer:GetStatus())
+            if active == "route" then                       -- only while the Route tab is open
+                status:SetText(GT.TR("Route:") .. " " .. GT.UI.RouteOptimizer:GetStatus())
+            end
         end
     end)
     status:SetText(GT.TR("Route:") .. " " .. GT.UI.RouteOptimizer:GetStatus())

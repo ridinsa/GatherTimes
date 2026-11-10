@@ -64,7 +64,6 @@ function GT.Startup()
     end
     Try("main window", GT.CreateMainFrame, GT)
     if HUD then Try("HUD init", HUD.Init) end        -- GatherTimesDB.hud + the HUD settings window
-    Try("arrow", GT.PlaceArrow)
     Try("restyle", GT.RestyleAll)
     for _, fn in ipairs(uiRefresh) do pcall(fn) end
     pcall(GT.ApplyLangFont, GT.main)             -- Apply the selected language's font to everything built so far
@@ -167,7 +166,7 @@ end)
 local accum = 0
 f:SetScript("OnUpdate", function(_, elap)
     -- every frame: the HUD parts throttle themselves (overlay 0.03 s, watcher 0.1 s, skin sweep 0.5 s)
-    if HUD then HUD.OnUpdate(elap) end -- HUD: compass / heading, tracking drag, mover, watcher
+    if HUD then HUD.OnUpdate(elap) end -- HUD: compass / heading, tracking drag, watcher
     accum = accum + elap
     if accum > 1 then
         accum = 0

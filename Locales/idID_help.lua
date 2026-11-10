@@ -37,7 +37,7 @@ Mengubah minimap sungguhan menjadi peta besar tembus pandang yang membentang di 
 - Profil: simpan beberapa tampilan, beralih atau hapus. Profil digunakan bersama semua karakter; setiap karakter mengingat profilnya sendiri.
 - Atur ulang profil memulihkan nilai default.]]
 
-T.credits = H .. "GatherTimes 0.24.2" .. E .. [[
+T.credits = H .. "GatherTimes 0.24.3" .. E .. [[
 
 Penulis: miRidinsa
 Situs web: https://github.com/ridinsa/

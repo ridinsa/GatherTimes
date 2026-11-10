@@ -122,7 +122,6 @@ GT.locales.suID = {
     ["Route:"] = "Rute:",
     ["No node in range."] = "Euweuh node dina jangkauan.",
     ["TomTom waypoint set to %s (%d yd)"] = "Titik jalan TomTom disetél ka %s (%d yd)",
-    ["Arrow set to %s (%d yd)"] = "Panah disetél ka %s (%d yd)",
     ["Map / minimap pins refreshed."] = "Pin peta/minimap geus dianyarkeun.",
     ["No route planned"] = "Rute can dijieun",
     ["Step %d/%d, %.0f yd total"] = "Léngkah %d/%d, total %.0f yd",

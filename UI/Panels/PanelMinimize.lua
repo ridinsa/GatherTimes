@@ -32,7 +32,7 @@ GT.panelBuilders.Minimize = function(panel, content)
     end
 
     local function AddSub(id, text, x)
-        local b = GT:CreateFlatButton(content, text, 68, 20)
+        local b = GT:CreateFlatButton(content, text, 70, 20)
         b:SetPoint("TOPLEFT", x, 0)
         b:SetScript("OnClick", function() ShowSub(id) end)
         tabs[id] = b
@@ -45,9 +45,9 @@ GT.panelBuilders.Minimize = function(panel, content)
     end
 
     local bar   = AddSub("bar",   "Bar",   0)
-    local chips = AddSub("chips", "Chips", 70)
-    local fade  = AddSub("fade",  "Fade",  140)
-    local xp    = AddSub("xp",    "XP",    210)
+    local chips = AddSub("chips", "Chips", 72)
+    local fade  = AddSub("fade",  "Fade",  144)
+    local xp    = AddSub("xp",    "XP",    216)
 
     local function Check(parent, y, text, get, set, description)
         local cb = GT:CreateCheckLabel(parent, text, get, set)
@@ -138,7 +138,7 @@ GT.panelBuilders.Minimize = function(panel, content)
             cfg().miniUrgencyColors = v
             if GT.bar then GT:UpdateMiniBar() end
         end,
-        "On: the progress bar under a waiting chip is white, turns yellow at 60 seconds and red at 15 seconds. Off: it keeps the status colour.")
+        "On: the progress bar under a waiting chip is white, then yellow and red as its timer drops (set the two warning times below). Off: it keeps the status colour.")
 
     -- blink warning: a chip pulses when its timer is at or below this many seconds
     Slider(chips, -78, "Blink warning: %s", 0, 30, 1,
@@ -149,6 +149,33 @@ GT.panelBuilders.Minimize = function(panel, content)
         end,
         function(v) return v == 0 and GT.TR("Off") or GT.TRF("%d sec", v) end,
         "A group on the minimized bar blinks when its timer is at or below this many seconds. 0 turns the blinking off.")
+
+    -- urgency thresholds: red can never be above yellow (moving one moves the other)
+    local redSlider, yellowSlider
+    yellowSlider = Slider(chips, -116, "Yellow warning at: %s", 0, 300, 5,
+        function() return cfg().miniYellowSecs or 60 end,
+        function(v)
+            cfg().miniYellowSecs = v
+            if (cfg().miniRedSecs or 15) > v then
+                cfg().miniRedSecs = v
+                if redSlider then redSlider:Refresh() end
+            end
+            if GT.bar then GT:UpdateMiniBar() end
+        end,
+        function(v) return GT.TRF("%d sec", v) end,
+        "The progress bar of a waiting group turns yellow when its timer is at or below this many seconds. Needs Urgency colors.")
+    redSlider = Slider(chips, -150, "Red warning at: %s", 0, 300, 5,
+        function() return cfg().miniRedSecs or 15 end,
+        function(v)
+            cfg().miniRedSecs = v
+            if (cfg().miniYellowSecs or 60) < v then
+                cfg().miniYellowSecs = v
+                if yellowSlider then yellowSlider:Refresh() end
+            end
+            if GT.bar then GT:UpdateMiniBar() end
+        end,
+        function(v) return GT.TRF("%d sec", v) end,
+        "The progress bar of a waiting group turns red when its timer is at or below this many seconds. Needs Urgency colors.")
 
     ---------------------------------------------------------------- Fade
     Check(fade, 0, "Fade in combat",
@@ -185,6 +212,10 @@ GT.panelBuilders.Minimize = function(panel, content)
             if GT.bar then GT:UpdateMiniBar() end
         end,
         "On: the XP button sits right after the dropdown on the minimized bar. Click it to show the hero and pet XP information in one line instead of the gathering timers. Off: the button is hidden and XP mode is off.")
+
+    -- the bar is on screen while these settings are open, so every option can be seen as it is changed
+    panel:HookScript("OnShow", function() if GT.SetBarPreview then GT:SetBarPreview(true) end end)
+    panel:HookScript("OnHide", function() if GT.SetBarPreview then GT:SetBarPreview(false) end end)
 
     ShowSub("bar")
 end

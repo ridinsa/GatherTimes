@@ -10,12 +10,6 @@ local order = GT.order
 local visitedSid = GT.visitedSid
 
 -- ============================================================
--- ARROW (TomTom only - custom arrow frame removed)
--- ============================================================
-local PlaceArrow = function() end
-local RefreshArrowVisibility = function() end
-
--- ============================================================
 -- ROUTE SUGGESTION
 -- ============================================================
 -- Candidate tables are reused: a new table for every group every two seconds was constant garbage.
@@ -97,7 +91,6 @@ function GT.ComputeNext()
         -- arrow follow GT.routeTarget, so they must be told too or the old one stays until the map is back.
         GT.routeTarget = nil
         if UI.UpdateTomTom then UI.UpdateTomTom() end
-        RefreshArrowVisibility()
         return
     end
     candFlip = 3 - candFlip; candN = 0
@@ -146,7 +139,6 @@ function GT.ComputeNext()
     end
     GT.routeTarget = best
     if UI.UpdateTomTom then UI.UpdateTomTom() end
-    RefreshArrowVisibility()
 end
 
 -- ============================================================
@@ -346,7 +338,6 @@ do
     function RouteOptimizer:GoToStep(step)
         if not currentRoute or step < 1 or step > #currentRoute.order then
             GT.routeTarget = nil
-            RefreshArrowVisibility()
             return
         end
         currentStep = step
@@ -364,7 +355,6 @@ do
             end)
         end
         if UI.UpdateTomTom then UI.UpdateTomTom() end
-        RefreshArrowVisibility()
         GT.cprint(GT.TRF("Route step %d/%d: %s (%d yd)",
             step, #currentRoute.order, nodes[cand.key].label, math.floor(GT.routeTarget.dist or 0)))
     end
@@ -380,7 +370,6 @@ do
             GT.routeTarget = nil
             self:ClearMap()
             if UI.ClearTomTom then UI.ClearTomTom() end
-            RefreshArrowVisibility()
             return
         end
         self:GoToStep(currentStep + 1)
@@ -392,7 +381,6 @@ do
         GT.routeTarget = nil
         self:ClearMap()
         if UI.ClearTomTom then UI.ClearTomTom() end
-        RefreshArrowVisibility()
         GT.cprint(GT.TR("Route cleared."))
     end
 
@@ -454,5 +442,3 @@ end
 -- ============================================================
 
 -- exports
-GT.PlaceArrow = PlaceArrow
-GT.RefreshArrowVisibility = RefreshArrowVisibility

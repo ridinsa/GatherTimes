@@ -120,7 +120,6 @@ GT.locales.deDE = {
     ["Route:"] = "Route:",
     ["No node in range."] = "Kein Punkt in Reichweite.",
     ["TomTom waypoint set to %s (%d yd)"] = "TomTom-Wegpunkt gesetzt auf %s (%d yd)",
-    ["Arrow set to %s (%d yd)"] = "Pfeil gesetzt auf %s (%d yd)",
     ["Map / minimap pins refreshed."] = "Karten-/Minimap-Marker aktualisiert.",
     ["No route planned"] = "Keine Route",
     ["Step %d/%d, %.0f yd total"] = "Schritt %d/%d, %.0f yd",

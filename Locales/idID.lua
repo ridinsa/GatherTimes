@@ -118,7 +118,6 @@ GT.locales.idID = {
     ["Route:"] = "Rute:",
     ["No node in range."] = "Tidak ada node dalam jangkauan.",
     ["TomTom waypoint set to %s (%d yd)"] = "Titik jalan TomTom diatur ke %s (%d yd)",
-    ["Arrow set to %s (%d yd)"] = "Panah diarahkan ke %s (%d yd)",
     ["Map / minimap pins refreshed."] = "Pin peta / minimap disegarkan.",
     ["No route planned"] = "Belum ada rute",
     ["Step %d/%d, %.0f yd total"] = "Langkah %d/%d, total %.0f yd",

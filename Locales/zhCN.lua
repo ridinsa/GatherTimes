@@ -121,7 +121,6 @@ GT.locales.zhCN = {
     ["Route:"] = "路线：",
     ["No node in range."] = "范围内没有节点。",
     ["TomTom waypoint set to %s (%d yd)"] = "TomTom 路点已设为 %s (%d 码)",
-    ["Arrow set to %s (%d yd)"] = "箭头已指向 %s (%d 码)",
     ["Map / minimap pins refreshed."] = "地图/小地图标记已刷新。",
     ["No route planned"] = "未规划路线",
     ["Step %d/%d, %.0f yd total"] = "第 %d/%d 步，共 %.0f 码",

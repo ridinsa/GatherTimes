@@ -120,7 +120,6 @@ GT.locales.esES = {
     ["Route:"] = "Ruta:",
     ["No node in range."] = "Ningún nodo al alcance.",
     ["TomTom waypoint set to %s (%d yd)"] = "Waypoint de TomTom en %s (%d yd)",
-    ["Arrow set to %s (%d yd)"] = "Flecha dirigida a %s (%d yd)",
     ["Map / minimap pins refreshed."] = "Marcas de mapa / minimapa actualizadas.",
     ["No route planned"] = "Sin ruta",
     ["Step %d/%d, %.0f yd total"] = "Paso %d/%d, %.0f yd",

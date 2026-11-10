@@ -85,7 +85,7 @@ local function UpdateRow(r, key)
 
     local hits, misses = 0, 0
     for _, sp in ipairs(GT.spawns[key]) do
-        hits = hits + (sp.hits or 0)
+        hits = hits + math.max(0, (sp.hits or 0) - (sp.missBase or 0))
         misses = misses + (sp.misses or 0)
     end
     if (hits + misses) > 0 then
@@ -161,15 +161,15 @@ GT.panelBuilders.Timing = function(panel, content)
             pcall(GT.SyncSpawnPins)
         end,
         "Treat nearby spawn spots in the same group as one resource with a shared respawn timer.")
-    Check(-208, "Detect empty nodes (taken by someone)",
+    Check(-204, "Detect empty nodes (taken by someone)",
         function() return cfg().detectEmpty end,
         function(v) cfg().detectEmpty = v end,
         "Learn when a node is already depleted by detecting when you approach and wait near it.")
-    Check(-230, "Use game messages (\"someone is using that\")",
+    Check(-226, "Use game messages (\"someone is using that\")",
         function() return cfg().msgDetect end,
         function(v) cfg().msgDetect = v end,
         "Use the game's gathering messages after an attempt to detect when another player took the node.")
-    Check(-252, "Auto-adjust learned times",
+    Check(-248, "Auto-adjust learned times",
         function() return cfg().autoLearn end,
         function(v) cfg().autoLearn = v end,
         "Automatically update a resource's respawn timer from learned data once enough samples are available.")
@@ -185,7 +185,7 @@ GT.panelBuilders.Timing = function(panel, content)
         GT:SetButtonActive(modeButtons.zone, m == "zone")
     end
     local function ModeButton(id, text, x)
-        local b = GT:CreateFlatButton(content, text, 92, 20)
+        local b = GT:CreateFlatButton(content, text, 94, 20)
         b:SetPoint("TOPLEFT", x, -296)
         b:SetScript("OnClick", function()
             cfg().learnMode = id
@@ -214,6 +214,7 @@ GT.panelBuilders.Timing = function(panel, content)
     note:SetWidth(284)
     note:SetJustifyH("LEFT")
     note:SetWordWrap(false)
+    GT.MakeFitting(note, 284)                 -- shrink long translations instead of running past the panel
     note:SetText(GT.TR("Minutes. Sample count: orange <5, yellow 5-9, green 10+. Green learned time = faster."))
 
     local apply = GT:CreateFlatButton(content, "Apply all faster", 138, 20)
@@ -236,18 +237,21 @@ GT.panelBuilders.Timing = function(panel, content)
 
     local reset = GT:CreateFlatButton(content, "Reset learned timings", 138, 20)
     reset:SetPoint("BOTTOMRIGHT", content, "BOTTOMRIGHT", 0, 0)
-    reset:SetScript("OnClick", function()
+    GT:SetConfirmClick(reset, "Reset learned timings", function()
         for _, key in ipairs(GT.order) do
             wipe(cfg().learn[key])
             wipe(cfg().learnZone[key])
-            for _, sp in ipairs(GT.spawns[key]) do sp.misses = 0 end
+            for _, sp in ipairs(GT.spawns[key]) do
+                sp.misses = 0
+                sp.missBase = sp.hits or 0         -- Taken % counts only hits from here on
+            end
         end
         GT.cprint(GT.TR("Learned timing data cleared."))
         list:Update()
     end)
     reset:HookScript("OnEnter", function(self)
         GT.Tip:SetOwner(self, "ANCHOR_TOP")
-        GT.Tip:AddLine(GT.TR("Reset learned data"))
+        GT.Tip:AddLine(GT.TR("Reset learned timings"))
         GT.Tip:AddLine(GT.TR("Erase learned respawn samples and empty-node counts for all resources. This does not change your current timer settings."), 0.85, 0.85, 0.85, true)
         GT.Tip:Show()
     end)

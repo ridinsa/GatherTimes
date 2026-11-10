@@ -120,7 +120,6 @@ GT.locales.ptBR = {
     ["Route:"] = "Rota:",
     ["No node in range."] = "Nenhum ponto ao alcance.",
     ["TomTom waypoint set to %s (%d yd)"] = "Waypoint TomTom definido em %s (%d yd)",
-    ["Arrow set to %s (%d yd)"] = "Seta definida em %s (%d yd)",
     ["Map / minimap pins refreshed."] = "Marcas do mapa / minimapa atualizadas.",
     ["No route planned"] = "Sem rota",
     ["Step %d/%d, %.0f yd total"] = "Passo %d/%d, %.0f yd",

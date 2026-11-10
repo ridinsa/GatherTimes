@@ -117,6 +117,7 @@ HUD.DEFAULTS = {
     eagleScale    = true,          -- distance scale: the edge of the map and a half-way ring, labelled in yards
     eagleNearest  = true,          -- readout of the nearest known node (name, ready / time left, yards) while it is up
     hideLabelsIdle = true,         -- hide the Gx labels and (G) timers on the normal minimap; they show while the HUD is on
+    eagleSync     = true,          -- the Eagle map uses the HUD's zoom and ring sizes (rings scaled to the smaller map)
     eagleHideLabels = true,        -- hide the Gx group labels and the (G) timers on the map while the Eagle map is up
     eagleHover    = true,          -- the Eagle map takes the mouse (clicks pass through) so the game's herb / ore hover tooltips work
 }
@@ -131,7 +132,7 @@ local MAP_KEYS     = { size = true, alpha = true, zoom = true,
                        rotate = true, arrow = true, mountFade = true }
 -- settings of the Eagle Eye map: they only change what is on screen while that map is up
 local EAGLE_KEYS   = { eagleSize = true, eagleAlpha = true, eagleZoom = true, eagleRotate = true, eagleRing = true,
-                       eagleScale = true, eagleNearest = true, eagleHover = true, eagleHideLabels = true }
+                       eagleScale = true, eagleNearest = true, eagleHover = true, eagleHideLabels = true, eagleSync = true }
 local TRACK_KEYS   = { trackingX = true, trackingY = true, trackingSize = true, idleX = true, idleY = true }
 
 ---------------------------------------------------------------------------
@@ -198,13 +199,28 @@ function HUD.Cfg()
     if not (eagleMode and db) then return db end
     local v = eagleView
     v.size = math.floor(db.eagleSize * HUD.EagleSizeMul() + 0.5)
-    v.alpha, v.zoom, v.rotate, v.arrow = db.eagleAlpha, db.eagleZoom, db.eagleRotate, true
+    v.alpha, v.rotate, v.arrow = db.eagleAlpha, db.eagleRotate, true
     local edge = math.max(0, math.floor(HUD.EffectiveSize(v) / 2) - 2)
-    v.ring = db.eagleRing and edge or 0
-    v.ringUnit = "px"                           -- the Eagle rings sit at fixed places on the map, in pixels ...
     v.hoverTips = db.eagleHover and true or false   -- (ConfigureMinimapInner)
-    v.scaleCaps = db.eagleScale and true or false   -- ... and are captioned with the yards they stand for (HUDOverlay.lua)
-    v.ring2 = db.eagleScale and math.floor(edge / 2) or 0      -- half-way ring of the distance scale
+    if db.eagleSync then
+        -- same zoom as the HUD, and the HUD's own rings: the map shows the same yards at any size, so a ring in
+        -- pixels is scaled by (Eagle size / HUD size) to stand for the same distance; rings in yards need no change
+        v.zoom = db.zoom
+        local k = HUD.EffectiveSize(v) / HUD.EffectiveSize(db)
+        local on = db.eagleRing
+        v.ringUnit = db.ringUnit
+        v.ring  = on and math.min(edge, math.floor(db.ring * k + 0.5)) or 0
+        v.ring2 = on and math.min(edge, math.floor(db.ring2 * k + 0.5)) or 0
+        v.ringYd, v.ring2Yd = on and db.ringYd or 0, on and db.ring2Yd or 0
+        v.scaleCaps = db.eagleScale and db.ringUnit == "px" or false   -- px rings are captioned with their yards
+    else
+        v.zoom = db.eagleZoom
+        v.ring = db.eagleRing and edge or 0
+        v.ringUnit = "px"                           -- the Eagle rings sit at fixed places on the map, in pixels ...
+        v.scaleCaps = db.eagleScale and true or false   -- ... and are captioned with the yards they stand for (HUDOverlay.lua)
+        v.ring2 = db.eagleScale and math.floor(edge / 2) or 0      -- half-way ring of the distance scale
+        v.ringYd, v.ring2Yd = db.ringYd, db.ring2Yd
+    end
     v.dirs, v.heading, v.routeReadout = false, false, false
     v.priorityReadout = db.eagleNearest and true or false      -- nearest node: the same readout the normal HUD has
     return v
@@ -503,6 +519,30 @@ local function SwapMouseUp(on)
     end
 end
 
+-- The HUD map is as big as the screen, so whatever mouse state it has decides whether a press on the world starts
+-- a camera drag. Off (normal HUD): it must not see the mouse at all. Hover (Eagle map): it only watches the mouse
+-- MOVE (for the game's herb / ore tooltips) and ignores clicks, so a press always goes to the world. Clients that
+-- cannot split the two keep the older "mouse on, clicks passed through" way.
+local function CanHover()
+    return (Minimap.SetMouseClickEnabled and Minimap.SetMouseMotionEnabled
+            or Minimap.SetPropagateMouseClicks) and true or false
+end
+local function SetMinimapMouse(hover)
+    Minimap:EnableMouse(hover)
+    if Minimap.SetMouseClickEnabled and Minimap.SetMouseMotionEnabled then
+        pcall(Minimap.SetMouseClickEnabled, Minimap, false)          -- never takes a press, in either state
+        pcall(Minimap.SetMouseMotionEnabled, Minimap, hover)
+    end
+    SwapMouseUp(hover)
+    if Minimap.SetPropagateMouseClicks then pcall(Minimap.SetPropagateMouseClicks, Minimap, hover) end
+end
+local function MinimapMouseMatches(hover)
+    if Minimap.SetMouseMotionEnabled and Minimap.IsMouseMotionEnabled and Minimap.IsMouseClickEnabled then
+        return (Minimap:IsMouseMotionEnabled() and true or false) == hover and not Minimap:IsMouseClickEnabled()
+    end
+    return (Minimap:IsMouseEnabled() and true or false) == hover
+end
+
 local function ConfigureMinimapInner(db)
     -- Mask first: the Minimap is about to become 800 px wide, and with the stock mask still on it for even one
     -- frame the whole stock circle shows (the shadow when the HUD is switched on).
@@ -521,10 +561,7 @@ local function ConfigureMinimapInner(db)
     -- Mouse off: the full-screen HUD must not catch clicks. The Eagle map (hoverTips) turns it on again for the game's
     -- own hover tooltips on herb / ore blips, with clicks passed through to the world; a client that cannot pass
     -- clicks through keeps it off. Clicks do nothing on the map itself (SwapMouseUp).
-    local hover = db.hoverTips and Minimap.SetPropagateMouseClicks and true or false
-    Minimap:EnableMouse(hover)
-    SwapMouseUp(hover)
-    if Minimap.SetPropagateMouseClicks then pcall(Minimap.SetPropagateMouseClicks, Minimap, hover) end
+    SetMinimapMouse(db.hoverTips and CanHover() and true or false)
     Minimap:EnableMouseWheel(false)
     if Minimap:GetZoom() ~= db.zoom then Minimap:SetZoom(db.zoom) end
     local rot = db.rotate and "1" or "0"
@@ -566,6 +603,10 @@ local function RestoreMinimapFromOrig()
     SwapMouseUp(false)
     if Minimap.SetPropagateMouseClicks then pcall(Minimap.SetPropagateMouseClicks, Minimap, false) end
     Minimap:EnableMouse(orig.mouse)
+    if Minimap.SetMouseClickEnabled and Minimap.SetMouseMotionEnabled then       -- the stock minimap takes clicks and hover
+        pcall(Minimap.SetMouseClickEnabled, Minimap, orig.mouse and true or false)
+        pcall(Minimap.SetMouseMotionEnabled, Minimap, orig.mouse and true or false)
+    end
     Minimap:EnableMouseWheel(orig.wheel)
     Minimap:SetZoom(orig.zoom)
     SetCVar("rotateMinimap", orig.rotate)
@@ -739,9 +780,10 @@ function HUD.EaglePreviewing() return eaglePreview end
 -- Eagle zoom setting itself, so it is kept for the next Eagle Eye.
 function HUD.EagleZoom(delta)
     if not (HUD.db and active and eagleMode) then return end
-    local z = Clamp(HUD.db.eagleZoom + delta, HUD.LIMITS.zoom[1], HUD.LIMITS.zoom[2])
-    if z == HUD.db.eagleZoom then return end
-    HUD.Set("eagleZoom", z)
+    local key = HUD.db.eagleSync and "zoom" or "eagleZoom"      -- synced: the key changes the HUD's own zoom
+    local z = Clamp(HUD.db[key] + delta, HUD.LIMITS.zoom[1], HUD.LIMITS.zoom[2])
+    if z == HUD.db[key] then return end
+    HUD.Set(key, z)
     if HUD.Config then HUD.Config.Refresh() end
 end
 
@@ -809,13 +851,32 @@ function HUD.MouseTick(dt)
     mouseAcc = mouseAcc + (dt or 0)
     if mouseAcc < 0.5 then return end
     mouseAcc = 0
-    local want = HUD.Cfg().hoverTips and Minimap.SetPropagateMouseClicks and true or false
-    if Minimap:IsMouseEnabled() == want then return end
+    local want = HUD.Cfg().hoverTips and CanHover() and true or false
+    if MinimapMouseMatches(want) then return end
     applying = true
-    Minimap:EnableMouse(want)
-    SwapMouseUp(want)
-    if Minimap.SetPropagateMouseClicks then pcall(Minimap.SetPropagateMouseClicks, Minimap, want) end
+    SetMinimapMouse(want)
     applying = false
+end
+
+-- Right away, not at the next half-second check: when the game or another addon switches the Minimap's mouse back on
+-- (or its clicks) while the HUD is up, a press on the world would be taken by the full-screen map and the camera
+-- would not turn until the check ran. The hooks put it right on the next frame.
+local mouseFixQueued = false
+local function QueueMouseFix()
+    if mouseFixQueued or applying or not (active and orig) then return end
+    mouseFixQueued = true
+    C_Timer.After(0, function()
+        mouseFixQueued = false
+        if not (active and orig and HUD.db) then return end
+        local want = HUD.Cfg().hoverTips and CanHover() and true or false
+        if MinimapMouseMatches(want) then return end
+        applying = true
+        pcall(SetMinimapMouse, want)
+        applying = false
+    end)
+end
+for _, fn in ipairs({ "EnableMouse", "SetMouseClickEnabled", "SetMouseMotionEnabled", "SetPropagateMouseClicks" }) do
+    if Minimap[fn] then pcall(hooksecurefunc, Minimap, fn, QueueMouseFix) end
 end
 
 -- An error half-way through must not leave the HUD half applied and unreported: report it, and if this call was
@@ -898,8 +959,30 @@ local autoSuppressed = false         -- the player turned the HUD off by hand: a
 function HUD.AutoSuppressed() return autoSuppressed end
 function HUD.ClearAutoSuppress() autoSuppressed = false end
 
+-- Preview (the settings panel's "Preview HUD" button): turns the HUD on while the panel is open, even when it is off.
+-- Not saved.  The preview only undoes itself: it never switches off a HUD the player turned on.
+local hudPreview = false
+function HUD.Previewing() return hudPreview end
+function HUD.Preview(state)
+    state = state and true or false
+    if state == hudPreview then return hudPreview end
+    if state then
+        if HUD.db and not active then
+            ApplyHud()
+            hudPreview = active and true or false
+        end
+    else
+        hudPreview = false
+        if active then RestoreHud() end
+    end
+    if GT.RefreshHudButton then GT.RefreshHudButton() end
+    if HUD.Config then HUD.Config.Refresh() end
+    return hudPreview
+end
+
 function HUD.SetEnabled(state, auto)
     state = state and true or false
+    if not auto then hudPreview = false end          -- the player switched the HUD by hand: the preview is over
     if not eagleBusy then eagleSuspended = false end     -- a manual / auto toggle ends the Eagle Eye suspension
     if not auto and not eagleBusy then
         autoSuppressed = not state                       -- manual off: do not let auto-gather switch it straight back on

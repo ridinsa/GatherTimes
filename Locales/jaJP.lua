@@ -121,7 +121,6 @@ GT.locales.jaJP = {
     ["Route:"] = "ルート：",
     ["No node in range."] = "範囲内にノードがありません。",
     ["TomTom waypoint set to %s (%d yd)"] = "TomTom ウェイポイントを %s に設定 (%d yd)",
-    ["Arrow set to %s (%d yd)"] = "矢印を %s に設定 (%d yd)",
     ["Map / minimap pins refreshed."] = "マップ/ミニマップのピンを更新しました。",
     ["No route planned"] = "ルート未作成",
     ["Step %d/%d, %.0f yd total"] = "%d/%d 番目、合計 %.0f yd",

@@ -18,6 +18,10 @@ local NAME_CVARS = {
     "UnitNameEnemyPlayerName",
     "UnitNameFriendlyPetName",
     "UnitNameEnemyPetName",
+    "UnitNameFriendlyGuardianName",       -- some pets / minions count as guardians or minions, not pets
+    "UnitNameEnemyGuardianName",
+    "UnitNameFriendlyMinionName",
+    "UnitNameEnemyMinionName",
 }
 local CVAR_DEFAULT = "1"
 local MAX_NAME_LETTERS = 12            -- the longest character name the game allows
@@ -51,6 +55,7 @@ local function InitDB()
     if db.hideAll == nil then db.hideAll = false end
     if db.groupNames == nil then db.groupNames = false end
     if db.hideBagTitle == nil then db.hideBagTitle = true end
+    if db.hideToTInCombat == nil then db.hideToTInCombat = true end
     db.fakeLevelMax = NormalizeLevel(db.fakeLevelMax, 60)
     local savedLevel = tonumber(db.fakeLevel)
     if not savedLevel or savedLevel ~= savedLevel or savedLevel == math.huge or savedLevel == -math.huge
@@ -152,7 +157,7 @@ end
 
 local function FakeLevelForUnit(unit)
     if Enabled() and unit and UnitIsUnit(unit, "player") then
-        return InitDB().fakeLevel
+        return GatherTimesHUNDB.fakeLevel or InitDB().fakeLevel
     end
 end
 
@@ -181,6 +186,7 @@ end
 -- replace every whole-word `real` in s with `fake` ("Ann" is not found inside "Anna"; the "[Ann]" of a chat link is)
 local function ReplaceName(s, real, fake)
     if type(s) ~= "string" or type(real) ~= "string" or real == "" or type(fake) ~= "string" or real == fake then return s end
+    if not s:find(real, 1, true) then return s end      -- most texts never hold the name: no table, no loop
     local out, pos, changed = {}, 1, false
     while true do
         local a, b = s:find(real, pos, true)
@@ -281,6 +287,7 @@ local function ProcessLevelRegion(region, unit)
     local current = region:GetText()
     if info then
         if current == info.fake then
+            if realLevel == info.realLevel and fakeLevel == info.fakeLevel then return end   -- unchanged: no string work
             info.realText = ReplaceLevelText(info.realText, info.realLevel, realLevel) or info.realText
             info.realLevel = realLevel
             if fakeLevel == info.fakeLevel then return end
@@ -343,24 +350,28 @@ end
 
 -- name FontStrings of a unit frame: the known ones, the ones found before, and (about once a second) any FontString
 -- in the frame or its children that shows the real name - so a different frame layout is still covered
+local scanReal, scanFound
+local function scanNode(f)
+    if not f or scanSeen[f] then return end
+    scanSeen[f] = true
+    if f.GetRegions then scanRegionsInto(scanFound, scanReal, f:GetRegions()) end
+    if f.GetChildren then forEachChild(scanNode, nil, f:GetChildren()) end
+end
 local function ScanFrame(frame, real, found)
     if type(real) ~= "string" or real == "" then return end
     wipeTable(scanSeen)
-    local function scan(f)
-        if not f or scanSeen[f] then return end
-        scanSeen[f] = true
-        if f.GetRegions then scanRegionsInto(found, real, f:GetRegions()) end
-        if f.GetChildren then forEachChild(scan, nil, f:GetChildren()) end
-    end
-    scan(frame)
+    scanReal, scanFound = real, found
+    scanNode(frame)
+    scanReal, scanFound = nil, nil
     wipeTable(scanSeen)
 end
 
+local NO_GLOBALS = {}
 local function ProcessEntry(entry)
     local frame = _G[entry.frame]
     if not frame then return end
     local unit = frame.unit or entry.unit
-    for _, g in ipairs(entry.levelGlobals or {}) do ProcessLevelRegion(_G[g], unit) end
+    for _, g in ipairs(entry.levelGlobals or NO_GLOBALS) do ProcessLevelRegion(_G[g], unit) end
     local fake = FakeForUnit(unit)
     if not fake then
         DropEntry(entry)
@@ -480,6 +491,29 @@ local function DiscoverGlobalGroupFrames()
     end
 end
 
+-- Name plates (the bar with the name above you or your pet, shown e.g. when you click the pet): the fake name goes
+-- into the plate's name text.  Restored by RestoreAll like the other frames.
+local function ProcessNamePlate(frame)
+    if not Enabled() or type(frame) ~= "table" then return end
+    local unit = frame.unit
+    if type(unit) ~= "string" or not unit:find("^nameplate") then return end
+    local fake = FakeForUnit(unit)
+    if not (fake and IsFontString(frame.name)) then return end
+    if frame.name:GetText() ~= fake then frame.name:SetText(fake) end
+    Track(frame.name, fake, frame, unit)
+end
+
+local nextPlateScan = 0
+local function RefreshNamePlates()
+    if not (C_NamePlate and C_NamePlate.GetNamePlates) then return end
+    local now = GetTime and GetTime() or 0
+    if now < nextPlateScan then return end
+    nextPlateScan = now + 0.2                          -- GetNamePlates builds a new table each call
+    for _, plate in ipairs(C_NamePlate.GetNamePlates()) do
+        if plate.UnitFrame then pcall(ProcessNamePlate, plate.UnitFrame) end
+    end
+end
+
 local function RefreshFrames()
     if not Enabled() then
         if next(faked) then RestoreAll() end
@@ -487,31 +521,38 @@ local function RefreshFrames()
         return
     end
     for _, entry in ipairs(UNIT_FRAMES) do pcall(ProcessEntry, entry) end
+    RefreshNamePlates()
 end
 
 -- The unit-frame hooks fire on every unit update (health, power, auras). Instead of a full pass each time,
 -- they ask for one pass on the next frame; many events in the same frame share that single pass.
 local frameRefreshPending = false
+local function RunFrameRefresh()
+    frameRefreshPending = false
+    if Enabled() then RefreshFrames() end
+end
 local function ScheduleFrameRefresh()
     if frameRefreshPending or not Enabled() then return end
     if C_Timer and C_Timer.After then
         frameRefreshPending = true
-        C_Timer.After(0, function()
-            frameRefreshPending = false
-            if Enabled() then RefreshFrames() end
-        end)
+        C_Timer.After(0, RunFrameRefresh)
     else
         RefreshFrames()
     end
 end
 
+local lastGlobalScan = -100
 local function RefreshGroupNames()
     if not GroupNamesEnabled() then
         RestoreGroupNames()
         return
     end
     DiscoverCompactFrames()
-    DiscoverGlobalGroupFrames()
+    local now = GetTime and GetTime() or 0
+    if now - lastGlobalScan >= 5 then          -- walks every global: not on each roster update
+        lastGlobalScan = now
+        DiscoverGlobalGroupFrames()
+    end
     local seen = {}
     for _, name in ipairs(GROUP_FRAME_ROOTS) do ProcessGroupTree(_G[name], seen) end
     for frame in pairs(compactFrames) do pcall(ProcessGroupTree, frame, seen) end
@@ -573,7 +614,12 @@ end
 local function ApplyCVars(hide)
     local db = GatherTimesHUNDB
     if hide then
-        for _, cvar in ipairs(NAME_CVARS) do SetCVarSafe(cvar, 0) end
+        if type(db.savedCVars) ~= "table" then db.savedCVars = {} end
+        for _, cvar in ipairs(NAME_CVARS) do
+            -- a setting added in a newer version (disguise already on): remember the player's value before it is hidden
+            if db.savedCVars[cvar] == nil then db.savedCVars[cvar] = GetCVarSafe(cvar) end
+            SetCVarSafe(cvar, 0)
+        end
     elseif type(db.savedCVars) == "table" then
         for _, cvar in ipairs(NAME_CVARS) do
             local v = db.savedCVars[cvar]
@@ -584,12 +630,60 @@ local function ApplyCVars(hide)
     -- nothing saved and the disguise off: the player's own settings are left alone (they used to be forced to 1 at every login)
 end
 
+-- ---------------------------------------------------------------- target-of-target hidden in combat
+-- While the disguise is on and you are in combat, the target-of-target frame is made fully transparent (option
+-- "Hide target-of-target in combat", on by default).  It is the frame's alpha that changes, not Show / Hide: the
+-- frame is a secure frame, and showing or hiding it is blocked in combat, while SetAlpha is allowed.
+local inCombat = false
+local totHidden, totAlpha = false, nil
+
+local function ToTFrame()
+    return _G.TargetFrameToT or (_G.TargetFrame and _G.TargetFrame.totFrame)
+end
+
+local function ToTWanted()
+    return inCombat and Enabled() and not standalone and GatherTimesHUNDB.hideToTInCombat ~= false
+end
+
+local function RefreshToT()
+    local frame = ToTFrame()
+    if not (frame and frame.SetAlpha and frame.GetAlpha) then return end
+    if ToTWanted() then
+        if not totHidden then totAlpha, totHidden = frame:GetAlpha(), true end
+        if frame:GetAlpha() ~= 0 then frame:SetAlpha(0) end
+    elseif totHidden then
+        frame:SetAlpha(totAlpha or 1)
+        totAlpha, totHidden = nil, false
+    end
+end
+
+local function SyncCombatState()
+    inCombat = (UnitAffectingCombat and UnitAffectingCombat("player")) and true or false
+end
+
 -- ---------------------------------------------------------------- everything at once
+local SyncTicker                                       -- set below, next to the event frame
+
+local function CharacterOpen()
+    local f = _G.CharacterFrame
+    return f and f.IsShown and f:IsShown() or false
+end
+
 local function Refresh()
-    RememberNames()
+    if not realPlayer then RememberNames() end         -- the names are remembered on login and on the name / pet events
     RefreshFrames()
-    RefreshTextRegions()
-    RefreshCharacterLevel()
+    -- the character window texts only matter while it is open (its OnShow hook refreshes again); the disguise being off
+    -- always runs them, so the real texts come back
+    if CharacterOpen() or not Enabled() then
+        RefreshTextRegions()
+        RefreshCharacterLevel()
+    end
+    RefreshToT()
+end
+
+-- nothing to do and nothing to put back: events then skip the refresh
+local function Idle()
+    return not Enabled() and not totHidden and not textFake and next(faked) == nil and next(fakedLevels) == nil
 end
 
 local function ApplyAll()
@@ -598,10 +692,22 @@ local function ApplyAll()
     ApplyCVars(db.hideAll == true)
     Refresh()
     RefreshGroupNames()
+    SyncTicker()
 end
 
+local refreshPending = false
+local function RunRefresh()
+    refreshPending = false
+    Refresh()
+end
 local function RefreshSoon()
-    if C_Timer and C_Timer.After then C_Timer.After(0, Refresh) else Refresh() end
+    if refreshPending then return end                  -- several events in one frame share one pass
+    if C_Timer and C_Timer.After then
+        refreshPending = true
+        C_Timer.After(0, RunRefresh)
+    else
+        Refresh()
+    end
 end
 
 -- ---------------------------------------------------------------- tooltip, chat, Blizzard hooks
@@ -656,6 +762,7 @@ local function InstallHooks()
         end
         if type(_G.CompactUnitFrame_UpdateName) == "function" then
             pcall(hooksecurefunc, "CompactUnitFrame_UpdateName", function(frame)
+                if Enabled() then pcall(ProcessNamePlate, frame) end
                 if GroupNamesEnabled() then pcall(ProcessGroupFrame, frame) end
             end)
         end
@@ -696,6 +803,7 @@ local function SetEnabled(on)
     db.hideAll = on
     ApplyCVars(on)
     Refresh()
+    SyncTicker()
     Notify()
 end
 
@@ -749,6 +857,12 @@ api.IsGroupNamesEnabled = function() InitDB(); return GroupNamesEnabled() end
 api.IsBagTitleHidden = function() return InitDB().hideBagTitle ~= false end
 api.SetBagTitleHidden = function(on)
     InitDB().hideBagTitle = on == true
+    Notify()
+end
+api.IsHideToTInCombat = function() return InitDB().hideToTInCombat ~= false end
+api.SetHideToTInCombat = function(on)
+    InitDB().hideToTInCombat = on == true
+    RefreshToT()
     Notify()
 end
 api.Randomize = function() RandomizeNames(true) end
@@ -1055,6 +1169,7 @@ local function StepAside()
         GatherTimesHUNDB.hideAll = false
         ApplyCVars(false)
     end
+    SyncTicker()
     _G.GatherTimesNameDisguise = nil
     print("|cffffd200GatherTimes: the standalone HideUnitNames addon is loaded, so Random Name is off here. Use /hun from that addon.|r")
 end
@@ -1109,7 +1224,8 @@ end
 -- ---------------------------------------------------------------- events
 local events = CreateFrame("Frame")
 for _, ev in ipairs({ "ADDON_LOADED", "PLAYER_LOGIN", "PLAYER_ENTERING_WORLD", "PLAYER_TARGET_CHANGED", "PLAYER_FOCUS_CHANGED",
-    "UNIT_NAME_UPDATE", "UNIT_PET", "GROUP_ROSTER_UPDATE", "BAG_OPEN", "BANKFRAME_OPENED" }) do
+    "UNIT_NAME_UPDATE", "UNIT_PET", "GROUP_ROSTER_UPDATE", "BAG_OPEN", "BANKFRAME_OPENED",
+    "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED" }) do
     pcall(events.RegisterEvent, events, ev)         -- a client without one of these events must not break the others
 end
 events:SetScript("OnEvent", function(_, event, arg1)
@@ -1120,6 +1236,14 @@ events:SetScript("OnEvent", function(_, event, arg1)
         return
     end
     if standalone then return end
+    if event == "PLAYER_REGEN_DISABLED" or event == "PLAYER_REGEN_ENABLED" then
+        inCombat = event == "PLAYER_REGEN_DISABLED"
+        RefreshToT()                                -- at once: the frame must not show for even a moment
+        return
+    end
+    if event == "UNIT_NAME_UPDATE" and arg1 ~= "player" and arg1 ~= "pet" and arg1 ~= "target"
+        and arg1 ~= "focus" and arg1 ~= "targettarget" then return end   -- fires for every unit: only ours matter
+    if event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then SyncCombatState() end   -- /reload in combat
     if event == "BAG_OPEN" or event == "BANKFRAME_OPENED" then
         BagsOpened()
         return
@@ -1141,16 +1265,22 @@ events:SetScript("OnEvent", function(_, event, arg1)
     if event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then
         ApplyAll()
     end
-    RefreshSoon()
+    if event == "UNIT_PET" or event == "UNIT_NAME_UPDATE" or event == "PLAYER_ENTERING_WORLD" then RememberNames() end
+    if not Idle() then RefreshSoon() end
 end)
 
 -- safety net for frames that Blizzard updates without one of the hooks below.
 local acc = 0
-events:SetScript("OnUpdate", function(_, elapsed)
+local function OnTick(_, elapsed)
     acc = acc + (elapsed or 0)
-    if acc < 0.1 then return end
+    if acc < 0.2 then return end
     acc = 0
     if Enabled() and not standalone then
         Refresh()
     end
-end)
+end
+-- no OnUpdate at all while the disguise is off: the game then does not call it every frame
+SyncTicker = function()
+    events:SetScript("OnUpdate", (Enabled() and not standalone) and OnTick or nil)
+end
+SyncTicker()

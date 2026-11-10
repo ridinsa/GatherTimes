@@ -23,7 +23,9 @@ local CLOSING_YARDS = 1.5        -- a tick that gets this much closer counts as 
 local APPROACH_MEMORY = 20       -- seconds a "walked toward it" stays valid
 local TICK_GAP = 3               -- ticks further apart than this (loading screen, lag) are not compared
 
-local ZONE_MIN_SAMPLES = 5      -- a zone needs this many samples before its own value is used
+local SHOW_MIN_SAMPLES  = 3     -- a learned value is shown in the Timing panel from this many samples
+local APPLY_MIN_SAMPLES = 5     -- "Apply all faster" and auto-apply need this many (matches the colour legend)
+local ZONE_MIN_SAMPLES  = 5      -- a zone needs this many samples before its own value is used
 
 local function Round15(v) return math.floor(v / 15 + 0.5) * 15 end
 
@@ -58,7 +60,7 @@ function GT.LearnedSeconds(key, mapID)
         local _, n, typ = Estimate(zl, ZONE_MIN_SAMPLES)
         if typ then return typ, n, true end
     end
-    local _, n, typ = Estimate(c.learn[key], 3)
+    local _, n, typ = Estimate(c.learn[key], SHOW_MIN_SAMPLES)
     return typ, n, false
 end
 
@@ -71,7 +73,7 @@ function GT.LearnedRange(key, mapID)
         local est, n, typ = Estimate(zl, ZONE_MIN_SAMPLES)
         if est then return est, n, true, typ end
     end
-    local est, n, typ = Estimate(c.learn[key], 3)
+    local est, n, typ = Estimate(c.learn[key], SHOW_MIN_SAMPLES)
     return est, n, false, typ
 end
 
@@ -79,8 +81,8 @@ end
 -- (more than 5 % above it), so a timer that is too short is corrected too.  Never more than twice the factory
 -- value.  The "Apply all faster" button does not pass it and stays faster-only.
 function GT.ApplyLearned(key, force, mapID, allowLonger)
-    local est = GT.LearnedSeconds(key, mapID)
-    if not est then return false end
+    local est, n = GT.LearnedSeconds(key, mapID)
+    if not est or (n or 0) < APPLY_MIN_SAMPLES then return false end        -- at least 5 samples, as the colour legend says
     local def = nodes[key]
     if not force then
         local faster = est < def.timer * 0.95
@@ -131,7 +133,7 @@ function GT.RecordInterval(key, prev, now, mapID)
     end
     if GT.cfg().autoLearn then
         local est, n = GT.LearnedSeconds(key, mapID)
-        if n >= 5 and est and GT.ApplyLearned(key, false, mapID, true) then
+        if n >= APPLY_MIN_SAMPLES and est and GT.ApplyLearned(key, false, mapID, true) then
             GT.cprint(GT.TRF("%s respawn time updated to %.1f min (learned).",
                 nodes[key].label, nodes[key].timer / 60))
         end
@@ -142,7 +144,8 @@ end
 function GT.ContestedPenalty(sp)
     local m = sp.misses or 0
     if m == 0 then return 0 end
-    return m / math.max(1, (sp.hits or 1) + m) * 60
+    local h = math.max(0, (sp.hits or 1) - (sp.missBase or 0))   -- same baseline as Taken % (reset)
+    return m / math.max(1, h + m) * 60
 end
 
 -- out (optional): a table to fill instead of creating a new one (for code that runs every second)

@@ -118,7 +118,6 @@ GT.locales.frFR = {
     ["Route:"] = "Route :",
     ["No node in range."] = "Aucun point à portée.",
     ["TomTom waypoint set to %s (%d yd)"] = "Point de passage TomTom défini sur %s (%d yd)",
-    ["Arrow set to %s (%d yd)"] = "Flèche dirigée vers %s (%d yd)",
     ["Map / minimap pins refreshed."] = "Repères de la carte / minicarte actualisés.",
     ["No route planned"] = "Aucune route",
     ["Step %d/%d, %.0f yd total"] = "Étape %d/%d, %.0f yd",

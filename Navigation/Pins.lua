@@ -1,7 +1,6 @@
 -- Pins.lua
 local addonName, GT = ...
 local HBDPins = GT.HBDPins
-local RefreshArrowVisibility = GT.RefreshArrowVisibility
 local order = GT.order
 local routeState = GT.routeState
 local spawnBySid = GT.spawnBySid
@@ -47,12 +46,14 @@ do
         else
             fr:EnableMouse(true)
             fr:SetHitRectInsets(-10, -10, -4, -24)
-            -- hover: the game's own item tooltip for this herb / ore (right-click still opens the spot menu)
+            -- hover: just the item name, in the resource's colour (right-click still opens the spot menu).
+            -- No item link: that needs the item cached and a server request, the name is there at once.
             fr:SetScript("OnEnter", function(self)
                 local def = self.key and GT.nodes[self.key]
                 if not (def and GameTooltip) then return end
                 GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-                pcall(GameTooltip.SetHyperlink, GameTooltip, "item:" .. def.id)
+                local col = GT.Col(self.key)
+                GameTooltip:AddLine(GT.TR(def.label), col[1], col[2], col[3])
                 GameTooltip:Show()
             end)
             fr:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -268,7 +269,6 @@ do
         GT.groupRebuild = GT.groupRebuild + 1
         routeState.lastSid = nil
         GT.routeTarget = nil
-        RefreshArrowVisibility()
     end
 end
 

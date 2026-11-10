@@ -12,7 +12,7 @@
 ## Notes-suID: Timer respawn herbal jeung bijih, titik spawn, rute ngumpulkeun, jeung HUD minimap pinuh layar (/gt, /gt hud).
 ## Notes-zhCN: 草药和矿石的刷新计时、刷新点位、采集路线，以及全屏小地图 HUD (/gt, /gt hud)。
 ## Author: miRidinsa
-## Version: 0.24.2
+## Version: 0.24.3
 ## X-License: GPL-3.0-or-later
 ## X-Website: https://github.com/ridinsa/GatherTimes
 ## SavedVariables: GatherTimesDB, GatherTimesHUNDB, HideUnitNamesDB

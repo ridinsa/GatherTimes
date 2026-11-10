@@ -121,7 +121,6 @@ GT.locales.koKR = {
     ["Route:"] = "경로:",
     ["No node in range."] = "범위 내 노드 없음.",
     ["TomTom waypoint set to %s (%d yd)"] = "TomTom 웨이포인트: %s (%d yd)",
-    ["Arrow set to %s (%d yd)"] = "화살표 대상: %s (%d yd)",
     ["Map / minimap pins refreshed."] = "지도/미니맵 핀을 새로 고쳤습니다.",
     ["No route planned"] = "경로 없음",
     ["Step %d/%d, %.0f yd total"] = "%d/%d 단계, 총 %.0f yd",

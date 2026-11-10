@@ -48,8 +48,10 @@ end
 
 -- progress bar colour of a waiting chip by time left: white, then yellow, then red
 local function UrgencyColor(left)
-    if left <= RED_SECS then return 1, 0.25, 0.25 end
-    if left <= YELLOW_SECS then return 1, 0.82, 0 end
+    local c = GT.cfg and GT.cfg() or {}
+    local red, yellow = c.miniRedSecs or RED_SECS, c.miniYellowSecs or YELLOW_SECS   -- set in the Minimize panel (Chips)
+    if left <= red then return 1, 0.25, 0.25 end
+    if left <= yellow then return 1, 0.82, 0 end
     return 1, 1, 1
 end
 
@@ -904,6 +906,27 @@ function GT:SetMinimized(on)
         if self.bar and not self:AlwaysShowBar() then self.bar:Hide() end
         self.main:Show()
     end
+end
+
+-- Preview: the Minimize settings show the bar while they are open, so each option can be seen as it is changed.
+-- Only undone if the preview is what showed the bar: a bar that was already on (always shown, minimized) stays on.
+GT.barPreviewing = false
+function GT:SetBarPreview(on)
+    on = on and true or false
+    if on == self.barPreviewing then return end
+    local ui = GatherTimesDB and GatherTimesDB._ui
+    if on then
+        if not (self.main and ui) then return end
+        if self.bar and self.bar:IsShown() then return end
+        local ok, bar = pcall(self.CreateMiniBar, self)
+        if not ok then GT.ReportError("mini bar", bar); return end
+        bar:Show()
+        self.barPreviewing = true
+    else
+        self.barPreviewing = false
+        if self.bar and not self:AlwaysShowBar() and not (ui and ui.minimized) then self.bar:Hide() end
+    end
+    if self.bar then self:UpdateMiniBar() end
 end
 
 function GT:ToggleMinimized()

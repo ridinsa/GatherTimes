@@ -223,6 +223,8 @@ function GT:CreateCheckLabel(parent, text, getter, setter, maxW)
     fs:SetPoint("LEFT", cb, "RIGHT", 6, 0)
     GT.MakeFitting(fs, maxW or 266)
     fs:SetText(GT.TR(text))
+    -- the caption is part of the check box: clicking it toggles, hovering it shows the tooltip
+    cb:SetHitRectInsets(0, -(6 + math.min(fs:GetStringWidth() or 0, maxW or 266)), 0, 0)
 
     function cb:Refresh() self:SetChecked(getter()) end
     GT.uiRefresh[#GT.uiRefresh + 1] = function() cb:Refresh() end

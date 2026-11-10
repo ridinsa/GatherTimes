@@ -86,12 +86,12 @@ local function InitCfg()
         if not nodes[key] or type(enabled) ~= "boolean" then c.alertItems[key] = nil end
     end
     c.nodeOffsetYd = tonumber(c.nodeOffsetYd) or 3   -- yards from you to the node while gathering
-    c.fontMini = tonumber(c.fontMini) or 11
+    c.fontMini = GT.Clamp(c.fontMini, 8, 24, 11)       -- same range as the Display slider
     c.fontWorld = c.fontMini          -- one text size for everything on both maps (fontWorld only mirrors it)
     if type(c.font) ~= "string" then c.font = "default" end          -- font style (Locales.lua GT.FONT_CHOICES)
     if type(c.newSessionOnLogin) ~= "boolean" then c.newSessionOnLogin = false end   -- false = resume the last session
     c.fontScale = math.max(80, math.min(130, tonumber(c.fontScale) or 100))   -- text size, percent
-    c.lowHPPct = tonumber(c.lowHPPct) or 35
+    c.lowHPPct = GT.Clamp(c.lowHPPct, 10, 80, 35)      -- same range as the Settings slider
     -- performance helpers (Graphics.lua): quality level 0..3 with a backup of the player's own CVars, and the
     -- last choices for screen effects / weather / camera zoom (nil = never touched, the game's value stays)
     c.gfxLevel = GT.Clamp(c.gfxLevel, 0, 3, 0)
@@ -101,12 +101,14 @@ local function InitCfg()
     c.fxWeather = tonumber(c.fxWeather) and GT.Clamp(c.fxWeather, 0, 3, 3) or nil
     c.fxZoom = tonumber(c.fxZoom) and GT.Clamp(c.fxZoom, 10, 40, 10) or nil
     c.sessions = (tonumber(c.sessions) or 0)
-    if c.showArrow == nil then c.showArrow = true end
     if c.includeUnchecked == nil then c.includeUnchecked = false end
     if type(c.miniSummaryAll) ~= "boolean" then c.miniSummaryAll = true end     -- minimized bar tooltip: all items / checked items only
     if type(c.miniSortUrgency) ~= "boolean" then c.miniSortUrgency = true end     -- minimized bar chips: soonest-ready first
     if type(c.miniHideIdle) ~= "boolean" then c.miniHideIdle = false end           -- minimized bar: only running / ready groups
     c.miniBlinkSecs = GT.Clamp(c.miniBlinkSecs, 0, 30, 15)         -- minimized bar: blink at or below this many seconds (0 = off)
+    c.miniYellowSecs = GT.Clamp(c.miniYellowSecs, 0, 300, 60)     -- urgency colours: yellow at or below this many seconds
+    c.miniRedSecs = GT.Clamp(c.miniRedSecs, 0, 300, 15)           -- ... red at or below this many seconds
+    if c.miniRedSecs > c.miniYellowSecs then c.miniRedSecs = c.miniYellowSecs end
     c.miniBgAlpha = GT.Clamp(c.miniBgAlpha, 0, 100, 95)            -- minimized bar: background opacity, percent
     if type(c.miniFadeCombat) ~= "boolean" then c.miniFadeCombat = false end      -- minimized bar: fade while in combat
     if type(c.miniFadeMouse) ~= "boolean" then c.miniFadeMouse = false end        -- minimized bar: fade while the mouse is not over it
@@ -122,7 +124,6 @@ local function InitCfg()
     c.groupSizeOre = tonumber(c.groupSizeOre) or c.groupSize
     if c.nodeShowAll == nil then c.nodeShowAll = false end
     if c.tomtom == nil then c.tomtom = true end
-    if c.tomtomHideArrow == nil then c.tomtomHideArrow = false end
     if c.logTomTom == nil then c.logTomTom = true end
     if c.tomTomAutoNearest == nil then c.tomTomAutoNearest = false end
     c.groupCapOre = math.max(1, math.min(3, tonumber(c.groupCapOre) or 1))

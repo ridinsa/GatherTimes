@@ -91,25 +91,27 @@ local function CreateRow(list, i)
     local eb = GT:CreateEditBox(r, MIN_W, 16)
     eb:SetPoint("LEFT", X_MIN, 0)
     eb:SetTextInsets(3, 3, 0, 0)          -- 50 px of text room (was 22)
-    local function resetText()
-        local def = r.key and GT.nodes[r.key]
+    local function resetText(key)
+        local def = key and GT.nodes[key]
         if def then eb:SetText(MinText(def.timer)) end
     end
+    -- remember the node the value is typed for: a scrolled list can move this row to another node
+    eb:HookScript("OnEditFocusGained", function(self) self.editKey = r.key end)
     local function apply(self)
-        local def = r.key and GT.nodes[r.key]
+        local key = self.editKey or r.key
+        local def = key and GT.nodes[key]
         if not def then return end
-        local n = tonumber(self:GetText())
+        local n = tonumber((self:GetText():gsub(",", ".")))   -- "13,5" (comma locales) = 13.5
         if n and n > 0 then
             def.timer = GT.ClampTimer(n * 60, def.timer)         -- 0.5 .. 120 minutes
-            GT.cfg().timers[r.key] = def.timer
-            resetText()                                          -- show the value that was really taken
-        else
-            resetText()
+            GT.cfg().timers[key] = def.timer
         end
+        self.editKey = nil
+        resetText(key)                                           -- show the value that was really taken
     end
     eb:SetScript("OnEnterPressed", function(self) apply(self); self:ClearFocus() end)
     eb:SetScript("OnEditFocusLost", apply)
-    eb:SetScript("OnEscapePressed", function(self) resetText(); self:ClearFocus() end)
+    eb:SetScript("OnEscapePressed", function(self) resetText(self.editKey or r.key); self:ClearFocus() end)
     r.minutes = eb
 
     -- colour swatch (left / right click cycles)
@@ -177,6 +179,8 @@ end
 local function UpdateRow(r, key)
     local def, c = GT.nodes[key], GT.cfg()
     local col = GT.Col(key)
+    -- stop editing if this row now shows another node: the typed value belongs to the node it was typed for
+    if r.minutes:HasFocus() and r.minutes.editKey ~= key then r.minutes:ClearFocus() end
     r.key = key
     r.check:SetChecked(GT.IsEnabled(key))
     r.name:SetText(def.label)
@@ -376,6 +380,13 @@ GT.panelBuilders.Nodes = function(panel, content)
         GT:OnNodesChanged()
         GT.cprint(GT.TRF("%d node(s) reset: time, colour and sound back to default (sound = None).", #listed))
     end)
+    reset:HookScript("OnEnter", function(self)
+        GT.Tip:SetOwner(self, "ANCHOR_TOP")
+        GT.Tip:AddLine(GT.TR("Reset"))
+        GT.Tip:AddLine(GT.TR("Set the listed nodes back to default time, colour and sound. Running timers switch to the new default right away."), 0.85, 0.85, 0.85, true)
+        GT.Tip:Show()
+    end)
+    reset:HookScript("OnLeave", function() GT.Tip:Hide() end)
 
     -- keep in sync: on show, every second (zone changes), external refresh
     panel:SetScript("OnShow", function() Refresh(true) end)
