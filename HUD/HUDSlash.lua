@@ -13,7 +13,7 @@ local function PrintHelp()
     Print("/gthud [toggle | on | off]   /gthud config")
     Print("/gthud size <150-1400> | alpha <0-1> | zoom <0-5> | rotate")
     Print("/gthud ringunit px | yd | ring <radius in that unit, 0=off> | ring2 <radius> | ringcolor <r> <g> <b> <a> | ringcolor2 <r> <g> <b> <a> | ringthick <1-10> | ringseg <8-256>")
-    Print("/gthud dirs | heading | arrow | tracking | trackmode auto/own/stock | tracksize <20-80> | trackpos <x> <y> | addons | scan | mountfade | autogather | restore")
+    Print("/gthud dirs | heading | arrow | hover | tracking | trackmode auto/own/stock | tracksize <20-80> | trackpos <x> <y> | addons | scan | mountfade | autogather | restore")
     Print("/gthud eagle [on | off] | preview | size <150-1400> | zoom <0-5> | alpha <0-1> | rotate | ring | scale | nearest | hover   (map shown during Eagle Eye / Far Sight / Mind Vision)")
     Print("/gthud profile [name | delete <name>]   /gthud status | info | frames | skins [hide N | show N | mark | diff] | debug | reset")
 end
@@ -386,6 +386,7 @@ function HUD.Slash(msg)
     elseif cmd == "dirs" then Toggle("dirs", "Compass letters")
     elseif cmd == "heading" then Toggle("heading", "Heading readout")
     elseif cmd == "arrow" then Toggle("arrow", "Player arrow")
+    elseif cmd == "hover" then Toggle("hudHover", "Hover tooltips on the HUD map")
     elseif cmd == "tracking" then Toggle("tracking", "Tracking button on HUD")
     elseif cmd == "trackmode" then
         local m = args[2] or ""

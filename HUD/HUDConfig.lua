@@ -67,18 +67,18 @@ local function KeySlider(parent, x, y, label, key, lo, hi, step, fmt)
         fmt)
 end
 
-local function Check(parent, x, y, text, get, set)
-    local cb = GT:CreateCheckLabel(parent, text, get, set)
+local function Check(parent, x, y, text, get, set, maxW)
+    local cb = GT:CreateCheckLabel(parent, text, get, set, maxW)
     cb:SetPoint("TOPLEFT", x + 2, y)
     refreshers[#refreshers + 1] = function() cb:Refresh() end
     return cb
 end
 
 -- checkbox bound to one profile setting
-local function KeyCheck(parent, x, y, text, key)
+local function KeyCheck(parent, x, y, text, key, maxW)
     return Check(parent, x, y, text,
         function() return HUD.db[key] and true or false end,
-        function(v) HUD.Set(key, v, true) end)
+        function(v) HUD.Set(key, v, true) end, maxW)
 end
 
 -- checkbox bound to an account-wide HUD switch (GatherTimesDB.hud.<key>)
@@ -438,8 +438,9 @@ local function BuildOverlay(f)
     end)
     refreshers[#refreshers + 1] = StyleLabel
 
-    KeyCheck(f, 0, -214, "Compass letters (N E S W)", "dirs")
-    KeyCheck(f, 0, -236, "Heading readout",           "heading")
+    KeyCheck(f, 0, -214, "Compass letters (N E S W)", "dirs", 150)
+    KeyCheck(f, 176, -214, "Heading readout",         "heading", 88)    -- same row as the compass letters
+    KeyCheck(f, 0, -236, "Hover tooltips on nodes",   "hudHover")       -- the normal HUD only; the Eagle map has its own (Eagle tab)
     KeyCheck(f, 0, -258, "Ready-first gathering readout", "priorityReadout")
     KeyCheck(f, 0, -280, "Route progress readout", "routeReadout")
 end

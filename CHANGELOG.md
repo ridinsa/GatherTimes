@@ -1,34 +1,36 @@
 # GatherTimes
 
+## 0.24.4 (2026-11-11)
+
+- Change: version 0.24.4 in the TOC, the Help credits and the translated Help files.
+
+- Fix: clicking the HUD map no longer shows the game's blinking yellow ping circle on top of the node pins.
+  - While the HUD is on, the Minimap's stock click handler (the one that pings the map) is always replaced with a no-op, not only when "Hover tooltips on nodes" is on.
+  - Minimap:PingLocation is swallowed while the HUD is on, for clients that draw the ping inside the Minimap itself.
+  - The ping frame (MiniMapPing / Minimap.PingFrame) is hidden again as soon as the game shows it while the HUD is on. Pings from other players are hidden the same way.
+  - With the HUD off, the normal minimap pings as usual.
+
 ## 0.24.3 (2026-11-10)
 
-New
-- Random Name: "Hide target-of-target in combat" option (on by default)
-- Random Name: also replaces your name and pet name on name plates
-- Random Name: also turns off guardian/minion name settings while active
-- HUD: "Preview HUD" button and a list of key bindings
-- Eagle map: "Same zoom and rings as the HUD" option
-- Minimize > Chips: yellow/red warning time sliders
-- Reset session / Reset learned timings now ask for confirmation
+- Change: version 0.24.3 in the TOC, the Help credits and the translated Help files.
 
-Changes
-- Changing language asks for confirmation before reloading
-- Clicking the text next to a check box toggles it
-- Removing a timer needs Shift + right-click
-- Built-in arrow removed; navigation uses TomTom only
-- Random Name uses less CPU and memory
-- Map pin hover shows the item name only (faster)
-- HUD profile Delete acts on the profile selected in the list
-
-Fixes
-- Low health warning only shows on Hardcore characters
-- Graphics "Off" no longer overwrites settings you changed in the game menu
-- Camera dragging sometimes not working while the HUD was on
-- Apply/auto-apply learned times now needs 5 samples, as the legend says
-- Taken % and misses are correct after resetting learned timings
-- Nodes panel: typed times go to the right node, "13,5" accepted
-- Slider values stay in range when settings load
-- Settings > Tools status text no longer overlaps buttons
+- Change: choosing another language in Settings > Look asks first ("Change the interface language and reload the UI?"). Cancel keeps the old language.
+- Change: the text next to a check box is part of it: clicking the text toggles the box and hovering it shows the tooltip.
+- Fix: the saved low-health percentage and the map text size are kept inside the range of their sliders when settings load.
+- Fix: the low health warning only shows on Hardcore characters, as its name says (it showed on every character). The game's Hardcore answer is used, or a realm name with "Hardcore" in it; a client that cannot tell keeps the warning.
+- Fix: setting Graphics quality back to Off no longer overwrites graphics settings you changed in the game's own menu in the meantime. Only the settings that still hold the value the slider set are put back.
+- Fix: the status text on the Settings > Tools tab is cut at its box instead of running into the buttons below it.
+- Change: Random Name uses less CPU and memory, no change in what it hides.
+  - The safety-net timer runs only while the disguise is on (the game no longer calls it every frame when it is off), and ticks 5 times a second instead of 10.
+  - With the disguise off, target and focus changes no longer start a refresh when there is nothing to put back; several events in one frame share one refresh; name updates of other units are ignored.
+  - Your name and your pet's name are remembered on login and on the name / pet events instead of on every refresh.
+  - The character window texts and level are only refreshed while the window is open.
+  - Chat and tooltip name replacement no longer builds a table for every text that does not contain the name.
+  - Level texts are only rewritten when the level changes; unit-frame scans and refresh timers no longer create new functions and tables on each call.
+  - The group-name search through all global frames runs at most every 5 seconds instead of on every roster update.
+- Change: Random Name also switches off the game's guardian and minion name settings (friendly and enemy) while it is on, and puts them back when it goes off. Some pets show their floating name through those settings.
+- Fix: Random Name now also replaces your name and your pet's name on name plates (for example the plate that shows when you click your pet). It was only hidden through the game's name settings before, so the real name showed on the plate.
+- New: Random Name window, "Hide target-of-target in combat" (on by default). While Disguise names is on, the target-of-target frame is made transparent when combat starts and comes back when combat ends. It only changes the frame's opacity (the frame is protected, so it cannot be hidden in combat). Only the default target-of-target frame is covered; a unit-frame addon that replaces it needs its own setting.
 
 ## 0.24.2 (2026-11-08)
 

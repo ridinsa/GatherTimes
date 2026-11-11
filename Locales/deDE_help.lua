@@ -37,7 +37,7 @@ Verwandelt die echte Minimap in eine große, durchscheinende Karte auf deinem Bi
 - Profil: mehrere Darstellungen speichern, wechseln oder löschen. Profile gelten für alle Charaktere; jeder Charakter merkt sich sein eigenes.
 - Profil zurücksetzen stellt die Standardwerte wieder her.]]
 
-T.credits = H .. "GatherTimes 0.24.3" .. E .. [[
+T.credits = H .. "GatherTimes 0.24.4" .. E .. [[
 
 Autor: miRidinsa
 Website: https://github.com/ridinsa/
