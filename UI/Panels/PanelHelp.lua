@@ -211,7 +211,7 @@ TOPICS[#TOPICS + 1] = { "cmds", "Cmds", H .. "Slash commands" .. E .. [[
 /gthud reset - reset the current profile
 /gthud help - show command help]] }
 
-TOPICS[#TOPICS + 1] = { "credits", "Credits", H .. "GatherTimes 0.24.3" .. E .. [[
+TOPICS[#TOPICS + 1] = { "credits", "Credits", H .. "GatherTimes 0.24.4" .. E .. [[
 
 Author: miRidinsa
 Website: https://github.com/ridinsa/

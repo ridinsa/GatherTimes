@@ -37,7 +37,7 @@ T.hud = H .. "小地图 HUD" .. E .. [[
 - 配置档：保存多种外观、切换或删除。所有角色共享配置档；每个角色分别记住自己的选择。
 - 重置配置档会恢复默认设置。]]
 
-T.credits = H .. "GatherTimes 0.24.3" .. E .. [[
+T.credits = H .. "GatherTimes 0.24.4" .. E .. [[
 
 作者：miRidinsa
 网站：https://github.com/ridinsa/

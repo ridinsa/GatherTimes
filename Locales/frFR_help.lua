@@ -37,7 +37,7 @@ Transforme la vraie minicarte en une grande carte translucide sur votre écran, 
 - Profil : enregistrer plusieurs apparences, passer de l’une à l’autre ou les supprimer. Les profils sont partagés par tous les personnages ; chacun mémorise le sien.
 - Réinitialiser le profil restaure les valeurs par défaut.]]
 
-T.credits = H .. "GatherTimes 0.24.3" .. E .. [[
+T.credits = H .. "GatherTimes 0.24.4" .. E .. [[
 
 Auteur : miRidinsa
 Site web : https://github.com/ridinsa/

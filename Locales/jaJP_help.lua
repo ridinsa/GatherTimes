@@ -37,7 +37,7 @@ T.hud = H .. "ミニマップ HUD" .. E .. [[
 - プロフィール：複数の外観を保存、切替、削除できます。プロフィールは全キャラクターで共有され、設定はキャラクターごとに記憶されます。
 - 「プロフィールをリセット」で既定値に戻します。]]
 
-T.credits = H .. "GatherTimes 0.24.3" .. E .. [[
+T.credits = H .. "GatherTimes 0.24.4" .. E .. [[
 
 作者：miRidinsa
 ウェブサイト：https://github.com/ridinsa/
