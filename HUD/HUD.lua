@@ -120,7 +120,6 @@ HUD.DEFAULTS = {
     eagleSync     = true,          -- the Eagle map uses the HUD's zoom and ring sizes (rings scaled to the smaller map)
     eagleHideLabels = true,        -- hide the Gx group labels and the (G) timers on the map while the Eagle map is up
     eagleHover    = true,          -- the Eagle map takes the mouse (clicks pass through) so the game's herb / ore hover tooltips work
-    hudHover      = false,         -- the normal HUD map also shows the game's herb / ore hover tooltips (off: it ignores the mouse)
 }
 
 -- Which setting changes need which kind of refresh
@@ -534,7 +533,7 @@ local function SetMinimapMouse(hover)
         pcall(Minimap.SetMouseClickEnabled, Minimap, false)          -- never takes a press, in either state
         pcall(Minimap.SetMouseMotionEnabled, Minimap, hover)
     end
-    SwapMouseUp(true)                                           -- the stock click handler (map ping) is never wanted on the HUD
+    SwapMouseUp(hover)
     if Minimap.SetPropagateMouseClicks then pcall(Minimap.SetPropagateMouseClicks, Minimap, hover) end
 end
 local function MinimapMouseMatches(hover)
@@ -542,36 +541,6 @@ local function MinimapMouseMatches(hover)
         return (Minimap:IsMouseMotionEnabled() and true or false) == hover and not Minimap:IsMouseClickEnabled()
     end
     return (Minimap:IsMouseEnabled() and true or false) == hover
-end
--- Does the map want the mouse (hover tooltips only, never clicks) right now?  The Eagle map follows "eagleHover"
--- (HUD.Cfg().hoverTips); the normal HUD follows "hudHover", off by default.
-local function HoverWanted()
-    local db = HUD.db
-    if not db then return false end
-    local on
-    if eagleMode then on = HUD.Cfg().hoverTips else on = db.hudHover end
-    return (on and CanHover()) and true or false
-end
-
--- Safety net for the tooltip of a node under the mouse (the game shows it with the Minimap as owner): while the normal
--- HUD is up and "Hover tooltips on nodes" (hudHover) is off, it is hidden again as soon as it shows, even if the game
--- or another addon turned the Minimap's mouse back on.  Not while the Eagle map is up (it has "eagleHover").
-local function TooltipSuppressed()
-    local db = HUD.db
-    return (active and not eagleMode and db and not db.hudHover) and true or false
-end
-if GameTooltip and GameTooltip.HookScript then
-    GameTooltip:HookScript("OnShow", function(self)
-        if not TooltipSuppressed() then return end
-        local ok, owner = pcall(self.GetOwner, self)
-        if not (ok and owner) then return end
-        local isMap = owner == Minimap
-        if not isMap and owner.GetParent then
-            local ok2, parent = pcall(owner.GetParent, owner)
-            isMap = ok2 and parent == Minimap
-        end
-        if isMap then self:Hide() end
-    end)
 end
 
 local function ConfigureMinimapInner(db)
@@ -592,7 +561,7 @@ local function ConfigureMinimapInner(db)
     -- Mouse off: the full-screen HUD must not catch clicks. The Eagle map (hoverTips) turns it on again for the game's
     -- own hover tooltips on herb / ore blips, with clicks passed through to the world; a client that cannot pass
     -- clicks through keeps it off. Clicks do nothing on the map itself (SwapMouseUp).
-    SetMinimapMouse(HoverWanted())
+    SetMinimapMouse(db.hoverTips and CanHover() and true or false)
     Minimap:EnableMouseWheel(false)
     if Minimap:GetZoom() ~= db.zoom then Minimap:SetZoom(db.zoom) end
     local rot = db.rotate and "1" or "0"
@@ -882,7 +851,7 @@ function HUD.MouseTick(dt)
     mouseAcc = mouseAcc + (dt or 0)
     if mouseAcc < 0.5 then return end
     mouseAcc = 0
-    local want = HoverWanted()
+    local want = HUD.Cfg().hoverTips and CanHover() and true or false
     if MinimapMouseMatches(want) then return end
     applying = true
     SetMinimapMouse(want)
@@ -899,7 +868,7 @@ local function QueueMouseFix()
     C_Timer.After(0, function()
         mouseFixQueued = false
         if not (active and orig and HUD.db) then return end
-        local want = HoverWanted()
+        local want = HUD.Cfg().hoverTips and CanHover() and true or false
         if MinimapMouseMatches(want) then return end
         applying = true
         pcall(SetMinimapMouse, want)
@@ -908,31 +877,6 @@ local function QueueMouseFix()
 end
 for _, fn in ipairs({ "EnableMouse", "SetMouseClickEnabled", "SetMouseMotionEnabled", "SetPropagateMouseClicks" }) do
     if Minimap[fn] then pcall(hooksecurefunc, Minimap, fn, QueueMouseFix) end
-end
-
--- Minimap ping marker: clicking the map (or a party member pinging it) makes the game flash a blinking yellow ring
--- (the MiniMapPing frame) at that spot. On the full-screen HUD that ring sits on top of the node pins, so while
--- the HUD is up the frame is hidden again the moment the game shows it. The stock minimap is not touched.
-local function HideHudPing(self)
-    if active then self:Hide() end
-end
--- Some clients draw the ping inside the Minimap itself (no frame to hide): the call that starts it is swallowed
--- while the HUD is up. Pings from other players arrive as an event and still show.
-do
-    local origPing = Minimap.PingLocation
-    if type(origPing) == "function" then
-        Minimap.PingLocation = function(self, ...)
-            if active then return end
-            return origPing(self, ...)
-        end
-    end
-end
-do
-    local pingFrames = { MiniMapPing, Minimap and Minimap.PingFrame }
-    for i = 1, 2 do
-        local f = pingFrames[i]
-        if f and f.HookScript then pcall(f.HookScript, f, "OnShow", HideHudPing) end
-    end
 end
 
 -- An error half-way through must not leave the HUD half applied and unreported: report it, and if this call was
@@ -1067,13 +1011,6 @@ function HUD.Set(key, value, fromUI)
         HUD.EagleCheck()
     elseif key == "eagleHideLabels" or key == "hideLabelsIdle" then
         HUD.UpdateEagleLabels()
-    elseif key == "hudHover" then
-        -- applies at once while the normal HUD is up (the Eagle map keeps its own "eagleHover" setting)
-        if active and orig and not eagleMode then
-            applying = true
-            pcall(SetMinimapMouse, HoverWanted())
-            applying = false
-        end
     elseif EAGLE_KEYS[key] then
         if active and eagleMode then HUD.Refresh(true) end
     elseif OVERLAY_KEYS[key] then
