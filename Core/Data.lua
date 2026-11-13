@@ -142,6 +142,39 @@ local SOUNDS = {
     { name = "Popup",        id = SK("TUTORIAL_POPUP", 7355) },
 }
 
+-- Media sounds (the files in the addon's Media folder, listed in Media\SoundList.lua) are stored in the sound
+-- settings as "file:<name>". Built-in sounds keep their number (index into SOUNDS), so saved settings do not change.
+GT.MEDIA_DIR = "Interface\\AddOns\\GatherTimes\\Media\\"
+function GT.SoundEntry(v)
+    if type(v) == "number" then return SOUNDS[v] end
+    if type(v) == "string" and v:sub(1, 5) == "file:" and #v > 5 then
+        local file = v:sub(6)
+        return { name = (file:gsub("%.[^.]*$", "")), file = file }
+    end
+    return nil
+end
+
+-- plays a sound entry from SoundEntry. A new Media sound stops the previous one, so they do not stack.
+local lastFileHandle
+function GT.PlaySoundEntry(s)
+    if not s then return false end
+    if s.file then
+        if lastFileHandle then pcall(StopSound, lastFileHandle) end
+        local ok, willPlay, handle = pcall(PlaySoundFile, GT.MEDIA_DIR .. s.file, "Master")
+        lastFileHandle = (ok and willPlay) and handle or nil
+        return ok and willPlay and true or false
+    end
+    if s.id == 0 then return false end
+    pcall(PlaySound, s.id, "Master")
+    return true
+end
+
+-- stops the Media sound that is playing (called when the Minimize or Nodes panel closes)
+function GT.StopMediaSound()
+    if lastFileHandle then pcall(StopSound, lastFileHandle) end
+    lastFileHandle = nil
+end
+
 -- exports
 GT.COLORS = COLORS
 GT.DEFAULT_COLOR = DEFAULT_COLOR

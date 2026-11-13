@@ -6,11 +6,6 @@ local SOUNDS = GT.SOUNDS
 local nodes = GT.nodes
 local spawnBySid = GT.spawnBySid
 
--- hud = the minimap HUD module's settings (HUD.lua); without this entry SanitizeDB would wipe them
--- _otherRealms = timers of your other realms, parked while you play this one (GT.MigrateRealm)
--- _dbVersion   = layout of the saved data (see DB_VERSION)
-local RESERVED = { _cfg = true, _enabled = true, _spawns = true, _spawnNext = true, _ui = true, hud = true,
-    _otherRealms = true, _dbVersion = true, _zoneYield = true }
 local DB_VERSION = 3          -- 1 = before realm tagging, 2 = timers carry their realm, 3 = the realm tag also carries Hardcore
 local STASH_MAX_AGE = 6 * 3600   -- parked timers older than this are long expired: dropped
 
@@ -115,6 +110,14 @@ local function InitCfg()
     c.miniFadeAlpha = GT.Clamp(c.miniFadeAlpha, 0, 100, 30)        -- minimized bar: opacity while faded, percent
     if type(c.miniUrgencyColors) ~= "boolean" then c.miniUrgencyColors = true end -- minimized bar: white / yellow / red progress bar
     if type(c.miniAlwaysShow) ~= "boolean" then c.miniAlwaysShow = true end        -- minimized bar: open by itself when the addon loads
+    -- minimized bar: fps, home latency and world latency, one switch each (the old single switch miniPerf carries over)
+    local perfWas = c.miniPerf ~= false
+    if type(c.miniFps) ~= "boolean" then c.miniFps = perfWas end
+    if type(c.miniHomePing) ~= "boolean" then c.miniHomePing = perfWas end
+    if type(c.miniWorldPing) ~= "boolean" then c.miniWorldPing = perfWas end
+    c.miniPerf = nil
+    if type(c.bagWarn) ~= "boolean" then c.bagWarn = true end                      -- alert + red chip when the bags are nearly full
+    c.bagWarnSlots = GT.Clamp(c.bagWarnSlots, 1, 30, 5)                            -- ... at this many free slots or fewer
     if c.showSpawns == nil then c.showSpawns = false end
     -- speed is a divisor ("Leave now" = distance / speed, route costs): 0 or less would make every alert fire at once
     c.speed = GT.Clamp(c.speed, 1, 40, 11)                 -- yards per second
@@ -151,7 +154,13 @@ local function InitCfg()
             c.timers[key] = nil                              -- zero, negative, NaN or text: back to the default
         end
         if not COLORS[c.colors[key] or 0] then c.colors[key] = DEFAULT_COLOR[key] or 1 end
-        if not SOUNDS[c.sounds[key] or 0] then c.sounds[key] = 7 end
+        local sv = c.sounds[key] or 0
+        local media = type(sv) == "string" and sv:match("^file:(.+)$")
+        local listed = false
+        if media and GT.SoundList then
+            for _, n in ipairs(GT.SoundList()) do if n == media then listed = true end end
+        end
+        if not GT.SoundEntry(sv) or (media and GT.SoundList and not listed) then c.sounds[key] = 7 end
         if type(c.learn[key]) ~= "table" then c.learn[key] = {} end
         if type(c.learnZone[key]) ~= "table" then c.learnZone[key] = {} end
     end
@@ -310,6 +319,7 @@ function GT.SanitizeDB()
                 if n._hasAlerted ~= true then n._hasAlerted = nil end
                 if n._leaveAlerted ~= true then n._leaveAlerted = nil end
                 if n._soundDone ~= true then n._soundDone = nil end
+                if n.taken ~= true then n.taken = nil end              -- found empty: someone else took it (Learn.lua MarkEmpty)
             end
         end
     end
@@ -444,14 +454,14 @@ end
 -- type becoming ready together (or spots passed one after another) do not stack up as a "loop".
 local soundAt = {}
 function GT.PlayHerbSound(key, throttle)
-    local s = SOUNDS[GT.cfg().sounds[key] or 1]
-    if not (s and s.id ~= 0) then return false end
+    local s = GT.SoundEntry(GT.cfg().sounds[key] or 1)
+    if not (s and (s.file or s.id ~= 0)) then return false end
     if throttle then
         local t = GetTime()
         if t - (soundAt[key] or -999) < 20 then return false end
         soundAt[key] = t
     end
-    pcall(PlaySound, s.id, "Master")
+    GT.PlaySoundEntry(s)
     return true
 end
 

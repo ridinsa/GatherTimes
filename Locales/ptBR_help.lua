@@ -37,7 +37,7 @@ Transforma o minimapa real em um mapa grande e transparente que ocupa a tela, co
 - Perfis: salve várias aparências, alterne entre elas ou exclua. Os perfis são compartilhados por todos os personagens; cada personagem guarda o próprio.
 - Redefinir perfil restaura os padrões.]]
 
-T.credits = H .. "GatherTimes 0.24.4" .. E .. [[
+T.credits = H .. "GatherTimes 0.24.7" .. E .. [[
 
 Autor: miRidinsa
 Site: https://github.com/ridinsa/
@@ -87,6 +87,8 @@ Acompanha quando ervas e minérios reaparecem na zona em que você está, lembra
 - Arraste a barra de título para mover a janela. O título mostra a zona em que você está.
 - O botão ? na barra de título abre esta ajuda.
 - O botão - na barra de título minimiza a janela para uma barra fina ao longo do topo da tela. Clique direito para as opções de minimizar. Na barra: a lista de itens, um chip por grupo, o ouro da sessão e o botão "+", que devolve a janela. Dois cliques direitos no ouro para zerar a sessão (o resumo é impresso antes no chat).
+- Botão XP (na barra): mostra o XP do herói e do mascote em uma linha no lugar dos timers: batalhas até o nível, XP por hora, tempo até o nível, cronômetro da batalha e o último ganho. Clique de novo, ou escolha um item na lista, para voltar. O tempo parado por mais de 2 minutos não conta no XP por hora (configurações de minimizar > XP > Ignorar tempo ocioso). Passe o mouse sobre o botão para ver o histórico de sessões: data, zona principal, XP por hora e ouro por hora das últimas sessões (10 guardadas por personagem, 5 listadas), com uma linha da melhor sessão. Uma sessão termina com /gt xp reset ou no próximo login após mais de 10 minutos; um /reload a continua.
+- Meta (configurações de minimizar > Goals): campos para ouro (a saquear nesta sessão), nível, habilidade (mining 300, herb 225) e horas (o tempo que você se dá). Enter para definir, vazio para limpar. /gt xp goal level 40 ou /gt xp goal 500g faz o mesmo pelo chat. Uma faixa fina na borda inferior da barra vai enchendo conforme você avança (duas ou três metas a dividem); a linha de XP mostra a porcentagem e o tempo restante no ritmo desta sessão, e ao alcançar a meta aparecem uma vez uma mensagem e um som. Com horas definidas, a meta fica laranja quando o tempo está curto e vermelha quando você está atrasado. /gt xp goal off limpa todas as metas; uma meta alcançada é limpa no próximo login.
 
 ]]
 
@@ -191,6 +193,7 @@ T.cmds = H .. "Comandos slash" .. E .. [[
 /gt profile start | stop | report - perfila o laço dos timers
 /gt hud - minimapa HUD (veja abaixo)
 /gt min - minimiza para a barra, ou traz a janela de volta
+/gt xp - modo XP na barra minimizada (também: /gt xp reset, /gt xp session, /gt xp history, /gt xp goal level 40, /gt xp goal 500g, /gt xp goal off)
 /gt dock - a barra empurra para baixo os quadros superiores do jogo (ligado) ou só os cobre (desligado)
 /gt export - mostra os seus próprios nós como texto para compartilhar
 /gt import - importa nós do texto de um amigo

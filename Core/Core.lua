@@ -44,7 +44,7 @@ SlashCmdList["GATHERTIMES"] = function(msg)
             if GT.BarDock then GT.BarDock.Sync() end
         end
     elseif arg == "xp" then
-        -- /gt xp : turn XP mode on or off (the bar shows the XP line).  /gt xp reset | /gt xp session  (UI\MiniXP.lua)
+        -- /gt xp : turn XP mode on or off (the bar shows the XP line).  /gt xp reset | session | goal ... | history  (UI\MiniXP.lua)
         if GT.MiniXP then GT.MiniXP.Slash((msg or ""):match("^%s*%S+%s*(.*)$") or "") end
     elseif arg == "gfx" then
         -- /gt gfx : list the graphics settings the quality slider uses and their values (Core\\Graphics.lua)
@@ -90,6 +90,7 @@ SlashCmdList["GATHERTIMES"] = function(msg)
         GT.cprint(GT.TR("/gt yield  (zone loot totals)   /gt yield current  (current zone only)"))
         GT.cprint(GT.TR("/gt hud  (minimap HUD, /gt hud help)"))
         GT.cprint(GT.TR("/gt xp  (XP mode on the minimized bar)   /gt xp reset   /gt xp session"))
+        GT.cprint("/gt xp goal level 40   /gt xp goal 500g   /gt xp goal off   /gt xp history")
         GT.cprint(GT.TR("/gt min  (shrink the window to a top bar, or bring it back)   /gt dock  (bar pushes the game frames down: on / off)"))
         GT.cprint(GT.TR("/gt export   /gt import  (share your own spots with a friend)   /gt report  (debug report)"))
     end

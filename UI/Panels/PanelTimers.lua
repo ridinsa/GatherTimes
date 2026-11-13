@@ -111,8 +111,10 @@ local function NextText()
         local g = GT.ComputeGroups(rt.key, gsp.mapID).of[gsp]
         if g then tag = " [G" .. g .. "]" end
     end
+    local status = rt.kind == "spawn" and GT.TR("no timer yet") or GT.TargetStatus(rt)
+    if gsp and GT.ContestedPenalty(gsp) >= 15 then status = status .. " (" .. GT.TR("often taken") .. ")" end   -- 25 % or more found taken
     return GT.TRF("Next: %s%s - %s - %d yd",
-        GT.nodes[rt.key].label, tag, rt.kind == "spawn" and GT.TR("no timer yet") or GT.TargetStatus(rt), math.floor(rt.dist or 0))
+        GT.nodes[rt.key].label, tag, status, math.floor(rt.dist or 0))
 end
 
 -- keep the stats box short: first lines + the Total line

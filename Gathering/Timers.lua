@@ -96,8 +96,8 @@ end
 local function TimerLine(nodeDef, n, now)
     local l = nodeDef.timer - (now - n.time)
     if l <= 0 then return string.format("%s |cff00ff00READY|r", nodeDef.prefix) end
-    return string.format("%s %s%d:%02d", nodeDef.prefix, n.est and "~" or "",
-        math.floor(l / 60), math.floor(l % 60))
+    return string.format("%s %s%d:%02d%s", nodeDef.prefix, n.est and "~" or "",
+        math.floor(l / 60), math.floor(l % 60), n.taken and (" |cffff9933" .. GT.TR("taken") .. "|r") or "")
 end
 
 local function ProcessNode(nodeKey, nodeDef, list, i, now, curMap)
@@ -129,7 +129,7 @@ local function ProcessNode(nodeKey, nodeDef, list, i, now, curMap)
             if GT.CooldownOK("leave", nodeKey, node, 240) then     -- once per group
             UI.lastLeave = now
             -- the "leave now" ping only plays for node types that have a sound set (not "None")
-            local snd = GT.SOUNDS[c.sounds[nodeKey] or 1]
+            local snd = GT.SoundEntry(c.sounds[nodeKey] or 1)
             if snd and snd.id ~= 0 and not node.est and GT.AfterLoginOK() and d <= c.chimeRange then pcall(PlaySound, 3175, "Master") end
             if c.screenAlert then
                 local col = GT.Col(nodeKey)

@@ -49,7 +49,7 @@ local function LoadedSkinAddons()
 end
 
 local function SkinScanEnabled()
-    return (HUD.root and HUD.root.deepScan) or #LoadedSkinAddons() > 0
+    return (HUD.root and HUD.root.deepScan and HUD.PerfLevel() == 0) or #LoadedSkinAddons() > 0   -- deep scan is off in Balanced / Lowest
 end
 
 -- Re-hide anything we manage if another addon shows it while the HUD is up.
@@ -243,7 +243,7 @@ function HUD.SkinSweep(dt)
         return
     end
     sweepAcc = sweepAcc + (dt or 0)
-    if sweepAcc < 0.25 then return end
+    if sweepAcc < 0.25 * HUD.PerfSlow() then return end
     sweepFull = sweepFull + sweepAcc
     sweepAcc = 0
     local count = (Minimap:GetNumChildren() or 0) * 1000 + (Minimap:GetNumRegions() or 0)
@@ -474,7 +474,7 @@ end
 
 local function WatcherTick(dt)
     watcherAcc = watcherAcc + dt
-    if watcherAcc < watcherWait then return end
+    if watcherAcc < watcherWait * HUD.PerfSlow() then return end
     watcherAcc = 0
     if HUD.IsActive() or not (HUD.db and HUD.db.tracking) then watcherWait = 0.5; return end
     if HUD.UseOwnIdle() then

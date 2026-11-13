@@ -1,13 +1,14 @@
 -- MiniBar.lua : the "minimized" bar.  The "-" button in the main window's title bar hides the window and shows
--- this bar instead: one full-width line docked at the top of the screen, like Titan Panel.  While it is shown the
--- game's top frames are moved down under it (UI\BarDock.lua); when the window comes back they return to normal.
+-- this bar instead: one full-width line docked at the top of the screen, like Titan Panel, with a smaller panel
+-- centered directly below it for FPS and ping.  While they are shown the game's top frames are moved down
+-- under both (UI\BarDock.lua); when the window comes back they return to normal.
 -- Design: on the left a dropdown to pick the item (same as the main window), then a chip per group (same data and order as the table):
 --   [|Copper G1   Ready ]  [|Copper G2   Waiting 3:41]  [|Tin G1   Idle]
 -- a coloured edge in the item's colour, the group, its status and timer, and a thin bar along the bottom that is
 -- full while the group is ready and drains as the respawn gets closer.  On the right, aligned to the right edge:
--- the bags (while one item is picked) and the session gold, then the "+" button.  Chips that do not fit are
+-- the bags (while one item is picked) and the session gold, then the red "x" button.  Chips that do not fit are
 -- replaced by "+N more".  The chips all have the same fixed width (sized for the current font style and size; no
--- shrinking or clipping of the text).  "+" or a right-click brings the window back.
+-- shrinking or clipping of the text).  A right-click on the bar brings the main window back (GT:OpenMainFrame).
 -- Look options (right-click the "-" button > Minimize settings):
 --   * bar size (ui.barScale) and background opacity (cfg miniBgAlpha, percent; the bar and chip backgrounds only, text stays solid)
 --   * auto-fade: fade the whole bar while in combat (miniFadeCombat) and / or while the mouse is not over it (miniFadeMouse)
@@ -25,12 +26,14 @@ local DD_W, DD_H = 120, 20   -- item dropdown on the left (same choices as the m
 local XP_BTN_W = 30         -- the "XP" button right after the dropdown (UI\MiniXP.lua)
 local LEAD = 6 + DD_W + 4 + XP_BTN_W + 10   -- where the chips start: padding + dropdown + XP button + a little air
 local PAD = 6               -- left padding
-local BTN_W = 18            -- the restore button
+local BTN_W = 18            -- the red "x" button
 local EDGE_W = 3            -- coloured edge on the left of a chip
 local PROG_H = 2            -- progress bar along the bottom of a chip
 local TEXT_PAD, MID_GAP = 6, 14
+local PERF_PAD = 12
 local IN_GAP = 5            -- space between the group name and its status inside a chip (was MID_GAP)
-local MAX_ITEMS = 24        -- chips considered; the rest is summed up as "+N more"
+local MAX_ITEMS = 60        -- chips considered (paged with the "<" ">" buttons when they do not fit on the bar)
+local PAGE_BTN_W = 16       -- the "<" / ">" page buttons next to "+N more"
 local BLINK_SECS = 15        -- a chip starts blinking when its timer is at or below this many seconds (cfg: miniBlinkSecs, 0 = off)
 local FAST_SECS = 5          -- ... and blinks faster in the last few seconds
 local YELLOW_SECS = 60       -- urgency colours: the progress bar turns yellow at or below this many seconds ...
@@ -170,7 +173,7 @@ function GT.GroupNodeTimers(key, gi, mapID)
     for _, node in ipairs(GatherTimesDB[key]) do
         if node._left and node.mapID == mapID then
             local sp = GT.SpawnOfNode(key, node)
-            if sp and inGroup[sp] then out[#out + 1] = { left = node._left, est = node.est, time = node.time or 0 } end
+            if sp and inGroup[sp] then out[#out + 1] = { left = node._left, est = node.est, taken = node.taken, time = node.time or 0 } end
         end
     end
     -- oldest loot first
@@ -195,7 +198,7 @@ local function ShowChipTip(owner, refresh)
             local text
             if t.left <= 0 then text = GT.TR("Ready")
             else text = (t.est and "~" or "") .. GT.FormatMmss(t.left) end
-            tip:SetLineTexts(i + 1, GT.TRF("Looted %s", date("%H:%M", t.time)), text)
+            tip:SetLineTexts(i + 1, GT.TRF(t.taken and "Taken by someone %s" or "Looted %s", date("%H:%M", t.time)), text)
         end
         tip:Show()
         return
@@ -208,7 +211,8 @@ local function ShowChipTip(owner, refresh)
         local text
         if t.left <= 0 then text = GT.TR("Ready")
         else text = (t.est and "~" or "") .. GT.FormatMmss(t.left) end
-        tip:AddDoubleLine(GT.TRF("Looted %s", date("%H:%M", t.time)), text, 1, 1, 1, 1, 1, 1)
+        tip:AddDoubleLine(GT.TRF(t.taken and "Taken by someone %s" or "Looted %s", date("%H:%M", t.time)), text,
+            1, t.taken and 0.6 or 1, t.taken and 0.2 or 1, 1, 1, 1)
     end
     owner.tipShape = shape
     tip:Show()
@@ -227,6 +231,7 @@ local function PaintChipBackgrounds(f)
     -- chips were 0.9 when the bar background was 0.95: scale them with the slider (100 % = 0.95)
     local chipA = math.min(1, 0.9 * a / 0.95)
     for _, chip in ipairs(f.chips or {}) do chip.bg:SetVertexColor(c[1], c[2], c[3], chipA) end
+    if f.bagChip then f.bagChip.bg:SetVertexColor(c[1], c[2], c[3], chipA) end
 end
 
 -- Bar background: the skin paints the frame with colour alpha * gtSkinAlpha, so only that factor is changed here.
@@ -237,8 +242,24 @@ local function PaintBarBackground(f)
     f.gtSkinAlpha = a / 0.95                     -- skin bg alpha is ~0.95 (0.98 on some skins): 100 % = the skin's own look
     if GT.SkinFrame then GT.SkinFrame(f, "bg") end
     local br, bg, bb = unpack((GT.colors and GT.colors.border) or { 0, 0, 0, 1 })
+    f.gtBorderAlpha = math.min(1, a)             -- kept, so a skin repaint does not bring the solid border back
     f:SetBackdropBorderColor(br, bg, bb, math.min(1, a))
+    -- the item dropdown, XP, "<" / ">" and "x" buttons follow the same opacity (their text stays solid)
+    for _, b in ipairs({ f.dropdown, f.xpBtn, f.bagsBtn, f.pagePrev, f.pageNext, f.closeBtn }) do
+        if b then
+            b.gtSkinAlpha = a / 0.95
+            b.gtBorderAlpha = math.min(1, a)
+            if GT.SkinFrame then GT.SkinFrame(b, "button") end
+        end
+    end
     PaintChipBackgrounds(f)
+    if f.secondary then
+        f.secondary.gtSkinAlpha = 0
+        f.secondary.gtBorderAlpha = 0
+        if GT.SkinFrame then GT.SkinFrame(f.secondary, "bg") end
+        f.secondary:SetBackdropColor(0, 0, 0, 0)
+        f.secondary:SetBackdropBorderColor(br, bg, bb, 0)
+    end
 end
 
 function GT:ApplyBarBackground() PaintBarBackground(self.bar) end
@@ -275,10 +296,17 @@ function GT:ApplyBarFade()
     f:SetAlpha(t)
 end
 
+-- Right-click on the bar: bring the main window back (nothing else opens; the Minimize settings stay on the right-click of
+-- the "-" button in the main window's title bar).
+function GT:OpenMainFrame()
+    if self.main and not self.main:IsShown() then self:SetMinimized(false) end
+    if self.Tip then self.Tip:Hide() end
+end
+
 local function NewChip(f)
     local chip = CreateFrame("Frame", nil, f)
     chip:SetHeight(CELL_H)
-    -- hover: the chip tooltip (option miniChipTip); right-click still restores the main window as on the bar
+    -- hover: the chip tooltip (option miniChipTip); right-click opens the main window as on the bar
     chip:EnableMouse(true)
     chip:SetScript("OnEnter", function(s)
         s.hovered = true
@@ -289,7 +317,7 @@ local function NewChip(f)
         GT.Tip:Hide()
     end)
     chip:SetScript("OnMouseUp", function(_, button)
-        if button == "RightButton" then GT:SetMinimized(false) end
+        if button == "RightButton" then GT:OpenMainFrame() end
     end)
 
     chip.bg = chip:CreateTexture(nil, "BACKGROUND")
@@ -329,6 +357,68 @@ local function NewChip(f)
 end
 
 -- natural width of a label (the width is cleared first, so the measure is the text itself)
+-- latency colour: under 300 ms green, under 500 yellow, 500 and over red
+local function PingColor(ms)
+    if ms < 300 then return "|cff00ff00" end
+    if ms < 500 then return "|cffffff00" end
+    return "|cffff4040"
+end
+
+-- sound played when a shown ping turns red: the file picked in Minimize settings (default: the first sound in the list)
+local SOUND_DIR = "Interface\\AddOns\\GatherTimes\\Media\\"
+local function PingSoundPath()
+    local list = GT.SoundList and GT.SoundList() or {}
+    local want = GT.cfg and GT.cfg().miniPingSoundFile
+    local name = list[1]
+    for _, n in ipairs(list) do if n == want then name = n end end
+    if not name then return nil end
+    return SOUND_DIR .. name
+end
+
+-- only one ping sound at a time: starting a new one stops the one still playing (so they do not stack)
+local lastPingHandle
+function GT.PlayPingSound(path)
+    if not path then return end
+    if lastPingHandle then pcall(StopSound, lastPingHandle) end
+    local ok, willPlay, handle = pcall(PlaySoundFile, path, "Master")
+    lastPingHandle = (ok and willPlay) and handle or nil
+end
+
+-- stop the ping sound that is playing (used when the option is unticked)
+function GT.StopPingSound()
+    if lastPingHandle then pcall(StopSound, lastPingHandle) end
+    lastPingHandle = nil
+end
+
+-- "fps:60 | H:45 | W:60": frame rate, home and world latency in ms. Each part has its own switch
+-- (options miniFps, miniHomePing, miniWorldPing, all on by default) and only the switched-on parts are shown.
+-- Returns the text and whether it should blink (a shown latency is 500 ms or more).
+local function PerfText()
+    local c = GT.cfg and GT.cfg()
+    if not c then return nil end
+    local wantFps, wantHome, wantWorld = c.miniFps ~= false, c.miniHomePing ~= false, c.miniWorldPing ~= false
+    if not (wantFps or wantHome or wantWorld) then return nil end
+    local home, world = 0, 0
+    if wantHome or wantWorld then
+        local ok, _, _, h, w = pcall(GetNetStats)
+        if ok and type(h) == "number" and type(w) == "number" then home, world = h, w end
+    end
+    local parts, alarm = {}, false
+    if wantFps then
+        local fps = (GetFramerate and GetFramerate()) or 0
+        parts[#parts + 1] = string.format("fps:%d", math.floor(fps + 0.5))
+    end
+    if wantHome then
+        parts[#parts + 1] = string.format("H:%s%d|r", PingColor(home), home)
+        if home >= 500 then alarm = true end
+    end
+    if wantWorld then
+        parts[#parts + 1] = string.format("W:%s%d|r", PingColor(world), world)
+        if world >= 500 then alarm = true end
+    end
+    return table.concat(parts, " | "), alarm
+end
+
 local function Measure(fs, text)
     -- back to the full-size font first: an earlier fit may have shrunk it, and a measure taken at the shrunk size
     -- would make the chip too narrow for the full-size text, so it would stay shrunk (or cut) for good
@@ -365,6 +455,8 @@ local function ShowSummaryTip(owner)
             tip:AddLine(line, 1, 1, 1, #line > 48)
         end
     end
+    local goal = GT.MiniXP and GT.MiniXP.GoalSummary and GT.MiniXP.GoalSummary()
+    if goal then tip:AddLine(goal) end
     if GetTime() - resetArmed <= RESET_CONFIRM then
         tip:AddLine(GT.TR("Right-click again to reset session"), 1, 0.3, 0.3)
     else
@@ -467,8 +559,8 @@ local function Layout(f, n, total, bags, gold, iconId, idleHidden)
     -- while the strip is open the arrow turns to ">" (click to close); the numbers are in the strip
     if bags and f.bagsOpen then bags = ">" end
 
-    -- right side, from the right edge: red "x", "+" button, gold, bags, then the strip (when open)
-    local right = 3 + BTN_W + 2 + BTN_W + 8
+    -- right side, from the right edge: red "x", gold, bags, then the strip (when open)
+    local right = 3 + BTN_W + 8
     local goldW = gold and Measure(f.gold, GOLD .. gold .. "|r") or 0
     f.gold:SetShown(gold ~= nil)
     if gold then
@@ -520,6 +612,61 @@ local function Layout(f, n, total, bags, gold, iconId, idleHidden)
         right = stripEdge + stripW
     end
 
+    -- fps and latency are centered in the second bar and do not take space away from the chips.
+    local perf = f.perfText
+    local perfText, perfAlarm
+    if perf then perfText, perfAlarm = PerfText() end
+    f.perfBlink = perfAlarm and true or false
+    -- while a shown ping is red, the sound plays right away and then repeats after the delay set on the Pings tab
+    -- (default 10 s). The bar refreshes once a second, so a repeat can land up to 1 s later.
+    if perfAlarm and GT.cfg and GT.cfg().miniPingSound == true then
+        local now = GetTime()
+        local delay = GT.cfg().miniPingDelay or 10
+        if now - (f.perfSoundAt or -100) >= delay then
+            f.perfSoundAt = now
+            GT.PlayPingSound(PingSoundPath())
+        end
+    end
+    if perfText then
+        perf:ClearAllPoints()
+        perf:SetPoint("CENTER", f.secondary, "CENTER")
+        local w = math.ceil(Measure(perf, perfText))
+        perf:SetText(perfText)
+        perf:SetWidth(w)
+        f.secondary:SetWidth(w + PERF_PAD)
+        local wasHidden = not f.secondary:IsShown()
+        f.secondary:Show()
+        perf:Show()
+        if wasHidden and GT.BarDock then GT.BarDock.Sync() end
+    elseif perf then
+        perf:Hide()
+        if f.secondary:IsShown() then
+            f.secondary:Hide()
+            if GT.BarDock then GT.BarDock.Sync() end
+        end
+    end
+
+    -- bag space chip: red "Bags: N" while the free slots are at or below the limit (Minimize settings > Chips)
+    local bagChip = f.bagChip
+    local bagFree = GT.BagWarning and GT.BagWarning()
+    if bagChip and bagFree then
+        local text = GT.TRF("Bags: %d", bagFree)
+        bagChip.free = bagFree
+        bagChip.text:SetText(text)
+        local w = math.ceil(EDGE_W + TEXT_PAD + Measure(bagChip.text, text) + TEXT_PAD)
+        bagChip:SetSize(w, CELL_H)
+        bagChip:ClearAllPoints()
+        bagChip:SetPoint("RIGHT", f, "RIGHT", -(right + MID_GAP), 0)
+        right = right + MID_GAP + w
+        bagChip:Show()
+    elseif bagChip then
+        bagChip:Hide()
+        if GT.Tip.owner == bagChip then GT.Tip:Hide() end
+    end
+
+    -- goal progress: a thin strip along the bottom edge, in the gathering view and in XP mode (UI\MiniXP.lua)
+    if GT.MiniXP and GT.MiniXP.UpdateGoalBar then pcall(GT.MiniXP.UpdateGoalBar, f) end
+
     -- the XP button shows whether XP mode is on; XP mode replaces the chips with one line of XP information
     -- the XP button: shown or hidden by "Show XP button" (Minimize settings > XP); hiding it also turns XP mode off
     local btnOn = (not GT.MiniXP) or GT.MiniXP.ButtonShown()
@@ -532,6 +679,7 @@ local function Layout(f, n, total, bags, gold, iconId, idleHidden)
     if xpOn then
         for _, chip in ipairs(f.chips) do chip.blink = nil; chip:Hide() end
         f.note:Hide()
+        f.pagePrev:Hide(); f.pageNext:Hide()
         local lineW = availW - lead - right - MID_GAP
         f.xpLine:ClearAllPoints()
         f.xpLine:SetPoint("LEFT", f, "LEFT", lead + 2, 0)
@@ -589,21 +737,33 @@ local function Layout(f, n, total, bags, gold, iconId, idleHidden)
     end
     local cellW = math.ceil(EDGE_W + TEXT_PAD + labelW + IN_GAP + statusW + TEXT_PAD)
 
-    -- how many chips fit left of the right-hand info (all chips are cellW wide, GAP apart)
+    -- how many chips fit left of the right-hand info (all chips are cellW wide, GAP apart).  When not all of them
+    -- fit, the chips are split into pages: "+N more" and the "<" ">" buttons follow the chips, and the buttons
+    -- slide to the previous / next page (they wrap around).
     local room = availW - lead - right - MID_GAP
-    local noteW = Measure(f.note, "+99 more")
-    local shown = 0
-    for k = n, 1, -1 do
-        local noteRoom = (k < total) and (GAP + noteW + 4) or 0
-        if k * cellW + (k - 1) * GAP + noteRoom <= room then shown = k; break end
+    local noteW = Measure(f.note, "+99 more (9/9)")
+    local pagerW = 4 + PAGE_BTN_W + 2 + PAGE_BTN_W                -- gap + "<" + gap + ">"
+    local function Fit(k) return k * cellW + (k - 1) * GAP end
+    local perPage, pages = n, 1
+    if n > 0 and (n < total or Fit(n) > room) then
+        perPage = 0
+        for k = n, 1, -1 do
+            if Fit(k) + GAP + noteW + pagerW + 4 <= room then perPage = k; break end
+        end
+        if perPage == 0 and cellW <= room then perPage = 1 end    -- always keep one chip when it fits at all
+        if perPage == 0 then perPage = n end
+        pages = math.max(1, math.ceil(n / perPage))
     end
-    if shown == 0 and n > 0 and cellW <= room then shown = 1 end   -- always keep one chip when it fits at all
+    if (f.page or 1) < 1 then f.page = pages end          -- "<" on the first page: wrap to the last
+    if (f.page or 1) > pages then f.page = 1 end          -- ">" on the last page (or fewer pages now): first page
+    local base = ((f.page or 1) - 1) * perPage                      -- records before this page
+    local shown = math.max(0, math.min(perPage, n - base))
 
     local y = -(BAR_H - CELL_H) / 2
     local statusX = cellW - TEXT_PAD - statusW        -- left edge of the status column: the same in every chip
     for i, chip in ipairs(f.chips) do
         if i <= shown then
-            local r = recs[i]
+            local r = recs[base + i]
             chip.rec = r
             chip:ClearAllPoints()
             chip:SetPoint("TOPLEFT", f, "TOPLEFT", lead + (i - 1) * (cellW + GAP), y)
@@ -647,21 +807,37 @@ local function Layout(f, n, total, bags, gold, iconId, idleHidden)
         end
     end
 
-    -- the note: nothing learned here, or the groups that did not fit
+    -- the note: nothing learned here, or the groups that did not fit (with the page buttons)
     f.note:ClearAllPoints()
+    f.pagePrev:Hide(); f.pageNext:Hide()
     if total == 0 then
+        f.note:SetJustifyH("LEFT")
         f.note:SetPoint("LEFT", f, "LEFT", lead + 2, 0)
         f.note:SetWidth(math.max(20, room))
         -- groups exist but "hide idle groups" left none: say so instead of "no spots learned"
         local msg = (idleHidden or 0) > 0 and "No groups running or ready." or "No spots learned in this zone yet - gather something."
-        f.note:SetText(GREY .. GT.TR(msg) .. "|r")
+        f.note:SetText(GREY .. GT.TR(msg) .. "  " .. GT.TR("Right-click the bar to open the main frame.") .. "|r")
         f.note:Show()
     elseif shown < total then
-        local x = lead + (shown > 0 and (shown * cellW + (shown - 1) * GAP + GAP) or 0) + 2
-        f.note:SetPoint("LEFT", f, "LEFT", x, 0)
+        -- fixed place: the "<" ">" buttons sit at the right end of the chip area and "+N more" right before them,
+        -- so they stay where they are whatever the number of chips on the page
+        local edge = right + MID_GAP
+        f.note:SetJustifyH("RIGHT")
         f.note:SetWidth(0)
-        f.note:SetText(GREY .. GT.TRF("+%d more", total - shown) .. "|r")
+        local text = GT.TRF("+%d more", total - shown)
+        if pages > 1 then text = text .. "  " .. (f.page or 1) .. "/" .. pages end
+        f.note:SetText(GREY .. text .. "|r")
         f.note:Show()
+        if pages > 1 then
+            f.pageNext:ClearAllPoints()
+            f.pageNext:SetPoint("RIGHT", f, "RIGHT", -edge, 0)
+            f.pagePrev:ClearAllPoints()
+            f.pagePrev:SetPoint("RIGHT", f.pageNext, "LEFT", -2, 0)
+            f.note:SetPoint("RIGHT", f.pagePrev, "LEFT", -4, 0)
+            f.pagePrev:Show(); f.pageNext:Show()
+        else
+            f.note:SetPoint("RIGHT", f, "RIGHT", -edge, 0)
+        end
     else
         f.note:Hide()
     end
@@ -715,6 +891,19 @@ function GT:CreateMiniBar()
     f:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", 0, 0)
     f:SetHeight(BAR_H)
 
+    -- Second panel: dynamically sized around FPS and ping, with the same height as the main bar.
+    -- As a child it follows the main bar's scale, visibility and fade automatically.
+    local secondary = self:CreateFlatFrame("GatherTimesBarSecondary", f, 1, BAR_H)
+    secondary:SetFrameStrata("DIALOG")
+    secondary:EnableMouse(false)
+    secondary:SetPoint("TOP", f, "BOTTOM", 0, 0)
+    f.secondary = secondary
+    secondary.perfText = GT.Font(secondary, nil, "OVERLAY", "GameFontHighlightSmall")
+    secondary.perfText:SetJustifyH("CENTER")
+    secondary.perfText:SetWordWrap(false)
+    secondary.perfText:Hide()
+    f.perfText = secondary.perfText
+
     -- item dropdown, before the first group
     f.dropdown = self:CreateDropdown(f, DD_W, DD_H, { GT.TR("All checked") }, function(index)
         GT:PickMainItem(index)
@@ -738,20 +927,34 @@ function GT:CreateMiniBar()
     f.note = GT.Font(f, nil, "OVERLAY", "GameFontDisableSmall")
     f.note:SetJustifyH("LEFT")
     f.note:SetWordWrap(false)
+    -- "<" / ">" next to "+N more": slide to the previous / next page of chips (wraps around)
+    f.page = 1
+    f.pagePrev = self:CreateFlatButton(f, "<", PAGE_BTN_W, BAG_BTN_H)
+    f.pageNext = self:CreateFlatButton(f, ">", PAGE_BTN_W, BAG_BTN_H)
+    f.pagePrev:SetScript("OnClick", function()
+        f.page = (f.page or 1) - 1
+        GT:UpdateMiniBar()
+    end)
+    f.pageNext:SetScript("OnClick", function()
+        f.page = (f.page or 1) + 1
+        GT:UpdateMiniBar()
+    end)
+    f.pagePrev:Hide(); f.pageNext:Hide()
     f.gold = GT.Font(f, nil, "OVERLAY", "GameFontNormalSmall")
     -- XP mode: all the hero / pet XP information in one line, in place of the chips (UI\MiniXP.lua)
     f.xpLine = GT.Font(f, nil, "OVERLAY", "GameFontHighlightSmall")
     f.xpLine:SetJustifyH("LEFT")
     f.xpLine:SetWordWrap(false)
     f.xpLine:Hide()
+
     f.gold:SetJustifyH("RIGHT")
     f.gold:SetWordWrap(false)
 
-    -- the "<" / ">" button: opens / closes the strip of every ticked item.  Right-click restores the window.
+    -- the "<" / ">" button: opens / closes the strip of every ticked item.  Right-click opens the main window.
     f.bagsBtn = self:CreateFlatButton(f, "<", 30, BAG_BTN_H)
     f.bagsBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     f.bagsBtn:SetScript("OnClick", function(_, button)
-        if button == "RightButton" then GT:SetMinimized(false) else GT:ToggleBagsStrip() end
+        if button == "RightButton" then GT:OpenMainFrame() else GT:ToggleBagsStrip() end
     end)
     f.bagsBtn:Hide()
 
@@ -760,6 +963,37 @@ function GT:CreateMiniBar()
     f.itemIcon:SetSize(ICON_SIZE, ICON_SIZE)
     f.itemIcon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
     f.itemIcon:Hide()
+
+    -- bag space chip (Layout shows it while the bags are nearly full): red edge, hover tip, right-click opens the main window
+    local bagChip = CreateFrame("Frame", nil, f)
+    bagChip:SetHeight(CELL_H)
+    bagChip:EnableMouse(true)
+    bagChip.bg = bagChip:CreateTexture(nil, "BACKGROUND")
+    bagChip.bg:SetAllPoints()
+    bagChip.bg:SetTexture(FLAT)
+    bagChip.edge = bagChip:CreateTexture(nil, "ARTWORK")
+    bagChip.edge:SetTexture(FLAT)
+    bagChip.edge:SetPoint("TOPLEFT"); bagChip.edge:SetPoint("BOTTOMLEFT")
+    bagChip.edge:SetWidth(EDGE_W)
+    bagChip.edge:SetVertexColor(1, 0.2, 0.2, 1)
+    bagChip.text = GT.Font(bagChip, nil, "OVERLAY", "GameFontHighlightSmall")
+    bagChip.text:SetPoint("LEFT", bagChip, "LEFT", EDGE_W + TEXT_PAD, 1)
+    bagChip.text:SetJustifyH("LEFT")
+    bagChip.text:SetWordWrap(false)
+    bagChip.text:SetTextColor(1, 0.35, 0.3)
+    bagChip:SetScript("OnEnter", function(s)
+        GT.Tip:SetOwner(s, "ANCHOR_BOTTOM")
+        GT.Tip:AddLine(GT.TR("Bag space"), 1, 0.82, 0)
+        GT.Tip:AddLine(GT.TRF("%d free slots", s.free or 0), 1, 1, 1)
+        GT.Tip:Show()
+    end)
+    bagChip:SetScript("OnLeave", function() GT.Tip:Hide() end)
+    bagChip:SetScript("OnMouseUp", function(_, button)
+        if button == "RightButton" then GT:OpenMainFrame() end
+    end)
+    pcall(GT.ApplyLangFont, bagChip)
+    bagChip:Hide()
+    f.bagChip = bagChip
 
     -- hover area over the gold text: shows the session summary tooltip
     local hit = CreateFrame("Frame", nil, f)
@@ -781,7 +1015,7 @@ function GT:CreateMiniBar()
     GT:RegisterSkinUpdater(function() PaintBarBackground(f) end)
     PaintBarBackground(f)
 
-    -- red "x" at the far right, after the "+": hides the bar (UI\MiniBar.lua GT:CloseBar)
+    -- red "x" at the far right: hides the bar (UI\MiniBar.lua GT:CloseBar)
     local closeBtn = self:CreateFlatButton(f, "x", BTN_W, BTN_W)
     closeBtn:SetPoint("RIGHT", f, "RIGHT", -3, 0)
     closeBtn:SetScript("OnClick", function() GT:CloseBar() end)
@@ -794,14 +1028,11 @@ function GT:CreateMiniBar()
     PaintCloseX()
     GT:RegisterSkinUpdater(PaintCloseX)
 
-    local restore = self:CreateFlatButton(f, "+", BTN_W, BTN_W)
-    restore:SetPoint("RIGHT", closeBtn, "LEFT", -2, 0)
-    restore:SetScript("OnClick", function() GT:SetMinimized(false) end)
-    f.restore = restore
+    PaintBarBackground(f)                          -- the "<" and "x" buttons exist now: give them the bar opacity too
 
-    -- right-click anywhere on the bar restores the window
+    -- right-click anywhere on the bar opens the main window (the note on an empty bar says so)
     f:SetScript("OnMouseUp", function(_, button)
-        if button == "RightButton" then GT:SetMinimized(false) end
+        if button == "RightButton" then GT:OpenMainFrame() end
     end)
 
     -- refresh once a second (the main window is hidden, so its own update loop is not running)
@@ -814,6 +1045,14 @@ function GT:CreateMiniBar()
                 local pulse = 0.5 + 0.5 * math.sin(t * (chip.fast and 12 or 6))   -- ~2 Hz, ~4 Hz in the last seconds
                 chip.glow:SetAlpha(0.12 + 0.38 * pulse)
                 chip.status:SetAlpha(0.4 + 0.6 * pulse)
+            end
+        end
+        -- the fps / latency text blinks while a latency is 500 ms or more
+        if s.perfText and s.perfText:IsShown() then
+            if s.perfBlink then
+                s.perfText:SetAlpha(0.3 + 0.7 * (0.5 + 0.5 * math.sin(t * 6)))
+            elseif s.perfText:GetAlpha() ~= 1 then
+                s.perfText:SetAlpha(1)
             end
         end
         StepFade(s, elapsed)                            -- auto-fade (combat / mouse away), smooth every frame
@@ -853,7 +1092,7 @@ function GT:CreateMiniBar()
     return f
 end
 
--- true: hide the main window and show the bar.  false: hide the bar and show the main window.
+-- true: hide the main window and show the bars.  false: hide the bars and show the main window.
 -- "Always show minimized panel" (PanelMinimize.lua).  On: the bar stays up whatever the main window and the other
 -- windows do.  Off: the bar appears only when the "-" button is clicked, and goes away when the window comes back.
 function GT:AlwaysShowBar()

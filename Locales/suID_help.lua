@@ -37,7 +37,7 @@ Ngarobah minimap asli jadi peta gedé transparan nu nutupan layar, kalawan pilih
 - Profil: simpen sababaraha tampilan, pindah atawa hapus. Profil dipaké bareng ku sakabéh karakter; unggal karakter nyimpen pilihanana sorangan.
 - Reset profil mulangkeun setélan baku.]]
 
-T.credits = H .. "GatherTimes 0.24.4" .. E .. [[
+T.credits = H .. "GatherTimes 0.24.7" .. E .. [[
 
 Nu nyieun: miRidinsa
 Website: https://github.com/ridinsa/
@@ -87,6 +87,8 @@ Ngalacak iraha suket jeung bijih muncul deui di zona anu anjeun asup, ngeling di
 - Séred bar judul pikeun mindahkeun jandela. Judulna mintonkeun zona anu anjeun asup.
 - Tombol ? dina bar judul muka pitulung ieu.
 - Tombol - dina bar judul ngaleutikan jandela jadi bar ipis di sapanjang luhur layar. Klik katuhu pikeun setélan leutikan. Dina bar: dropdown barang, hiji chip per grup, emas sési, sarta tombol "+" pikeun balikeun jandela. Klik katuhu dua kali kana emas pikeun ngareset sési (ringkesan dicitak heula ka obrolan).
+- Tombol XP (dina bar): nembongkeun XP hero jeung pet dina hiji baris ngagantikeun timer: tarung ka level, XP per jam, waktu ka level, timer tarung, jeung hasil panungtungan. Klik deui, atawa pilih item dina daptar, pikeun balik. Waktu diam leuwih ti 2 menit teu diitung dina XP per jam (setélan minimalkeun > XP > Cuekan waktu nganggur). Arahkeun kursor kana tombol pikeun riwayat sési: tanggal, zona utama, XP per jam jeung emas per jam tina sési panungtungan (10 disimpen per karakter, 5 dipidangkeun), jeung hiji baris sési pangalusna. Sési réngsé ku /gt xp reset atawa login saterusna sanggeus leuwih ti 10 menit; /reload neruskeunana.
+- Target (setélan minimalkeun > Goals): kotak pikeun emas (dikumpulkeun sési ieu), level, skill (mining 300, herb 225), jeung jam (waktu anu anjeun béré). Pencét Enter pikeun nyetél, kosongkeun pikeun mupus. /gt xp goal level 40 atawa /gt xp goal 500g sarua tina obrolan. Garis ipis di sisi handap bar kaeusi nalika anjeun ngadeukeutan (dua atawa tilu target babagi garis éta); baris XP nembongkeun persén jeung sésa waktu dina laju sési ieu, jeung pesen jeung sora muncul sakali nalika target kahontal. Lamun jam disetél, target jadi oranyeu lamun waktuna kandel jeung beureum lamun katinggaleun. /gt xp goal off mupus kabéh target; target anu geus kahontal dihapus dina login saterusna.
 
 ]]
 
@@ -191,6 +193,7 @@ T.cmds = H .. "Paréntah slash" .. E .. [[
 /gt profile start | stop | report - profilkeun loop timer
 /gt hud - minimap HUD (tingali handap)
 /gt min - leutikan jadi bar, atawa balikeun jandela
+/gt xp - mode XP dina bar anu dileutikan (ogé: /gt xp reset, /gt xp session, /gt xp history, /gt xp goal level 40, /gt xp goal 500g, /gt xp goal off)
 /gt dock - bar nyorong frame luhur kaulinan ka handap (hurung) atawa ngan nutupan (pareum)
 /gt export - tembongkeun titik anjeun salaku téks pikeun dibagikeun
 /gt import - impor titik tina téks babaturan

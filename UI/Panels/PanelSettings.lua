@@ -160,6 +160,32 @@ GT.panelBuilders.Settings = function(panel, content)
         end,
         "Choose how long a timer stays marked READY before it returns to idle.")
 
+    -- guild members and friends: a small pop-up on the right and a sound (UI\GuildPopup.lua). One row: on/off and the time.
+    Check(general, -306, "Friend/Guild Notifier",
+        function() return cfg().guildOnline == true end,
+        function(v) cfg().guildOnline = v end,
+        "On: a small pop-up on the right of the screen when a guild member or a friend comes online (gold, with a sound) or goes offline (red, with a sound). It hides by itself after the time on the button next to it. Clicking that button shows a demo.")
+    local secsBtn = Button(general, "", 96, 176, -306)
+    local SECS_STEPS = { 3, 6, 10, 20 }
+    local function SecsLabel()
+        secsBtn.label:SetText(GT.TRF("Show %d s", cfg().guildOnlineSecs or 6))
+    end
+    secsBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    AddOptionTip(secsBtn, "Show time", "Left click: the next time. Right click: the previous time. Each click shows a demo.")
+    secsBtn:SetScript("OnClick", function(_, button)
+        local cur = cfg().guildOnlineSecs or 6
+        local idx = 1
+        for i, v in ipairs(SECS_STEPS) do
+            if v == cur then idx = i end
+        end
+        local step = (button == "RightButton") and -1 or 1
+        idx = ((idx - 1 + step) % #SECS_STEPS) + 1
+        cfg().guildOnlineSecs = SECS_STEPS[idx]
+        SecsLabel()
+        if GT.GuildPopupDemo then GT.GuildPopupDemo() end     -- the demo runs on every click
+    end)
+    SecsLabel()
+
     ----------------------------------------------------------------- Display
     -- ONE size for all node text: running timers AND spot pins, on the minimap AND the world map
     Slider(display, 0, "Map text size (all nodes, minimap + world map): %s", 8, 24, 1,

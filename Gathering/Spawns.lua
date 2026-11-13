@@ -205,7 +205,10 @@ function GT.TargetStatus(t)
     if t.kind == "spawn" then return GT.TR("unchecked") end
     local left = nodes[t.key].timer - (GetServerTime() - t.ref.time)
     if left <= 0 then return "|cff00ff00" .. GT.TR("READY") .. "|r" end
-    return string.format("%d:%02d", math.floor(left / 60), math.floor(left % 60))
+    local text = string.format("%d:%02d", math.floor(left / 60), math.floor(left % 60))
+    -- the timer runs out before you get there: it is the better pick than a spot that is ready but further away
+    if t.eta and left <= t.eta then text = text .. " |cff00ff00" .. GT.TR("ready on arrival") .. "|r" end
+    return text
 end
 
 -- ============================================================

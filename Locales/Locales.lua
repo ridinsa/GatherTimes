@@ -160,7 +160,7 @@ end
 -- Safety net: a missing / damaged language table, a non-text translation or a translation whose %s / %d do not
 -- match the English text never raises an error - the English text is shown instead.
 function GT.TR(s)
-    if type(s) ~= "string" then return s end
+    if type(s) ~= "string" then return s == nil and "" or tostring(s) end
     local t = GT.locales[GT.TextLang()]
     if type(t) ~= "table" then return s end
     local r = t[s]
@@ -168,12 +168,45 @@ function GT.TR(s)
     return s
 end
 
+local function FormatTokens(fmt)
+    local tokens, i = {}, 1
+    while i <= #fmt do
+        if fmt:sub(i, i + 1) == "%%" then
+            tokens[#tokens + 1] = "%%"
+            i = i + 2
+        elseif fmt:sub(i, i) == "%" then
+            local token = fmt:sub(i):match("^%%[-+ #0]*%d*%.?%d*[cdiouxXeEfgGqs]")
+            if token then
+                tokens[#tokens + 1] = token
+                i = i + #token
+            else
+                tokens[#tokens + 1] = "%"
+                i = i + 1
+            end
+        else
+            i = i + 1
+        end
+    end
+    return tokens
+end
+
+local function SameFormatTokens(a, b)
+    local at, bt = FormatTokens(a), FormatTokens(b)
+    if #at ~= #bt then return false end
+    for i = 1, #at do
+        if at[i] ~= bt[i] then return false end
+    end
+    return true
+end
+
 function GT.TRF(fmt, ...)
-    local ok, r = pcall(string.format, GT.TR(fmt), ...)
+    local translated = GT.TR(fmt)
+    if type(fmt) == "string" and not SameFormatTokens(fmt, translated) then translated = fmt end
+    local ok, r = pcall(string.format, translated, ...)
     if ok then return r end
     ok, r = pcall(string.format, fmt, ...)                -- translated format is broken: use the English one
     if ok then return r end
-    return tostring(fmt)
+    return tostring(fmt or "")
 end
 
 -- "3 items, 2 groups, 5 spots": English needs singular / plural, Indonesian does not

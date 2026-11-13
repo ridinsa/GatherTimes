@@ -14,7 +14,8 @@ local function PrintHelp()
     Print("/gthud size <150-1400> | alpha <0-1> | zoom <0-5> | rotate")
     Print("/gthud ringunit px | yd | ring <radius in that unit, 0=off> | ring2 <radius> | ringcolor <r> <g> <b> <a> | ringcolor2 <r> <g> <b> <a> | ringthick <1-10> | ringseg <8-256>")
     Print("/gthud dirs | heading | arrow | hover | tracking | trackmode auto/own/stock | tracksize <20-80> | trackpos <x> <y> | addons | scan | mountfade | autogather | restore")
-    Print("/gthud eagle [on | off] | preview | size <150-1400> | zoom <0-5> | alpha <0-1> | rotate | ring | scale | nearest | hover   (map shown during Eagle Eye / Far Sight / Mind Vision)")
+    Print("/gthud eagle [on | off] | preview | size <150-1400> | zoom <0-5> | alpha <0-1> | rotate | scale | nearest | hover   (map shown during Eagle Eye / Far Sight / Mind Vision)")
+    Print("/gthud perf [full | balanced | lowest]   (performance level; /gthud lowspec = lowest)")
     Print("/gthud profile [name | delete <name>]   /gthud status | info | frames | skins [hide N | show N | mark | diff] | debug | reset")
 end
 
@@ -30,6 +31,7 @@ local function Status()
     Print(string.format("tracking %s (offset %d,%d)  hide addons %s  deep scan %s  mount fade %s  auto gather %s  restore on login %s",
         OnOff(db.tracking), db.trackingX, db.trackingY, OnOff(db.hideAddons), OnOff(HUD.root.deepScan),
         OnOff(db.mountFade), OnOff(db.autoGather), OnOff(HUD.root.restoreOnLogin)))
+    Print("performance level " .. HUD.PERF_LEVELS[HUD.PerfLevel()] .. "  suggest on low FPS " .. OnOff(HUD.root.perfSuggest))
 end
 
 local function Info()
@@ -427,7 +429,6 @@ function HUD.Slash(msg)
             if not v then return Print("Usage: /gthud eagle alpha <0-1>") end
             HUD.Set("eagleAlpha", Clamp(v, 0, 1)); Print(string.format("Eagle map alpha %.2f", db.eagleAlpha))
         elseif sub == "rotate" then Toggle("eagleRotate", "Eagle map rotates with the camera")
-        elseif sub == "ring" then Toggle("eagleRing", "Ring around the Eagle map")
         elseif sub == "scale" then Toggle("eagleScale", "Distance scale (yards) on the Eagle map")
         elseif sub == "nearest" then Toggle("eagleNearest", "Nearest node readout on the Eagle map")
         elseif sub == "hover" then Toggle("eagleHover", "Hover tooltips on the Eagle map")
@@ -461,7 +462,7 @@ function HUD.Slash(msg)
             HUD.Set("eagleMap", v and true or false)
             Print("Eagle Eye map " .. OnOff(db.eagleMap))
         else
-            Print("Usage: /gthud eagle [on|off] | preview | size <px> | zoom <0-5> | alpha <0-1> | rotate | ring | scale | nearest | hover | debug")
+            Print("Usage: /gthud eagle [on|off] | preview | size <px> | zoom <0-5> | alpha <0-1> | rotate | scale | nearest | hover | debug")
         end
         if HUD.Config then HUD.Config.Refresh() end
     elseif cmd == "mountfade" then Toggle("mountFade", "Hide HUD while mounted")
@@ -470,6 +471,12 @@ function HUD.Slash(msg)
         HUD.SetRoot("restoreOnLogin", not HUD.root.restoreOnLogin)
         Print("Restore HUD after /reload or login: " .. OnOff(HUD.root.restoreOnLogin))
         if HUD.Config then HUD.Config.Refresh() end
+    elseif cmd == "perf" or cmd == "lowspec" then
+        local want = cmd == "lowspec" and "lowest" or a
+        if want and want ~= "" then
+            if not HUD.SetPerfLevel(tostring(want)) then return Print("Usage: /gthud perf full | balanced | lowest") end
+        end
+        Print("Performance level: " .. HUD.PERF_LEVELS[HUD.PerfLevel()])
     elseif cmd == "config" or cmd == "options" then
         if HUD.Config and HUD.Config.Open then HUD.Config.Open() else Print("Settings window unavailable; use /gthud help") end
     elseif cmd == "profile" then ProfileCommand(args, raw)

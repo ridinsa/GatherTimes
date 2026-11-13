@@ -65,7 +65,12 @@ local function Push(name, value)
 end
 
 local function ApplyLevel(level)
-    for _, row in ipairs(PRESETS) do Push(row[1], row[2][level]) end
+    local applied = 0
+    for _, row in ipairs(PRESETS) do
+        if Push(row[1], row[2][level]) then applied = applied + 1 end
+    end
+    -- nothing was accepted (CVars locked, for example in combat): do not pretend the preset is on
+    if applied == 0 and #PRESETS > 0 then return false end
     -- remember what the game ended up with: "Off" later puts back only the settings that still hold these values
     local c = Cfg()
     if c then
@@ -75,6 +80,7 @@ local function ApplyLevel(level)
             if v ~= nil then c.gfxApplied[row[1]] = tostring(v) end
         end
     end
+    return true
 end
 
 local function SameValue(a, b)
@@ -91,7 +97,7 @@ end
 
 function Gfx.SetLevel(level)
     local c = Cfg()
-    if not c then return end
+    if not c then return false end
     level = math.max(0, math.min(3, math.floor(tonumber(level) or 0)))
     if level == 0 then
         -- back to what the player had before: master first, then the sub-settings.  A setting the player changed
@@ -108,16 +114,22 @@ function Gfx.SetLevel(level)
         c.gfxBackup = {}
         c.gfxApplied = nil
     else
+        local madeBackup = false
         if next(c.gfxBackup or {}) == nil then
             c.gfxBackup = {}
+            madeBackup = true
             for _, row in ipairs(PRESETS) do
                 local v = Get(row[1])
                 if v ~= nil then c.gfxBackup[row[1]] = v end
             end
         end
-        ApplyLevel(level)
+        if not ApplyLevel(level) then
+            if madeBackup then c.gfxBackup = {} end      -- nothing changed, so there is nothing to put back later
+            return false
+        end
     end
     c.gfxLevel = level
+    return true
 end
 
 ---------------------------------------------------------------------------

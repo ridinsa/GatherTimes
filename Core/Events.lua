@@ -36,6 +36,11 @@ pcall(f.RegisterUnitEvent, f, "UNIT_SPELLCAST_CHANNEL_START", "player")   -- Eag
 pcall(f.RegisterUnitEvent, f, "UNIT_SPELLCAST_CHANNEL_STOP", "player")
 pcall(f.RegisterUnitEvent, f, "UNIT_SPELLCAST_SUCCEEDED", "player")       -- fallback when the channel / buff is not reported
 pcall(f.RegisterUnitEvent, f, "UNIT_SPELLCAST_INTERRUPTED", "player")
+pcall(f.RegisterEvent, f, "BAG_UPDATE_DELAYED")        -- bag space warning (Gathering\BagSpace.lua)
+pcall(f.RegisterEvent, f, "SKILL_LINES_CHANGED")       -- skill ETA (Gathering\SkillEta.lua); not on every client
+pcall(f.RegisterEvent, f, "CHAT_MSG_SKILL")
+pcall(f.RegisterEvent, f, "GUILD_ROSTER_UPDATE")   -- guild online popup (UI\GuildPopup.lua)
+pcall(f.RegisterEvent, f, "FRIENDLIST_UPDATE")      -- friends online popup (UI\GuildPopup.lua)
 
 -- Everything ADDON_LOADED sets up.  Runs under pcall (see below).
 -- Part 1 is the saved data: if that fails the addon stays off (GT.ready false), because the timers cannot work
@@ -91,6 +96,11 @@ f:SetScript("OnEvent", function(_, event, msg, msg2, ...)
         if GT.Gfx then pcall(GT.Gfx.Reapply) end  -- saved graphics / screen effect / weather / camera zoom choices
         local rok, changed = pcall(GT.RecheckRealm)   -- the Hardcore flag may only be known now, see Config.lua
         if GT.RestoreSession then pcall(GT.RestoreSession) end               -- resume the last session (once per login)
+        -- skills and bags are not ready at the very first moment: look at them a few seconds later
+        C_Timer.After(4, function()
+            if GT.InitSkillEta then pcall(GT.InitSkillEta) end
+            if GT.CheckBags then pcall(GT.CheckBags) end
+        end)
         if rok and changed then pcall(GT.RefreshTimingUI) end
         if GT.cfg() and GT.cfg().tomTomAutoNearest then
             C_Timer.After(3, function()
@@ -115,6 +125,15 @@ f:SetScript("OnEvent", function(_, event, msg, msg2, ...)
             local ok, err = pcall(GT.OnMaintenanceMessage, msg)
             if not ok then GT.ReportError("maintenance alert", err) end
         end
+        if event == "CHAT_MSG_SYSTEM" and type(msg) == "string" and GT.OnGuildOnlineMessage then
+            pcall(GT.OnGuildOnlineMessage, msg)
+        end
+
+    elseif event == "GUILD_ROSTER_UPDATE" then
+        pcall(GT.RefreshGuildRoster)
+
+    elseif event == "FRIENDLIST_UPDATE" then
+        pcall(GT.RefreshFriendRoster)
 
     elseif event == "CHAT_MSG_LOOT" then
         if type(msg) ~= "string" then return end
@@ -149,6 +168,12 @@ f:SetScript("OnEvent", function(_, event, msg, msg2, ...)
     elseif event == "UNIT_HEALTH" then
         if msg == "player" then GT.CheckHealth() end
 
+    elseif event == "BAG_UPDATE_DELAYED" then
+        if GT.CheckBags then pcall(GT.CheckBags) end
+
+    elseif event == "SKILL_LINES_CHANGED" or event == "CHAT_MSG_SKILL" then
+        if GT.CheckSkillEta then pcall(GT.CheckSkillEta) end
+
     elseif event == "PLAYER_LOGOUT" then
         HUDEvent(event)
         if GT.SaveSession then pcall(GT.SaveSession) end
@@ -168,7 +193,7 @@ f:SetScript("OnUpdate", function(_, elap)
     -- every frame: the HUD parts throttle themselves (overlay 0.03 s, watcher 0.1 s, skin sweep 0.5 s)
     if HUD then HUD.OnUpdate(elap) end -- HUD: compass / heading, tracking drag, watcher
     accum = accum + elap
-    if accum > 1 then
+    if accum > ((HUD and HUD.PerfTimerStep and HUD.PerfTimerStep()) or 1) then
         accum = 0
         if GT.ready then GT.RefreshTimers() end
     end

@@ -12,7 +12,7 @@ local SND_W = 60                      -- width of the sound button (row ends at 
 -- short sound names for the narrow button (display only; the real names are unchanged elsewhere)
 local SHORT_SOUND = { ["Raid Warning"] = "Raid W", ["Ready Check"] = "Ready C" }
 local function SoundText(idx)
-    local snd = GT.SOUNDS[idx]
+    local snd = GT.SoundEntry(idx)
     return snd and GT.TR(SHORT_SOUND[snd.name] or snd.name) or ""
 end
 
@@ -38,20 +38,21 @@ end
 -- so "None" stays index 7 and old saves / Reset keep working). Gentle sounds first, loud ones last.
 local SOUND_ORDER = { "None", "Default", "Whisper", "Toast", "Popup", "Invite", "Map Ping",
     "Auction", "Queue", "Level Up", "Ready Check", "Raid Warning", "Alarm", "Alarm 2" }
-local soundCycle
+-- built-in sounds in SOUND_ORDER, then the Media sounds ("file:<name>"); rebuilt each time, so an added sound shows up
 local function SoundCycle()
-    if soundCycle then return soundCycle end
-    soundCycle = {}
-    local used = {}
+    local order, used = {}, {}
     for _, name in ipairs(SOUND_ORDER) do
         for i, snd in ipairs(GT.SOUNDS) do
-            if snd.name == name and not used[i] then used[i] = true; soundCycle[#soundCycle + 1] = i end
+            if snd.name == name and not used[i] then used[i] = true; order[#order + 1] = i end
         end
     end
     for i in ipairs(GT.SOUNDS) do            -- anything not listed above goes at the end
-        if not used[i] then soundCycle[#soundCycle + 1] = i end
+        if not used[i] then order[#order + 1] = i end
     end
-    return soundCycle
+    for _, file in ipairs(GT.SoundList and GT.SoundList() or {}) do
+        order[#order + 1] = "file:" .. file
+    end
+    return order
 end
 local function CycleSound(idx, back)
     local order = SoundCycle()
@@ -390,7 +391,10 @@ GT.panelBuilders.Nodes = function(panel, content)
 
     -- keep in sync: on show, every second (zone changes), external refresh
     panel:SetScript("OnShow", function() Refresh(true) end)
-    panel:HookScript("OnHide", function() dd.list:Hide() end)
+    panel:HookScript("OnHide", function()
+        dd.list:Hide()
+        if GT.StopMediaSound then GT.StopMediaSound() end   -- closing the panel stops any sound it started
+    end)
     local t = 0
     panel:SetScript("OnUpdate", function(_, elapsed)
         t = t + elapsed

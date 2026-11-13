@@ -125,8 +125,9 @@ end
 -- pause (optional) is called after every few spots: GT.ImportSpotsReport passes a function that gives the game
 -- back after a few milliseconds when it runs inside a coroutine, so a big list does not freeze the screen.
 -- dropped = spots that did not fit under GT.MAX_SPAWNS and pushed out older unvisited imported ones.
-function GT.ImportSpots(text, pause)
-    local list, why, n = GT.ParseSpotText(text)
+function GT.ImportSpots(text, pause, parsed)
+    local list, why, n = parsed, nil, nil                       -- parsed: the list GT.ParseSpotText already made, so a long text is read once
+    if not list then list, why, n = GT.ParseSpotText(text) end
     if not list then return nil, why, n end
     local made, known, touched = {}, 0, {}
     local evicted0 = GT.spawnEvictions or 0
@@ -189,7 +190,7 @@ function GT.ImportSpotsReport(text)
         return false
     end
     if #list <= SLICE_AT or not (coroutine and coroutine.create and CreateFrame) then
-        local res = GT.ImportSpots(text)
+        local res = GT.ImportSpots(text, nil, list)
         if not res then GT.cprint(GT.TR(REASON.damaged)); return false end
         PrintResult(res)
         return true, res
@@ -202,7 +203,7 @@ function GT.ImportSpotsReport(text)
     local co = coroutine.create(function()
         return GT.ImportSpots(text, function()
             if clock() - sliceStart > SLICE_MS then coroutine.yield() end
-        end)
+        end, list)
     end)
     local driver = CreateFrame("Frame")
     driver:SetScript("OnUpdate", function(self)

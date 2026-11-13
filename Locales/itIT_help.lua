@@ -37,7 +37,7 @@ Trasforma la minimappa vera e propria in una grande mappa trasparente estesa sul
 - Profili: salva diversi aspetti, passa da uno all'altro o eliminali. I profili sono condivisi da tutti i personaggi; ogni personaggio ricorda il proprio.
 - Reimposta profilo ripristina i valori predefiniti.]]
 
-T.credits = H .. "GatherTimes 0.24.4" .. E .. [[
+T.credits = H .. "GatherTimes 0.24.7" .. E .. [[
 
 Autore: miRidinsa
 Sito web: https://github.com/ridinsa/
@@ -87,6 +87,8 @@ Tiene traccia di quando erbe e minerali riappaiono nella zona in cui ti trovi, r
 - Trascina la barra del titolo per spostare la finestra. Il titolo mostra la zona in cui ti trovi.
 - Il pulsante ? nella barra del titolo apre questa guida.
 - Il pulsante - nella barra del titolo riduce la finestra a una barra sottile lungo la parte alta dello schermo. Il clic destro apre le opzioni di riduzione. Nella barra: il menu degli oggetti, un chip per gruppo, l'oro della sessione e il pulsante "+", che riporta la finestra. Due clic destri sull'oro reimpostano la sessione (il riepilogo viene prima stampato in chat).
+- Pulsante XP (sulla barra): mostra l’XP dell’eroe e dell’animale in una riga al posto dei timer: combattimenti al livello, XP all’ora, tempo al livello, cronometro del combattimento e ultimo guadagno. Cliccalo di nuovo, o scegli una voce dal menu, per tornare. Il tempo passato fermo per più di 2 minuti non conta negli XP all’ora (impostazioni di minimizzazione > XP > Ignora il tempo di inattività). Passa il mouse sul pulsante per la cronologia delle sessioni: data, zona principale, XP all’ora e oro all’ora delle ultime sessioni (10 conservate per personaggio, 5 mostrate), con una riga per la sessione migliore. Una sessione finisce con /gt xp reset o al login successivo dopo più di 10 minuti; un /reload la continua.
+- Obiettivo (impostazioni di minimizzazione > Goals): campi per oro (da lootare in questa sessione), livello, abilità (mining 300, herb 225) e ore (il tempo che ti dai). Invio per impostare, campo vuoto per cancellare. /gt xp goal level 40 o /gt xp goal 500g fa lo stesso dalla chat. Una sottile striscia in basso sulla barra si riempie man mano che avanzi (due o tre obiettivi la dividono); la riga XP mostra la percentuale e il tempo rimasto al ritmo di questa sessione, e quando l’obiettivo è raggiunto compaiono una volta un messaggio e un suono. Con le ore impostate, l’obiettivo diventa arancione quando il tempo è poco e rosso quando sei in ritardo. /gt xp goal off cancella tutti gli obiettivi; un obiettivo raggiunto viene cancellato al login successivo.
 
 ]]
 
@@ -191,6 +193,7 @@ T.cmds = H .. "Comandi slash" .. E .. [[
 /gt profile start | stop | report - profila il ciclo dei timer
 /gt hud - minimappa HUD (vedi sotto)
 /gt min - riduce alla barra, oppure riporta la finestra
+/gt xp - modalità XP sulla barra ridotta (anche: /gt xp reset, /gt xp session, /gt xp history, /gt xp goal level 40, /gt xp goal 500g, /gt xp goal off)
 /gt dock - la barra spinge in basso i riquadri superiori del gioco (attivo) oppure li copre soltanto (disattivo)
 /gt export - mostra i tuoi punti come testo da condividere
 /gt import - importa punti dal testo di un amico

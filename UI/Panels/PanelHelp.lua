@@ -35,8 +35,9 @@ Tracks when herbs and ore respawn in the zone you are in, remembers where the no
 - Minimap HUD On/Off button: left-click turns the HUD on / off, right-click opens the HUD settings. Its text is green while the HUD is on and grey while it is off.
 - The server and game-mode label appears below the timer table.
 - The 5 buttons at the bottom open the panels. Click the same button again to close its panel.
-- The - button in the title bar minimizes the window to a bar along the top of the screen. Right-click it for Minimize settings (tabs Bar, Chips, Fade and XP). In the bar: the item dropdown, the XP button, one chip per group, the session gold, the "+" button, which brings the window back, and a red x, which hides the bar until you open the window again or use /gt min. Right-click the gold twice to reset the session (the summary is printed to chat first).
-- XP button (on the bar): shows your hero and pet XP in one line instead of the timers: battles to level, XP per hour, time to level, the battle timer and the latest gain. Click it again, or pick an item in the dropdown, to go back. /gt xp does the same. Minimize settings > XP hides the button. Nothing is saved between sessions.
+- The - button in the title bar minimizes the window to a bar along the top of the screen. Right-click it for Minimize settings (tabs Bar, Chips, XP and Goals). In the bar: the item dropdown, the XP button, one chip per group, the session gold and a red x, which hides the bar until you open the window again or use /gt min. Right-click the bar to bring the main window back (the Minimize settings are on the right-click of the - button). Right-click the gold twice to reset the session (the summary is printed to chat first).
+- XP button (on the bar): shows your hero and pet XP in one line instead of the timers: battles to level, XP per hour, time to level, the battle timer and the latest gain. Click it again, or pick an item in the dropdown, to go back. /gt xp does the same. Minimize settings > XP hides the button. Time spent standing still for more than 2 minutes is left out of XP per hour (Minimize settings > XP > Ignore idle time). Hover the button for the session history: the date, main zone, XP per hour and gold per hour of your last sessions (10 are kept per character, 5 are listed), with a best session line. A session ends with /gt xp reset or with the next login after more than 10 minutes; a /reload continues it.
+- Goal (Minimize settings > Goals): boxes for Gold (to loot this session), Level, Skill (mining 300, herb 225) and By (h) (the hours you give yourself). Press Enter to set a box, leave it empty to clear it. /gt xp goal level 40 or /gt xp goal 500g does the same from chat. A thin strip along the bottom of the bar fills as you get there (two or three goals share it), the XP line shows the percent and the time left at the pace of this session, and a message and sound appear once when a goal is reached. With hours set, the goal turns orange when you are tight on time and red when you are behind. /gt xp goal off clears all goals; a reached goal is cleared at the next login.
 - Drag the title bar to move the window. The title shows the zone you are in.
 - The ? button in the title bar opens this help.]] }
 
@@ -163,7 +164,7 @@ TOPICS[#TOPICS + 1] = { "cmds", "Cmds", H .. "Slash commands" .. E .. [[
 /gt hud - minimap HUD (see below)
 /gt min (or /gt minimize) - minimize to the bar, or bring the window back
 /gt dock - the bar pushes the game's top frames down (on) or only covers them (off)
-/gt xp - XP mode on the minimized bar (also: /gt xp reset, /gt xp session)
+/gt xp - XP mode on the minimized bar (also: /gt xp reset, /gt xp session, /gt xp history, /gt xp goal level 40, /gt xp goal 500g, /gt xp goal off)
 /gt export - show your own spots as text to share
 /gt import - import spots from a friend's text
 /gt report - debug report to copy into a bug report
@@ -211,7 +212,7 @@ TOPICS[#TOPICS + 1] = { "cmds", "Cmds", H .. "Slash commands" .. E .. [[
 /gthud reset - reset the current profile
 /gthud help - show command help]] }
 
-TOPICS[#TOPICS + 1] = { "credits", "Credits", H .. "GatherTimes 0.24.4" .. E .. [[
+TOPICS[#TOPICS + 1] = { "credits", "Credits", H .. "GatherTimes 0.24.7" .. E .. [[
 
 Author: miRidinsa
 Website: https://github.com/ridinsa/

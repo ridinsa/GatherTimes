@@ -1,93 +1,78 @@
 # GatherTimes
 
+## 0.24.7 (2026-11-13)
+
+- New: Friend/Guild Notifier (Settings > General). A pop-up on the right when a guild member or friend comes online (gold, Xbox sound) or goes offline (red, Windows sound). Shows for 3 to 20 s; click the time button to pick it.
+- Change: Xbox and Windows are no longer in the ping and Nodes sound lists.
+
+## 0.24.6 (2026-11-12)
+
+- New: Performance tab in the HUD settings: Full, Balanced or Lowest. Saved ring values are kept. Command: /gthud perf full | balanced | lowest.
+- New: Pings tab in Minimize settings, with a repeat delay for the red-ping sound (1 to 60 s).
+- New: the red-ping sound repeats while the ping stays red. The Nodes sound button also plays your Media sounds.
+- New: arrow size slider on the HUD Map tab (50 to 200%).
+- New: XP goals and XP session history. "Ignore idle time" for XP per hour.
+- Change: the player arrow hides during Eagle Eye and comes back after.
+- Change: Boom.ogg removed. The ping sound defaults to the first sound in the list.
+- Change: more space and tooltips in Minimize and HUD settings. Options with no effect are greyed out.
+- Fix: the minimized bar keeps its fps, H and W switches, and the level-up and pet messages follow their own settings.
+
+## 0.24.5 (2026-11-11)
+
+- New: skill ETA for Herbalism and Mining in the session summary ("next point in ~4 nodes (~3 min)"). Counts this session only.
+- New: "Best node" line in the summary (highest gold per hour this session).
+- New: bag space warning (Minimize settings > Chips). Alert at a set number of free slots (default 5) and when full, plus a red "Bags: N" chip.
+- New: competition detection. A spot found already looted is marked "taken" on its timer, and the summary shows "Taken by someone else: N". Taken spots no longer teach timers that are too long.
+- Change: smarter next spot. Running timers get the "often taken" penalty too; the Next line says "ready on arrival" or "(often taken)".
+- New: choose what the XP line shows (Minimize settings > XP), and an optional gold per hour.
+- New: level-up alert (on) and "close to level" alert (off), both in Minimize settings > XP.
+- Fix: Bar opacity now also fades the buttons on the minimized bar.
+- Change: translations in new files `GatherExtra.lua` and `XPExtra.lua`.
+
 ## 0.24.4 (2026-11-11)
 
-- Change: version 0.24.4 in the TOC, the Help credits and the translated Help files.
-
-- Fix: clicking the HUD map no longer shows the game's blinking yellow ping circle on top of the node pins.
-  - While the HUD is on, the Minimap's stock click handler (the one that pings the map) is always replaced with a no-op, not only when "Hover tooltips on nodes" is on.
-  - Minimap:PingLocation is swallowed while the HUD is on, for clients that draw the ping inside the Minimap itself.
-  - The ping frame (MiniMapPing / Minimap.PingFrame) is hidden again as soon as the game shows it while the HUD is on. Pings from other players are hidden the same way.
-  - With the HUD off, the normal minimap pings as usual.
+- Fix: clicking the HUD map no longer shows the game's yellow ping circle over the node pins. Pings from other players are hidden while the HUD is on.
 
 ## 0.24.3 (2026-11-10)
 
-- Change: version 0.24.3 in the TOC, the Help credits and the translated Help files.
-
-- Change: choosing another language in Settings > Look asks first ("Change the interface language and reload the UI?"). Cancel keeps the old language.
-- Change: the text next to a check box is part of it: clicking the text toggles the box and hovering it shows the tooltip.
-- Fix: the saved low-health percentage and the map text size are kept inside the range of their sliders when settings load.
-- Fix: the low health warning only shows on Hardcore characters, as its name says (it showed on every character). The game's Hardcore answer is used, or a realm name with "Hardcore" in it; a client that cannot tell keeps the warning.
-- Fix: setting Graphics quality back to Off no longer overwrites graphics settings you changed in the game's own menu in the meantime. Only the settings that still hold the value the slider set are put back.
-- Fix: the status text on the Settings > Tools tab is cut at its box instead of running into the buttons below it.
-- Change: Random Name uses less CPU and memory, no change in what it hides.
-  - The safety-net timer runs only while the disguise is on (the game no longer calls it every frame when it is off), and ticks 5 times a second instead of 10.
-  - With the disguise off, target and focus changes no longer start a refresh when there is nothing to put back; several events in one frame share one refresh; name updates of other units are ignored.
-  - Your name and your pet's name are remembered on login and on the name / pet events instead of on every refresh.
-  - The character window texts and level are only refreshed while the window is open.
-  - Chat and tooltip name replacement no longer builds a table for every text that does not contain the name.
-  - Level texts are only rewritten when the level changes; unit-frame scans and refresh timers no longer create new functions and tables on each call.
-  - The group-name search through all global frames runs at most every 5 seconds instead of on every roster update.
-- Change: Random Name also switches off the game's guardian and minion name settings (friendly and enemy) while it is on, and puts them back when it goes off. Some pets show their floating name through those settings.
-- Fix: Random Name now also replaces your name and your pet's name on name plates (for example the plate that shows when you click your pet). It was only hidden through the game's name settings before, so the real name showed on the plate.
-- New: Random Name window, "Hide target-of-target in combat" (on by default). While Disguise names is on, the target-of-target frame is made transparent when combat starts and comes back when combat ends. It only changes the frame's opacity (the frame is protected, so it cannot be hidden in combat). Only the default target-of-target frame is covered; a unit-frame addon that replaces it needs its own setting.
+- Change: changing the language asks first and can be cancelled. Clicking the text next to a check box toggles it.
+- Fix: saved low-health % and map text size stay inside their slider range.
+- Fix: the low health warning only shows on Hardcore characters.
+- Fix: setting Graphics quality back to Off no longer overwrites graphics settings you changed in the game menu.
+- Fix: the status text on Settings > Tools is cut at its box.
+- Change: Random Name uses less CPU and memory. No change in what it hides.
+- New: Random Name window option "Hide target-of-target in combat" (on by default).
 
 ## 0.24.2 (2026-11-08)
 
-- New: the Eagle map uses the HUD's zoom and rings (HUD settings > Eagle, "Same zoom and rings as the HUD"; on by default). A ring set in pixels is scaled to the smaller map so it stands for the same distance; a ring set in yards is the same as on the HUD. The Eagle zoom keys then change the HUD's zoom. Off keeps the separate Eagle zoom and the edge / half-way rings.
-- Fix: dragging the mouse to turn the camera sometimes did nothing while the HUD was on. The full-screen HUD map never takes mouse clicks now: the normal HUD ignores the mouse completely, and the Eagle map only watches the mouse move (for the herb / ore tooltips). If the game or another addon switches the Minimap's mouse back on, it is put right on the next frame instead of up to half a second later.
-- New: the Gx group labels and the (G) timer texts on the minimap are hidden while the HUD is off and shown while it is on (HUD settings > Options, "Hide Gx and (G) timers while the HUD is off"; on by default). The world map keeps its labels.
-- New: the same labels are hidden on the Eagle Eye map (HUD settings > Eagle, "Hide Gx and (G) timers on the map"; on by default), and come back when the Eagle map ends.
-- Change: HUD settings > Options: "Rotate map with player" and "Show player arrow" share one row to make room for the new checkbox.
-
-- Change: Help panel brought up to date with the addon. The minimized bar entry now lists the XP button, the red x and the Minimize settings tabs (Bar, Chips, Fade, XP); new XP button entry; the command list gains `/gt xp` (`reset`, `session`), `/gathertimes`, `/gt minimize`, `/gthud skins hide | show | mark | diff` and `/gthud eagle debug`; the Credits tab shows 0.24.2.
-- Known issue: the translated Help texts (all languages except English) do not cover everything the English Help does yet (Eagle map, graphics quality, yard rings, XP, newer commands). Only their version number was updated; the rest is shown as it was.
-- Change: code cleanup, no change in behaviour. The unused `ADDON` / `addonName` local (`local ADDON, GT = ...`) is now `local _, GT = ...` in the 59 files that never used it, including all Panel files and NameDisguiseFrame.
-- New: LibDataBroker feed. With a Broker display addon (Titan Panel, ChocolateBar, Bazooka...) a GatherTimes button shows the ready count or the time left on the soonest timer, a tooltip per item, left-click opens the window and right-click turns the HUD on / off. Nothing is added when no Broker display is installed.
-- Fix: the saved-data layout number (`_dbVersion`, HUD `ver`) is no longer lowered when an older version of the addon loads data written by a newer one.
-- Change: version 0.24.2 in the TOC.
-
-- Change: the HUD is always centred. The Offset X / Y sliders, the Unlock / drag button and handle, and `/gthud unlock`, `/gthud lock` and `/gthud offset` are removed; offsets saved in older profiles are ignored. The tracking button can only be dragged while the HUD is off (while it is on, use the Track tab sliders).
-- Fix: the minimap's mouse state is checked twice a second while the HUD is up, so it is switched off again if something turns it back on when the Eagle map ends.
-- New: Eagle map hover tooltips (HUD settings > Eagle, `/gthud eagle hover`). The HUD switches the minimap's mouse off, which also removed the game's herb / ore name tooltips; the Eagle map now turns it on with clicks passed through to the world; the map's own click handler (ping, tracking menu) is switched off while it is up.
-- New: three Eagle map key bindings (Key Bindings > AddOns): zoom in, zoom out, next size (saved size, bigger, smaller; the size change is not saved).
-- New: the Eagle map also appears for Far Sight (shaman), Mind Vision (priest), Eyes of the Beast (hunter) and Eye of Kilrogg (warlock).
-- Change: Eagle Eye detection is lighter. Classes without a remote view skip the buff check on every aura change, buffs are looked up by spell id instead of scanning all 40, and the answer is reused within a frame.
-- Fix: if a client reports neither a channel nor a buff for the spell, a successful cast now brings the map up for up to 60 s (ended by an interrupt or channel stop). It is only used until a channel or buff has been seen once.
-- New: Eagle Eye map distance scale (HUD settings > Eagle, `/gthud eagle scale`). The edge of the map and a ring half-way in are captioned with the yards they stand for, e.g. "233 yd" / "117 yd", and the captions follow the zoom and indoors / outdoors.
-- New: Eagle Eye map nearest node readout (HUD settings > Eagle, `/gthud eagle nearest`). Shows the nearest known node with READY or the time left and the distance in yards, the same readout the normal HUD has. Distances are measured from the same point the map pins are placed from.
-- New: Eagle Eye map (HUD settings > Eagle, `/gthud eagle`). While a hunter's Eagle Eye is on, the HUD no longer switches off: it stays on and the map is drawn centred at its own size (default 450 px), opacity, zoom and rotation (north-up by default), with an optional ring. Compass letters and readouts are hidden while it is up, and the normal HUD settings come back in one step when Eagle Eye ends. The stock minimap is not restored in between, so there is no flicker. "Show this map during Eagle Eye" off keeps the old behaviour (HUD off during Eagle Eye). "Preview Eagle map" / `/gthud eagle preview` shows it without casting Eagle Eye.
-- New: HUD rings can be set in yards (HUD settings > Rings, Unit button; `/gthud ringunit yd`). A yard ring keeps its real distance at any HUD size and zoom (it follows the minimap's reach, indoors and outdoors), shows a "40 yd" caption, and is hidden when it is farther out than the map shows. Pixels stay the default, so existing profiles look the same. `/gthud ring` and `ring2` use whichever unit is set.
-
-- Fix: HUD route-only readout (priority readout off, route readout on) no longer disappears until the next one-second tick when settings change.
-- Fix: when another minimap addon keeps moving the Minimap and the HUD pauses its re-apply, it now re-applies once when the pause ends, so the HUD is no longer left displaced. A one-time chat notice names the cause.
-- Fix: the saved HUD size is no longer shrunk by one login at a small window or high UI scale. The screen limit is applied only when the HUD is drawn; the profile keeps the size you chose.
-- Change: the HUD rings are laid out again only when radius, colour, style, thickness, density or segments change, not on every update (smoother size slider).
-- Fix: switching the HUD off restores the player arrow another addon had set (SexyMap etc.), not always the stock arrow. Only arrow changes made after GatherTimes loaded can be seen.
-- Fix: switching the HUD off no longer shows minimap frames that another addon hid after the HUD did.
-- Fix: the HUD tracking button's tooltip name fallback now also recognises tracking abilities by spell ID, so it no longer shows "Active" on non-English clients when the icon lookups fail.
-- Change: `/gthud skins` now lists every shown piece on the Minimap, numbered, including small and thin textures (layer, texture, colour, whether the HUD hid it). `/gthud skins hide <n>` and `/gthud skins show <n>` hide or show one item for testing, to find what draws the white arc seen with SexyMap. Map pins are skipped and only visible pieces are listed. For an arc that comes and goes: `/gthud skins mark` while it is gone, `/gthud skins diff` while it shows.
-- Fix: HUD x and y are limited when a profile is loaded, so a hand-edited SavedVariables file can no longer put the HUD off screen.
-
-- New (Settings > Display): Drunken haze on/off is back. It switches the game's full screen glow, which is what draws the drunk blur, so turning it off also removes that glow everywhere.
-- Change: the minimized bar is now shown as soon as the addon loads (Always show minimized panel is on by default), and has a red x after the "+" that hides it until the window is opened again or /gt min is used.
-- Change: the HUD no longer stops switching on when one Minimap frame refuses method calls, the opacity mask swap waits for the slider to rest, the tracking menu on clients with a tracking list is a flat popup, and the masks are 256 x 256.
+- New: Eagle map. While Eagle Eye is on, the HUD stays on and draws its own map (size, opacity, zoom, rotation, rings; HUD settings > Eagle, `/gthud eagle`). Also works for Far Sight, Mind Vision, Eyes of the Beast and Eye of Kilrogg.
+- New: Eagle map extras: same zoom and rings as the HUD, hover tooltips for herbs and ore, distance scale, nearest node readout, a Preview button, and 3 key bindings (zoom in, zoom out, next size).
+- New: HUD rings can be set in yards (`/gthud ringunit yd`). Pixels stay the default.
+- New: Gx labels and (G) timer texts on the minimap are hidden while the HUD is off (on by default), and on the Eagle map.
+- New: LibDataBroker feed. Shows the ready count or time left; left-click opens the window, right-click toggles the HUD. Nothing is added without a Broker display addon.
+- Change: the HUD is always centred. Offset sliders, Unlock and `/gthud unlock | lock | offset` are removed.
+- Change: the minimized bar shows at load by default and has a red x to hide it. Drunken haze option is back (Settings > Display).
+- Change: Help panel updated. Translated Help texts do not cover everything yet (Eagle map, graphics quality, yard rings, XP, newer commands).
+- Fix: camera turning with the mouse sometimes did nothing while the HUD was on.
+- Fix: the HUD no longer stays displaced when another minimap addon keeps moving the Minimap.
+- Fix: the saved HUD size is no longer shrunk by one login at a small window or high UI scale.
+- Fix: switching the HUD off restores the player arrow and minimap frames set by other addons (SexyMap etc.).
+- Fix: route-only readout no longer disappears when settings change; tracking button tooltip works on non-English clients; HUD x / y are limited when a profile loads.
+- Change: `/gthud skins` lists every shown minimap piece, with `hide`, `show`, `mark` and `diff` for finding the SexyMap white arc.
+- Change: rings redraw only when their settings change (smoother size slider). Eagle Eye detection is lighter.
+- Fix: the saved-data version number is no longer lowered by an older addon version.
 
 ## 0.24.1 (2026-11-07)
 
-- New (Settings > Display): Graphics quality slider (Off / Low / Very low / Minimal) for slow PCs, screen effects on/off, weather density and maximum camera zoom. Your own graphics values are saved when you leave "Off" and restored when you go back.
-- Change: the Graphics quality slider applies once when you let go (not at every step), the levels now differ clearly from each other (more settings, plus render scale), and `/gt gfx` lists which graphics settings this client has.
-- Removed: the Drunken haze option (Settings > Display) and its code. If you had it switched off, the full screen glow is turned back on once at your next login.
-- Change: the HUD hides minimap skin textures that are as wide as the stock minimap, even when they have a name, and re-checks the minimap skins twice a second while the HUD is on. Added `/gthud skins`, which lists the minimap frames and textures for a bug report.
-- Known issue: with SexyMap enabled, a white arc can still show along the bottom edge of the HUD circle. The source is not identified yet; use `/gthud skins` with the HUD on and report the output.
-- Fix: Minimap HUD map opacity. Changing the opacity now swaps only the mask texture (once per frame, last value wins) instead of re-applying the whole HUD on every slider step, so going from 0 to 100% no longer flickers or sticks. The 11 mask files are preloaded, and the mask is set before the Minimap is resized when the HUD is switched on, which removes the stock-mask "shadow" for the first frames.
+- New: Graphics quality slider (Off / Low / Very low / Minimal) for slow PCs. `/gt gfx` lists the settings your client has.
+- Fix: HUD opacity no longer flickers or sticks when going from 0 to 100%. Masks are preloaded.
+- Change: the HUD hides minimap skin textures as wide as the stock minimap. `/gthud skins` lists minimap frames for bug reports.
+- Removed: Drunken haze option (returned in 0.24.2).
+- Known issue: with SexyMap a white arc can show along the bottom of the HUD circle.
 
 ## [v0.24.0](https://github.com/ridinsa/GatherTimes/tree/v0.24.0) (2026-11-06)
 [Full Changelog](https://github.com/ridinsa/GatherTimes/compare/v0.23.2...v0.24.0) [Previous Releases](https://github.com/ridinsa/GatherTimes/releases)
 
-- 0.24.0: XP button, rested XP and minimize settings tabs  
-    # Changelog  
-    ## 0.24.0  
-    - New: hero and pet XP, merged in from the GetXP addon. A small "XP" button after the dropdown on the minimized bar turns XP mode on. In XP mode the bar shows all the XP information in one line in place of the gathering timers: hero battles to the next level, XP/hr, time to level, pet battles, the battle timer, the hunter pet-capped alert and the latest gain. Picking an item in the dropdown turns XP mode off. The XP button can be hidden in Minimize settings > XP. The bar shows hero battles, XP/hr, time to level, rested XP and the pet-capped warning. Hovering the XP button shows the session totals, pet battles, the last battle, rested XP with the battles it covers, the XP to the next level, and the latest five gains. The tracking runs all the time. `/gt xp` toggles XP mode, `/gt xp reset` starts a new XP session and `/gt xp session` prints the totals.  
-    - Change: Minimize settings are split into tabs: Bar, Chips, Fade and XP. The options are grouped by what they change.  
-    - Removed: the GetXP window and its minimized icon, the Quests and Spots tabs, the transparency and hide-in-battle buttons, and the chat window that GetXP created ("ExpInfo"). Delete the GetXP addon folder after installing this version.  
+- New: hero and pet XP, merged in from GetXP. An "XP" button on the minimized bar shows battles to level, XP/hr, time to level, pet battles and latest gain. `/gt xp`, `/gt xp reset`, `/gt xp session`.
+- Change: Minimize settings are split into tabs (Bar, Chips, Fade, XP).
+- Removed: the GetXP window, its Quests and Spots tabs and its chat window. Delete the GetXP addon folder.

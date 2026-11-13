@@ -23,6 +23,8 @@ local function NewCand(ref, kind, key, mapID, x, y, left, dist, cost)
     if not cd then cd = {}; pool[candN] = cd end
     cd.ref, cd.kind, cd.key, cd.mapID, cd.x, cd.y, cd.left, cd.dist, cd.cost = ref, kind, key, mapID, x, y, left, dist, cost
     cd.wx, cd.wy, cd.inst = nil, nil, nil
+    local speed = GT.cfg().speed
+    cd.eta = (dist and speed and speed > 0) and (dist / speed) or nil     -- seconds to get there (TargetStatus: "ready on arrival")
     return cd
 end
 
@@ -32,6 +34,13 @@ local function InventoryCost(key, c)
     local itemID = def.countId or def.id
     local count = GetItemCount(itemID) or 0
     return math.min(120, count / c.routeStockTarget * 90)
+end
+
+-- A timer that is still running: the spot may well be taken by someone else by the time it is ready and you are there.
+-- Spots that were often found taken (Taken % in the Timing panel) get the same penalty the ready ones already have.
+local function RunningPenalty(node)
+    local sp = node and node.sid and GT.spawnBySid[node.sid]
+    return sp and GT.ContestedPenalty(sp) or 0
 end
 
 local function GroupCandidates(key, curMap, c, cands)
@@ -53,7 +62,7 @@ local function GroupCandidates(key, curMap, c, cands)
             if entry._left and d and d <= c.routeRange then
                 local travel = d / c.speed
                 local cost = travel + math.max(0, entry._left - travel) - GT.TransitionBonus(entry.sid)
-                    + InventoryCost(key, c)
+                    + InventoryCost(key, c) + RunningPenalty(entry)
                 cands[#cands + 1] = NewCand(entry, "timer", key, entry.mapID, cx, cy, entry._left, d, cost)
             end
         elseif entry or c.includeUnchecked then
@@ -105,7 +114,7 @@ function GT.ComputeNext()
                     and (not c.zoneOnly or n.mapID == curMap) then
                     local travel = n._dist / c.speed
                     local cost = travel + math.max(0, n._left - travel) - GT.TransitionBonus(n.sid)
-                        + InventoryCost(key, c)
+                        + InventoryCost(key, c) + RunningPenalty(n)
                     cands[#cands + 1] = NewCand(n, "timer", key, n.mapID, n.x, n.y, n._left, n._dist, cost)
                 end
             end

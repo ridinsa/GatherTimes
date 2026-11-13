@@ -418,7 +418,7 @@ function GT:CreateMainFrame()
     CreateMinimapLauncher()
 
     -- Startup.  "Always show minimized panel" on (the default): the main window stays closed and the minimized bar is
-    -- up from the moment the addon loads, with the window closed; open the window from the "+", the minimap button
+    -- up from the moment the addon loads, with the window closed; open the window from the minimap button
     -- or /gt.  Off: the main window shows as usual, and the bar appears only from the "-" button, so a bar left open
     -- last session is not brought back.
     ui.minimized = false

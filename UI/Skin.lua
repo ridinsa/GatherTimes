@@ -84,7 +84,8 @@ local function PaintFrame(frame)
         frame:SetBackdropColor(color[1], color[2], color[3], color[4] * (frame.gtSkinAlpha or 1))
     end
     if colors.border and frame.SetBackdropBorderColor then
-        frame:SetBackdropBorderColor(unpack(colors.border))
+        local b = colors.border
+        frame:SetBackdropBorderColor(b[1], b[2], b[3], (b[4] or 1) * (frame.gtBorderAlpha or 1))   -- gtBorderAlpha: see-through bar parts
     end
     if frame.mark and colors.active then frame.mark:SetVertexColor(unpack(colors.active)) end
     -- what the button goes back to after a hover: the same colour it was painted with (active stays active)

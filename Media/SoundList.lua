@@ -1,0 +1,3 @@
+-- Ping and Nodes sounds: the .ogg files in the Media folder. To add one, put the file in Media and add its name here.
+local _, GT = ...
+GT.MEDIA_SOUNDS = { "Alarm.ogg", "Bamboo.ogg", "BB.ogg", "Bell.ogg", "breaking glass.ogg", "Chimes.ogg", "Doorbell.ogg", "Echo.ogg", "Haciu.ogg", "Iphone.ogg", "Meteor.ogg", "Nokia.ogg", "Postman.ogg", "Postman2.ogg", "Pssst.ogg", "Signal.ogg", "Sims.ogg", "Telegram.ogg", "Tururu.ogg", "Water.ogg" }

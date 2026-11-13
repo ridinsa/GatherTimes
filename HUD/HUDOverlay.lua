@@ -296,15 +296,16 @@ do
         if cfg.ringUnit == "yd" or cfg.scaleCaps then
             -- the map's reach changes with zoom and indoors / outdoors: re-lay the rings when it does
             radiusAcc = radiusAcc + dt
-            if radiusAcc >= 0.25 then
+            if radiusAcc >= 0.25 * HUD.PerfSlow() then
                 radiusAcc = 0
                 if HUD.MapRadiusYards() ~= lastRadius then LayoutRings(cfg) end
             end
         end
         if cfg.priorityReadout or cfg.routeReadout then
             priorityElapsed = priorityElapsed + dt
-            if priorityElapsed >= 1 then
-                priorityElapsed = priorityElapsed % 1
+            local every = HUD.PerfSlow()
+            if priorityElapsed >= every then
+                priorityElapsed = priorityElapsed % every
                 UpdatePriorityText()
             end
         elseif priorityText:IsShown() then
@@ -312,7 +313,7 @@ do
         end
         if needsTick then
             elapsedSince = elapsedSince + dt
-            if elapsedSince >= 0.03 then
+            if elapsedSince >= 0.03 * HUD.PerfTick() then
                 elapsedSince = 0
                 Tick()
             end
@@ -357,7 +358,7 @@ do
 
         -- Only tick when something actually rotates
         lastFacing = nil
-        priorityElapsed = 1
+        priorityElapsed = HUD.PerfSlow()
         needsTick = ((db.dirs and db.rotate) or db.heading) and true or false
         if needsTick then
             Tick()

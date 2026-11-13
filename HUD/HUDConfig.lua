@@ -17,19 +17,66 @@ local COL_W = 288                     -- content width of a panel (300 - 2 x 6 p
 
 local panel, built
 local refreshers = {}                 -- functions that re-read every control from the database
-local tabButtons, tabFrames = {}, {}
+local tabFrames, sectionDropdown = {}, nil
+local resetButton                    -- the Reset profile button: shown on the Profile tab only
 local RefreshProfiles = function() end
 
 local TABS = {
-    { "map",      "Map" },
-    { "overlay",  "Rings" },
-    { "tracking", "Track" },
-    { "options",  "Options" },
-    { "eagle",    "Eagle" },
-    { "profiles", "Profile" },
+    { "map",      "Map",         "HUD map size, opacity, zoom, arrow, and key binding." },
+    { "overlay",  "Rings",       "Configure ring size, units, colour, and style." },
+    { "tracking", "Track",       "Set up the gathering tracking button and where it appears." },
+    { "options",  "Options",     "Change HUD behaviour, minimap addon visibility, and diagnostics." },
+    { "perf",     "Performance", "Adjust HUD performance settings and graphics options." },
+    { "eagle",    "Eagle",       "Configure the map shown during Eagle Eye and similar spells." },
+    { "profiles", "Profile",     "Switch HUD profiles or reset the current profile." },
 }
 
 -- ----------------------------------------------------------------------------------------------- helpers
+-- Greying out: a control that has no effect right now is dimmed and disabled.  byKey maps a profile key to its
+-- control (filled by KeySlider / KeyCheck); a gate lists the controls it governs and the condition that enables them.
+local byKey = {}
+local gates = {}
+local DIMMED = 0.4
+
+local function SetEnabledState(w, on)
+    if w.Enable and w.Disable then
+        if on then w:Enable() else w:Disable() end
+    end
+end
+
+local function ApplyGates()
+    for _, g in ipairs(gates) do
+        local on = g.on() and true or false
+        for _, item in ipairs(g.items) do
+            local w = type(item) == "string" and byKey[item] or item
+            if w then
+                w:SetAlpha(on and 1 or DIMMED)
+                if w.caption then w.caption:SetAlpha(on and 1 or DIMMED) end
+                if w.slider then SetEnabledState(w.slider, on) end
+                SetEnabledState(w, on)
+            end
+        end
+    end
+end
+
+local function Gate(on, items)
+    gates[#gates + 1] = { on = on, items = items }
+end
+
+-- shared layout for every HUD tab: rows and sliders step down the panel, groups are separated by GAP_H
+local ROW_H, SLIDER_H, SECTION_H, GAP_H = 20, 34, 22, 8
+
+-- tooltip for any control: a title and a short description, same look as the other panels
+local function Tip(frame, title, text)
+    frame:HookScript("OnEnter", function(self)
+        GT.Tip:SetOwner(self, "ANCHOR_RIGHT")
+        GT.Tip:AddLine(GT.TR(title))
+        GT.Tip:AddLine(GT.TR(text), 0.85, 0.85, 0.85, true)
+        GT.Tip:Show()
+    end)
+    frame:HookScript("OnLeave", function() GT.Tip:Hide() end)
+end
+
 local function Heading(parent, x, y, text)
     local fs = GT.Font(parent, nil, "OVERLAY", "GameFontNormal")
     fs:SetPoint("TOPLEFT", x + 2, y)
@@ -61,24 +108,35 @@ end
 
 -- slider bound to one profile setting
 local function KeySlider(parent, x, y, label, key, lo, hi, step, fmt)
-    return Slider(parent, x, y, label, lo, hi, step,
+    local s = Slider(parent, x, y, label, lo, hi, step,
         function() return HUD.db[key] end,
-        function(v) if HUD.db[key] ~= v then HUD.Set(key, v, true) end end,
+        function(v)
+            if HUD.db[key] ~= v then HUD.Set(key, v, true) end
+            ApplyGates()
+        end,
         fmt)
+    byKey[key] = s
+    return s
 end
 
 local function Check(parent, x, y, text, get, set, maxW)
-    local cb = GT:CreateCheckLabel(parent, text, get, set, maxW)
+    local cb, caption = GT:CreateCheckLabel(parent, text, get, set, maxW)
     cb:SetPoint("TOPLEFT", x + 2, y)
+    cb.caption = caption
     refreshers[#refreshers + 1] = function() cb:Refresh() end
     return cb
 end
 
 -- checkbox bound to one profile setting
 local function KeyCheck(parent, x, y, text, key, maxW)
-    return Check(parent, x, y, text,
+    local cb = Check(parent, x, y, text,
         function() return HUD.db[key] and true or false end,
-        function(v) HUD.Set(key, v, true) end, maxW)
+        function(v)
+            HUD.Set(key, v, true)
+            ApplyGates()
+        end, maxW)
+    byKey[key] = cb
+    return cb
 end
 
 -- checkbox bound to an account-wide HUD switch (GatherTimesDB.hud.<key>)
@@ -272,6 +330,8 @@ local function BuildKeybind(f, y)
     Heading(f, 0, y, "Keybinding")
     local keyBtn = Button(f, "", 190, 0, y - 22)
     local clear  = Button(f, "Clear", 94, 194, y - 22)
+    Tip(keyBtn, "Toggle key", "Bind a key that shows or hides the HUD. Click the button, then press the key. Esc cancels.")
+    Tip(clear, "Clear", "Remove the key that shows or hides the HUD.")
     local capturing = false
 
     -- every GatherTimes key with what it does (the names are the game's own binding names)
@@ -346,45 +406,69 @@ end
 
 -- ----------------------------------------------------------------------------------------------- tabs
 local function BuildMap(f)
-    Heading(f, 0, 0, "Minimap")
+    local y = 0
+    Heading(f, 0, y, "Minimap")
     -- Preview: shows the HUD while this panel is open, even when the HUD is off (nothing is saved; closing the panel ends it)
-    local pv = Button(f, "", 120, COL_W - 120, 0)
+    local pv = Button(f, "", 120, COL_W - 120, y + 2)
     local function PreviewLabel()
         pv.label:SetText(GT.TR(HUD.Previewing() and "Stop preview" or "Preview HUD"))
         GT:SetButtonActive(pv, HUD.Previewing())
     end
     pv:SetScript("OnClick", function() HUD.Preview(not HUD.Previewing()) end)
-    pv:HookScript("OnEnter", function(self)
-        GT.Tip:SetOwner(self, "ANCHOR_TOP")
-        GT.Tip:AddLine(GT.TR("Preview HUD"))
-        GT.Tip:AddLine(GT.TR("Show the HUD while this panel is open, even if it is off. Nothing is saved; closing the panel ends the preview."), 0.85, 0.85, 0.85, true)
-        GT.Tip:Show()
-    end)
-    pv:HookScript("OnLeave", function() GT.Tip:Hide() end)
+    Tip(pv, "Preview HUD", "Show the HUD while this panel is open, even if it is off. Nothing is saved; closing the panel ends the preview.")
     refreshers[#refreshers + 1] = PreviewLabel
     PreviewLabel()
-    KeySlider(f, 0, -22, "HUD size: %s", "size", 150, HUD.MaxSize(), 10, Px)
+    y = y - SECTION_H
+
+    local size = KeySlider(f, 0, y, "HUD size: %s", "size", 150, HUD.MaxSize(), 10, Px)
+    Tip(size.slider, "HUD size", "How big the HUD map is, in pixels.")
+    y = y - SLIDER_H
+
+    local arrowSize = KeySlider(f, 0, y, "Arrow size: %s", "arrowScale", 50, 200, 10, function(v) return v .. "%" end)
+    Tip(arrowSize.slider, "Arrow size", "How big the player arrow in the middle of the map is. 100% is the game's own arrow. Needs Show player arrow.")
+    Gate(function() return HUD.db.arrow and true or false end, { "arrowScale" })
+    y = y - SLIDER_H
+
     -- the opacity is one of the 11 mask textures Masks\a00.tga ... a10.tga (0% = blank, 100% = opaque)
-    Slider(f, 0, -60, "Map opacity: %s", 0, 10, 1,
+    local alpha = Slider(f, 0, y, "Map opacity: %s", 0, 10, 1,
         function() return math.floor(HUD.db.alpha * 10 + 0.5) end,
         function(v)
             if math.floor(HUD.db.alpha * 10 + 0.5) ~= v then HUD.Set("alpha", v / 10, true) end
         end,
         function(v) return string.format("%d%%", math.floor(v * 10 + 0.5)) end)
-    KeySlider(f, 0, -98,  "Minimap zoom: %s", "zoom", 0, 5, 1)
-    BuildKeybind(f, -140)
+    Tip(alpha.slider, "Map opacity", "How solid the map is. 0% is invisible, 100% is fully shown.")
+    y = y - SLIDER_H
+
+    local zoom = KeySlider(f, 0, y, "Minimap zoom: %s", "zoom", 0, 5, 1)
+    Tip(zoom.slider, "Minimap zoom", "How far the map is zoomed in. Higher values show a smaller area.")
+    y = y - SLIDER_H - GAP_H
+
+    BuildKeybind(f, y)
 end
 
 local function BuildOverlay(f)
-    -- Ring radius in pixels or in yards (the button at the top right of the first slider switches). Both pairs sit
-    -- in the same place; only the pair for the chosen unit is shown.
-    local YdOrOff = function(v) return v == 0 and GT.TR("off") or GT.TRF("%d yd", v) end
-    local sPx1 = KeySlider(f, 0, 0,   "Ring radius: %s", "ring",    0, 700, 1, PxOrOff)
-    local sPx2 = KeySlider(f, 0, -38, "Second ring: %s", "ring2",   0, 700, 1, PxOrOff)
-    local sYd1 = KeySlider(f, 0, 0,   "Ring radius: %s", "ringYd",  0, 250, 5, YdOrOff)
-    local sYd2 = KeySlider(f, 0, -38, "Second ring: %s", "ring2Yd", 0, 250, 5, YdOrOff)
+    local y = 0
+    Heading(f, 0, y, "Rings")
+    -- unit button: switches the ring radius between pixels and yards (top right of the heading row)
     local unitBtn = GT:CreateFlatButton(f, "", 76, 15)
     unitBtn:SetPoint("TOPLEFT", 212, 1)
+    Tip(unitBtn, "Ring unit", "Switch the ring radius between pixels and yards.")
+    y = y - SECTION_H
+
+    -- ring radius: one pair per unit, only the pair for the chosen unit is shown
+    local YdOrOff = function(v) return v == 0 and GT.TR("off") or GT.TRF("%d yd", v) end
+    local sPx1 = KeySlider(f, 0, y, "Ring radius: %s", "ring", 0, 700, 1, PxOrOff)
+    local sYd1 = KeySlider(f, 0, y, "Ring radius: %s", "ringYd", 0, 250, 5, YdOrOff)
+    Tip(sPx1.slider, "Ring radius", "How far from the centre the first ring is drawn, in pixels. 0 = off.")
+    Tip(sYd1.slider, "Ring radius", "How far from the centre the first ring is drawn, in yards. 0 = off.")
+    y = y - SLIDER_H
+
+    local sPx2 = KeySlider(f, 0, y, "Second ring: %s", "ring2", 0, 700, 1, PxOrOff)
+    local sYd2 = KeySlider(f, 0, y, "Second ring: %s", "ring2Yd", 0, 250, 5, YdOrOff)
+    Tip(sPx2.slider, "Second ring", "How far from the centre the second ring is drawn, in pixels. 0 = off.")
+    Tip(sYd2.slider, "Second ring", "How far from the centre the second ring is drawn, in yards. 0 = off.")
+    y = y - SLIDER_H
+
     local function ApplyUnit()
         local yd = HUD.db.ringUnit == "yd"
         sPx1:SetShown(not yd); sPx2:SetShown(not yd)
@@ -394,38 +478,44 @@ local function BuildOverlay(f)
     unitBtn:SetScript("OnClick", function()
         HUD.Set("ringUnit", HUD.db.ringUnit == "yd" and "px" or "yd", true)
         ApplyUnit()
+        ApplyGates()
     end)
     refreshers[#refreshers + 1] = ApplyUnit
     ApplyUnit()
-    KeySlider(f, 0, -76, "Ring thickness: %s",  "ringThickness", 1, 10,  1, Px)
-    KeySlider(f, 0, -114,"Ring smoothness: %s", "ringSegments",  8, 256, 8)
-    KeySlider(f, 0, -150,"Ring density: %s", "ringDensity", 4, 128, 4)
+
+    local thick = KeySlider(f, 0, y, "Ring thickness: %s", "ringThickness", 1, 10, 1, Px)
+    Tip(thick.slider, "Ring thickness", "How thick the ring lines are, in pixels.")
+    y = y - SLIDER_H
+
+    local smooth = KeySlider(f, 0, y, "Ring smoothness: %s", "ringSegments", 8, 256, 8)
+    Tip(smooth.slider, "Ring smoothness", "How many segments make up each ring. More = a smoother circle, a little more work.")
+    y = y - SLIDER_H
+
+    local density = KeySlider(f, 0, y, "Ring density: %s", "ringDensity", 4, 128, 4)
+    Tip(density.slider, "Ring density", "How many dots or stripes a ring has when it is not a solid line. More = closer together.")
+    y = y - SLIDER_H - GAP_H
+
+    -- colour and style, then the readouts, in one group
+    Heading(f, 0, y, "Style and readouts")
+    y = y - SECTION_H
 
     swatch = GT:CreateFlatFrame(nil, f, 20, 20)                -- ring 1 colour
-    swatch:SetPoint("TOPLEFT", 2, -186)
+    swatch:SetPoint("TOPLEFT", 2, y)
     swatch2 = GT:CreateFlatFrame(nil, f, 20, 20)               -- ring 2 colour (right next to ring 1)
-    swatch2:SetPoint("TOPLEFT", 26, -186)
-    local function SetupSwatch(frame, title)
-        frame:EnableMouse(true)
-        frame:HookScript("OnEnter", function(self)
-            GT.Tip:SetOwner(self, "ANCHOR_TOP")
-            GT.Tip:AddLine(GT.TR(title))
-            GT.Tip:Show()
-        end)
-        frame:HookScript("OnLeave", function() GT.Tip:Hide() end)
-    end
-    SetupSwatch(swatch, "Ring 1 colour")
-    SetupSwatch(swatch2, "Ring 2 colour")
+    swatch2:SetPoint("TOPLEFT", 26, y)
+    swatch:EnableMouse(true); swatch2:EnableMouse(true)
+    Tip(swatch, "Ring 1 colour", "The colour of the first ring. Use Ring colour... to change it.")
+    Tip(swatch2, "Ring 2 colour", "The colour of the second ring. Use Ring colour... to change it.")
 
-    local pick = Button(f, "Ring colour...", 108, 54, -186)
+    local pick = Button(f, "Ring colour...", 108, 54, y)
     pick:SetScript("OnClick", OpenColorPicker)
-
+    Tip(pick, "Ring colour...", "Open the colour picker for the rings.")
     refreshers[#refreshers + 1] = UpdateSwatch
 
     -- ring style: line -> stripes -> dots -> line
     local STYLES = { "solid", "stripes", "dots" }
     local STYLE_TEXT = { solid = "Ring: line", stripes = "Ring: stripes", dots = "Ring: dots" }
-    local styleBtn = Button(f, "", 100, 168, -186)
+    local styleBtn = Button(f, "", 100, 168, y)
     local function StyleLabel() styleBtn.label:SetText(GT.TR(STYLE_TEXT[HUD.db.ringStyle] or STYLE_TEXT.solid)) end
     styleBtn:SetScript("OnClick", function()
         local cur = HUD.db.ringStyle or "solid"
@@ -436,74 +526,231 @@ local function BuildOverlay(f)
         HUD.Set("ringStyle", nextStyle, true)
         StyleLabel()
     end)
+    Tip(styleBtn, "Ring style", "Change how the rings are drawn: solid line, stripes or dots.")
     refreshers[#refreshers + 1] = StyleLabel
 
-    KeyCheck(f, 0, -214, "Compass letters (N E S W)", "dirs", 150)
-    KeyCheck(f, 176, -214, "Heading readout",         "heading", 88)    -- same row as the compass letters
-    KeyCheck(f, 0, -236, "Hover tooltips on nodes",   "hudHover")       -- the normal HUD only; the Eagle map has its own (Eagle tab)
-    KeyCheck(f, 0, -258, "Ready-first gathering readout", "priorityReadout")
-    KeyCheck(f, 0, -280, "Route progress readout", "routeReadout")
+    -- ring settings only matter while ring 1 or ring 2 has a radius
+    Gate(function()
+        local db = HUD.db
+        if db.ringUnit == "yd" then return (db.ringYd or 0) > 0 or (db.ring2Yd or 0) > 0 end
+        return (db.ring or 0) > 0 or (db.ring2 or 0) > 0
+    end, { "ringThickness", "ringSegments", "ringDensity", styleBtn, pick, swatch, swatch2 })
+
+    y = y - ROW_H - GAP_H
+    local compass = KeyCheck(f, 0, y, "Compass letters (N E S W)", "dirs", 150)
+    Tip(compass, "Compass letters", "Show N, E, S and W around the edge of the map.")
+    local heading = KeyCheck(f, 176, y, "Heading readout", "heading", 88)
+    Tip(heading, "Heading readout", "Show the direction you are facing as a number of degrees.")
+    y = y - ROW_H
+
+    local hover = KeyCheck(f, 0, y, "Hover tooltips on nodes", "hudHover")
+    Tip(hover, "Hover tooltips on nodes", "Show the name of a gathering node when you hover it on the HUD map. The Eagle map has its own setting on the Eagle tab.")
+    y = y - ROW_H
+
+    local priority = KeyCheck(f, 0, y, "Ready-first gathering readout", "priorityReadout")
+    Tip(priority, "Ready-first gathering readout", "Show which gathering spot is ready first.")
+    y = y - ROW_H
+
+    local route = KeyCheck(f, 0, y, "Route progress readout", "routeReadout")
+    Tip(route, "Route progress readout", "Show how far you have got along the current route.")
 end
 
 local MODES = { { "auto", "Auto" }, { "own", "HUD button" }, { "stock", "Blizzard" } }
 
 local function BuildTracking(f)
-    Heading(f, 0, 0, "While the HUD is on")
-    KeyCheck(f, 0, -22, "Show tracking button", "tracking")
-    KeySlider(f, 0, -48,  "Button size: %s", "trackingSize", 20, 80, 1, Px)
-    KeySlider(f, 0, -86,  "Offset X: %s",    "trackingX", -1500, 1500, 1)
-    KeySlider(f, 0, -124, "Offset Y: %s",    "trackingY", -1000, 1000, 1)
+    local y = 0
+    Heading(f, 0, y, "While the HUD is on")
+    y = y - SECTION_H
 
-    Heading(f, 0, -170, "While the HUD is off")
+    local show = KeyCheck(f, 0, y, "Show tracking button", "tracking")
+    Tip(show, "Show tracking button", "Show a button on the HUD for the gathering tracking spell (Find Herbs, Find Minerals, Find Treasure).")
+    y = y - ROW_H
+
+    local bsize = KeySlider(f, 0, y, "Button size: %s", "trackingSize", 20, 80, 1, Px)
+    Tip(bsize.slider, "Button size", "How big the tracking button is, in pixels.")
+    y = y - SLIDER_H
+
+    local tx = KeySlider(f, 0, y, "Offset X: %s", "trackingX", -1500, 1500, 1)
+    Tip(tx.slider, "Offset X", "Move the tracking button sideways, in pixels, from its normal place.")
+    y = y - SLIDER_H
+
+    local ty = KeySlider(f, 0, y, "Offset Y: %s", "trackingY", -1000, 1000, 1)
+    Tip(ty.slider, "Offset Y", "Move the tracking button up or down, in pixels, from its normal place.")
+    y = y - SLIDER_H - GAP_H
+
+    Gate(function() return HUD.db.tracking and true or false end, { "trackingSize", "trackingX", "trackingY" })
+
+    Heading(f, 0, y, "While the HUD is off")
+    y = y - SECTION_H
+
+    local MODE_TIPS = {
+        auto  = "Choose the tracking button automatically while the HUD is off.",
+        own   = "Use the HUD's own tracking button while the HUD is off.",
+        stock = "Use the game's own tracking button while the HUD is off.",
+    }
     local buttons = {}
     for i, m in ipairs(MODES) do
         local id = m[1]
-        local b = Button(f, m[2], 92, (i - 1) * 96, -192)
+        local b = Button(f, m[2], 92, (i - 1) * 96, y)
         b:SetScript("OnClick", function()
             HUD.Set("trackIdle", id, true)
             for mid, mb in pairs(buttons) do GT:SetButtonActive(mb, HUD.db.trackIdle == mid) end
         end)
+        Tip(b, m[2], MODE_TIPS[id])
         buttons[id] = b
     end
     refreshers[#refreshers + 1] = function()
         for mid, mb in pairs(buttons) do GT:SetButtonActive(mb, HUD.db.trackIdle == mid) end
     end
-    KeySlider(f, 0, -220, "Offset X: %s", "idleX", -1500, 1500, 1)
-    KeySlider(f, 0, -258, "Offset Y: %s", "idleY", -1500, 1500, 1)
+    y = y - ROW_H - 6
+
+    local ix = KeySlider(f, 0, y, "Offset X: %s", "idleX", -1500, 1500, 1)
+    Tip(ix.slider, "Offset X (HUD off)", "Move the tracking button sideways, in pixels, while the HUD is off.")
+    y = y - SLIDER_H
+
+    local iy = KeySlider(f, 0, y, "Offset Y: %s", "idleY", -1500, 1500, 1)
+    Tip(iy.slider, "Offset Y (HUD off)", "Move the tracking button up or down, in pixels, while the HUD is off.")
 end
 
 local function BuildOptions(f)
-    Heading(f, 0, 0, "Behaviour")
-    KeyCheck(f, 0,   -22,  "Rotate map with player",              "rotate")
-    KeyCheck(f, 144, -22,  "Show player arrow",                   "arrow")
-    KeyCheck(f, 0, -44,  "Hide HUD while mounted",              "mountFade")
-    KeyCheck(f, 0, -66,  "Auto-enable with gathering tracking", "autoGather")
-    RootCheck(f, 0, -88, "Restore HUD after /reload or login", "restoreOnLogin")
-    KeyCheck(f, 0, -110, "Hide Gx and (G) timers while the HUD is off", "hideLabelsIdle")
+    -- Layout: one option per row, grouped, same spacing as the other tabs.
+    local ROW, HEAD, GAP = ROW_H, SECTION_H - 4, GAP_H
+    local y = 0
 
-    Heading(f, 0, -138, "Minimap addons")
-    KeyCheck(f, 0, -160, "Hide minimap addon skins / buttons", "hideAddons")
-    RootCheck(f, 0, -182, "Deep scan for other minimap addons", "deepScan")
-    local seen = Note(f, 0, -204, COL_W, "")
+    local function Section(text)
+        if y < 0 then y = y - GAP end         -- no gap above the first group
+        Heading(f, 0, y, text)
+        y = y - HEAD
+    end
+
+    -- checkbox bound to a profile setting
+    local function OptKey(text, key, description)
+        local cb = KeyCheck(f, 0, y, text, key)
+        Tip(cb, text, description)
+        y = y - ROW
+    end
+
+    -- checkbox bound to an account-wide switch
+    local function OptRoot(text, key, description)
+        local cb = RootCheck(f, 0, y, text, key)
+        Tip(cb, text, description)
+        y = y - ROW
+    end
+
+    Section("Behaviour")
+    OptKey("Rotate map with player", "rotate",
+        "On: the map turns so the direction you are facing is always up.")
+    OptKey("Show player arrow", "arrow",
+        "On: an arrow in the middle of the map shows which way you are facing. It is hidden while the Eagle map is up.")
+    OptKey("Hide HUD while mounted", "mountFade",
+        "On: the HUD hides while you are mounted and comes back when you dismount.")
+    OptKey("Auto-enable with gathering tracking", "autoGather",
+        "On: the HUD turns on by itself while a gathering tracking spell is active (Find Herbs, Find Minerals, Find Treasure), and turns off again afterwards.")
+    OptRoot("Restore HUD after /reload or login", "restoreOnLogin",
+        "On: if the HUD was on when you logged out or reloaded, it is turned on again.")
+    OptKey("Hide Gx and (G) timers while the HUD is off", "hideLabelsIdle",
+        "On: the Gx labels and (G) timers on the minimap are hidden while the HUD is off.")
+
+    Section("Minimap addons")
+    OptKey("Hide minimap addon skins / buttons", "hideAddons",
+        "On: the buttons and borders that other addons put around the minimap (SexyMap, ElvUI, LibDBIcon and similar) are hidden while the HUD is on.")
+    local seen = Note(f, 0, y, COL_W, "")      -- a text label, so it has no tooltip
+    seen:SetHeight(26)
     refreshers[#refreshers + 1] = function()
         local list = HUD.LoadedSkinAddons()
         seen:SetText(GT.TRF("Detected: %s", #list > 0 and table.concat(list, ", ") or GT.TR("none")))
     end
+    y = y - 26
 
-    Heading(f, 0, -226, "Diagnostics (chat output)")
-    RootCheck(f, 0, -248, "Debug messages", "debug")
-    local status = Button(f, "Status", 92, 0, -274)
+    Section("Diagnostics (chat output)")
+    OptRoot("Debug messages", "debug",
+        "On: the HUD prints its debug messages in chat. Only useful when reporting a problem.")
+    local status = Button(f, "Status", 92, 0, y)
     status:SetScript("OnClick", function() HUD.Status() end)
-    local info = Button(f, "Info", 92, 96, -274)
+    Tip(status, "Status", "Print the HUD's current status and settings to chat.")
+    local info = Button(f, "Info", 92, 96, y)
     info:SetScript("OnClick", function() HUD.Info() end)
-    local frames = Button(f, "Frames", 92, 192, -274)
+    Tip(info, "Info", "Print general information about the HUD to chat.")
+    local frames = Button(f, "Frames", 92, 192, y)
     frames:SetScript("OnClick", function() HUD.ListFrames() end)
+    Tip(frames, "Frames", "List the minimap frames the HUD found, in chat.")
 end
 
--- Eagle Eye map: while the hunter's Eagle Eye is on, the HUD stays up as a smaller centred map (HUD.lua, HUD.Cfg)
+local function BuildPerf(f)
+    local y = 0
+    local function Section(text)
+        if y < 0 then y = y - GAP_H end
+        Heading(f, 0, y, text)
+        y = y - (SECTION_H - 4)
+    end
+
+    Section("Performance level")
+    local PERF = {
+        { 0, "Full",     "Full speed and saved ring detail. While the HUD is on during Eagle Eye, the Eagle map uses the normal HUD rings instead." },
+        { 1, "Balanced", "Keeps the Eagle map, hides its own Eagle rings and uses the HUD rings instead; rings are limited to 48 pieces; the update loops run slower; deep scan is off. Good for most slower PCs." },
+        { 2, "Lowest",   "No rings and no Eagle map (the names still show during Eagle Eye); the slowest update loops (the compass and player arrow move in coarser steps), timers refresh every 2 s while the HUD is on; deep scan is off." },
+    }
+    local perfButtons = {}
+    for i, m in ipairs(PERF) do
+        local lvl = m[1]
+        local b = Button(f, m[2], 92, (i - 1) * 96, y)
+        b:SetScript("OnClick", function() HUD.SetPerfLevel(lvl) end)
+        Tip(b, "Performance: " .. m[2], m[3] .. " Your saved ring values are kept, so going back to Full brings them back.")
+        perfButtons[lvl] = b
+    end
+    y = y - ROW_H - 4
+
+    local PERF_NOTES = {
+        [0] = "Full: full speed and saved ring detail; the active Eagle map uses the normal HUD rings.",
+        "Balanced: the Eagle map stays; its own rings are hidden and the HUD rings are used. Rings are limited to 48 pieces and the update loops run slower.",
+        "Lowest: no rings and no Eagle map (names still show during Eagle Eye). Slowest update loops; timers refresh every 2 s while the HUD is on.",
+    }
+    local perfNote = Note(f, 0, y, COL_W, "")
+    perfNote:SetHeight(40)
+    perfNote:SetJustifyV("TOP")
+    refreshers[#refreshers + 1] = function()
+        local cur = HUD.PerfLevel()
+        for lvl, pb in pairs(perfButtons) do GT:SetButtonActive(pb, cur == lvl) end
+        perfNote:SetText(GT.TR(PERF_NOTES[cur]))
+    end
+    y = y - 44
+
+    Section("Extras")
+    local suggest = RootCheck(f, 0, y, "Suggest this when the frame rate is low", "perfSuggest")
+    Tip(suggest, "Suggest this when the frame rate is low",
+        "On: if the HUD is on at Full and the frame rate stays under 25 FPS for 30 seconds, one chat line points you to this tab. It is shown once.")
+    y = y - ROW_H
+    local deep = RootCheck(f, 0, y, "Deep scan for other minimap addons", "deepScan")
+    Tip(deep, "Deep scan for other minimap addons",
+        "On: the HUD also searches the other frames on screen for minimap addons it does not know by name. This uses more processing, so keep it off unless a minimap addon is not being hidden. It is always off in Balanced and Lowest (minimap skin addons the HUD knows by name, such as SexyMap, are still handled).")
+    Gate(function() return HUD.PerfLevel() == 0 end, { deep })
+    y = y - ROW_H
+
+    Section("Game graphics")
+    local gfxBtn = Button(f, "", COL_W, 0, y)
+    local function GfxLabel()
+        local on = GT.Gfx and GT.Gfx.GetLevel() > 0
+        gfxBtn.label:SetText(GT.TR(on and "Restore my game graphics" or "Also lower game graphics (Low)"))
+        GT:SetButtonActive(gfxBtn, on and true or false)
+    end
+    gfxBtn:SetScript("OnClick", function()
+        if not GT.Gfx then return end
+        local okSet = GT.Gfx.SetLevel(GT.Gfx.GetLevel() > 0 and 0 or 1)
+        if okSet == false then
+            HUD.Print(GT.TR("The game did not accept the graphics change (it may be locked in combat). Try again out of combat."))
+        end
+        GfxLabel()
+    end)
+    Tip(gfxBtn, "Game graphics", "Sets the game's own graphics quality to Low, the same as Settings > Display > Graphics quality. Press again to put your own settings back.")
+    refreshers[#refreshers + 1] = GfxLabel
+    y = y - ROW_H - 4
+    Note(f, 0, y, COL_W, "The HUD levels above only change this addon. This button changes the game's own graphics; your settings are remembered and put back.")
+end
+
 local function BuildEagle(f)
-    Heading(f, 0, 0, "Eagle Eye map")
-    local preview = Button(f, "", 140, COL_W - 140, 2)
+    local y = 0
+    Heading(f, 0, y, "Eagle Eye map")
+    local preview = Button(f, "", 140, COL_W - 140, y + 2)
     local function PreviewLabel()
         preview.label:SetText(GT.TR(HUD.EaglePreviewing() and "Stop preview" or "Preview Eagle map"))
         GT:SetButtonActive(preview, HUD.EaglePreviewing())
@@ -514,24 +761,53 @@ local function BuildEagle(f)
         HUD.EaglePreview()
         PreviewLabel()
     end)
+    Tip(preview, "Preview Eagle map", "Show the Eagle map now to see how it looks. Needs the HUD on and the first option below switched on.")
     refreshers[#refreshers + 1] = PreviewLabel
+    y = y - SECTION_H
 
-    KeyCheck(f, 0, -22, "Show this map during Eagle Eye, Far Sight, Mind Vision", "eagleMap")
-    KeySlider(f, 0, -48, "Map size: %s", "eagleSize", 150, HUD.MaxSize(), 10, Px)
-    Slider(f, 0, -86, "Map opacity: %s", 0, 10, 1,
+    local enable = KeyCheck(f, 0, y, "Show this map during Eagle Eye, Far Sight, Mind Vision", "eagleMap")
+    Tip(enable, "Show this map during Eagle Eye", "On: the Eagle map is shown during Eagle Eye, Far Sight, Mind Vision and similar spells. The options below only apply while it is on.")
+    y = y - ROW_H - 2
+
+    local size = KeySlider(f, 0, y, "Map size: %s", "eagleSize", 150, HUD.MaxSize(), 10, Px)
+    Tip(size.slider, "Map size", "How big the Eagle map is, in pixels.")
+    y = y - SLIDER_H
+
+    byKey.eagleAlpha = Slider(f, 0, y, "Map opacity: %s", 0, 10, 1,
         function() return math.floor(HUD.db.eagleAlpha * 10 + 0.5) end,
         function(v)
             if math.floor(HUD.db.eagleAlpha * 10 + 0.5) ~= v then HUD.Set("eagleAlpha", v / 10, true) end
         end,
         function(v) return string.format("%d%%", math.floor(v * 10 + 0.5)) end)
-    KeySlider(f, 0, -124, "Minimap zoom: %s", "eagleZoom", 0, 5, 1)
-    KeyCheck(f, 0,   -162, "Rotate map with camera",  "eagleRotate")
-    KeyCheck(f, 144, -162, "Ring around the map",     "eagleRing")
-    KeyCheck(f, 0,   -184, "Distance scale in yards", "eagleScale")
-    KeyCheck(f, 144, -184, "Nearest node readout",    "eagleNearest")
-    KeyCheck(f, 0,   -206, "Hover tooltips on the map", "eagleHover")
-    KeyCheck(f, 0,   -228, "Hide Gx and (G) timers on the map", "eagleHideLabels")
-    KeyCheck(f, 0,   -250, "Same zoom and rings as the HUD", "eagleSync")
+    Tip(byKey.eagleAlpha.slider, "Map opacity (Eagle)", "How solid the Eagle map is. 0% is invisible, 100% is fully shown.")
+    y = y - SLIDER_H
+
+    local zoom = KeySlider(f, 0, y, "Minimap zoom: %s", "eagleZoom", 0, 5, 1)
+    Tip(zoom.slider, "Minimap zoom (Eagle)", "How far the Eagle map is zoomed in. Higher values show a smaller area.")
+    y = y - SLIDER_H - GAP_H
+
+    local rotate = KeyCheck(f, 0, y, "Rotate map with camera", "eagleRotate")
+    Tip(rotate, "Rotate map with camera", "On: the Eagle map turns with the camera direction.")
+    y = y - ROW_H
+    local scale = KeyCheck(f, 0, y, "Distance scale in yards", "eagleScale")
+    Tip(scale, "Distance scale in yards", "On: a distance scale in yards is drawn on the Eagle map.")
+    y = y - ROW_H
+    local nearest = KeyCheck(f, 0, y, "Nearest node readout", "eagleNearest")
+    Tip(nearest, "Nearest node readout", "On: shows the nearest gathering node and how far away it is.")
+    y = y - ROW_H
+    local hover = KeyCheck(f, 0, y, "Hover tooltips on the map", "eagleHover")
+    Tip(hover, "Hover tooltips on the map", "On: hover a gathering node on the Eagle map to see its name.")
+    y = y - ROW_H
+    local labels = KeyCheck(f, 0, y, "Hide Gx and (G) timers on the map", "eagleHideLabels")
+    Tip(labels, "Hide Gx and (G) timers on the map", "On: the Gx labels and (G) timers are hidden on the Eagle map.")
+    y = y - ROW_H
+    local layer = KeyCheck(f, 0, y, "Hide layer info (e.g. Layer 1) on the map", "eagleHideLayer")
+    Tip(layer, "Hide layer info", "On: hides the layer text, such as Layer 1, on the Eagle map.")
+
+    Gate(function() return HUD.db.eagleMap and true or false end, {
+        "eagleSize", "eagleAlpha", "eagleZoom", "eagleRotate", "eagleScale",
+        "eagleNearest", "eagleHover", "eagleHideLabels", "eagleHideLayer",
+    })
 end
 
 local function BuildProfiles(f)
@@ -619,7 +895,11 @@ end
 -- ----------------------------------------------------------------------------------------------- panel
 local function ShowTab(id)
     for tid, f in pairs(tabFrames) do f:SetShown(tid == id) end
-    for tid, b in pairs(tabButtons) do GT:SetButtonActive(b, tid == id) end
+    for i, def in ipairs(TABS) do
+        if def[1] == id then sectionDropdown:SetSelected(i); break end
+    end
+    ApplyGates()
+    if resetButton then resetButton:SetShown(id == "profiles") end
     if id == "profiles" then RefreshProfiles() end
 end
 
@@ -627,18 +907,23 @@ end
 GT.panelBuilders.HUD = function(p, content)
     p.header.title:SetText(GT.TR("HUD"))
 
-    -- tab row: 6 flat buttons, 2 px apart
-    local TAB_W, TAB_GAP = 46, 2
+    local section = GT.Font(content, nil, "OVERLAY", "GameFontHighlightSmall")
+    section:SetPoint("LEFT", content, "TOPLEFT", 2, -10)
+    section:SetText(GT.TR("Section:"))
+    local items = {}
     for i, def in ipairs(TABS) do
-        local id, text = def[1], def[2]
-        local b = GT:CreateFlatButton(content, text, TAB_W, 20)
-        b:SetPoint("TOPLEFT", (i - 1) * (TAB_W + TAB_GAP), 0)
-        b:SetScript("OnClick", function() ShowTab(id) end)
-        tabButtons[id] = b
+        items[i] = { text = GT.TR(def[2]), tooltip = def[3] }
+    end
+    sectionDropdown = GT:CreateDropdown(content, 160, 20, items, function(index)
+        ShowTab(TABS[index][1])
+    end)
+    sectionDropdown:SetPoint("TOPLEFT", content, "TOPLEFT", 62, 0)
 
+    for _, def in ipairs(TABS) do
+        local id = def[1]
         local sub = CreateFrame("Frame", nil, content)
         sub:SetPoint("TOPLEFT", content, "TOPLEFT", 0, -30)
-        sub:SetPoint("BOTTOMRIGHT", content, "BOTTOMRIGHT", 0, 28)   -- room for the button row below
+        sub:SetPoint("BOTTOMRIGHT", content, "BOTTOMRIGHT", 0, id == "profiles" and 28 or 0)   -- room for Reset profile
         sub:Hide()
         tabFrames[id] = sub
     end
@@ -646,13 +931,17 @@ GT.panelBuilders.HUD = function(p, content)
     BuildOverlay(tabFrames.overlay)
     BuildTracking(tabFrames.tracking)
     BuildOptions(tabFrames.options)
+    BuildPerf(tabFrames.perf)
     BuildEagle(tabFrames.eagle)
     BuildProfiles(tabFrames.profiles)
 
-    -- bottom row (visible on every tab)
-    local reset = GT:CreateFlatButton(content, "Reset profile", 142, 22)
-    reset:SetPoint("BOTTOMLEFT", content, "BOTTOMLEFT", 0, 0)
+    -- Reset profile sits on the panel frame; ShowTab shows it on the Profile tab only
+    local reset = GT:CreateFlatButton(p, "Reset profile", 142, 22)
+    resetButton = reset
+    reset:SetPoint("BOTTOMLEFT", p, "BOTTOMLEFT", 6, 6)
+    reset:SetFrameLevel(p:GetFrameLevel() + 10)
     GT:SetConfirmClick(reset, "Reset profile", function() HUD.ResetProfile() end)
+    Tip(reset, "Reset profile", "Reset the current HUD profile to the default settings. Click twice to confirm.")
 
     p:SetScript("OnShow", function() Config.Refresh() end)
     ShowTab("map")
@@ -671,6 +960,7 @@ end
 function Config.Refresh()
     if not (built and panel:IsShown()) then return end
     for _, fn in ipairs(refreshers) do fn() end
+    ApplyGates()
     RefreshProfiles()
 end
 

@@ -68,6 +68,8 @@ function GT.RecordZoneYield(key, mapID, itemID, quantityDelta, newDrop, newGathe
     quantityDelta = tonumber(quantityDelta)
     if not quantityDelta or quantityDelta ~= quantityDelta then quantityDelta = 0 end
     item.quantity = math.max(0, math.min(1000000000, CleanCount(item.quantity) + quantityDelta))
+    -- one gather visit: the skill ETA (Gathering\SkillEta.lua) counts these
+    if newGather and GT.NoteSkillGather then pcall(GT.NoteSkillGather, key) end
 end
 
 local function ZoneName(mapID)
@@ -191,6 +193,35 @@ function GT.AddOtherLoot(itemID, qty)
     if GT.SaveSession then pcall(GT.SaveSession) end
 end
 
+-- Node types of this session ranked by gold per hour, best first: { { key, perHour (copper) }, ... }.
+-- Same prices as the summary (UnitValue); types without a price are left out.  Empty during the first minute.
+function GT.RankNodesByGold()
+    local el = GetTime() - stats.start
+    if el < 60 then return {} end
+    local hours = el / 3600
+    local list = {}
+    for i, key in ipairs(order) do
+        local n = stats.counts[key]
+        local unit = n and n > 0 and UnitValue(nodes[key].id)
+        if unit then list[#list + 1] = { key = key, perHour = unit * n / hours, i = i } end
+    end
+    table.sort(list, function(a, b)
+        if a.perHour ~= b.perHour then return a.perHour > b.perHour end
+        return a.i < b.i
+    end)
+    return list
+end
+
+-- the best node type right now: key, copper per hour (nil when there is no priced data yet)
+function GT.BestNodeByGold()
+    local top = GT.RankNodesByGold()[1]
+    if top then return top.key, top.perHour end
+end
+
+-- spots found already taken by someone else this session (Learn.lua MarkEmpty)
+local takenCount = 0
+function GT.NoteTaken() takenCount = takenCount + 1 end
+
 local OTHER_SHOWN = 10      -- other items listed (the most valuable); the rest is summed up
 
 -- the session summary: used by the chat output, the Timers panel and the copy window.
@@ -245,6 +276,10 @@ function GT.FormatStats(checkedOnly)
             lines[#lines + 1] = GT.TRF("Total: %d  (%.0f/hr)", total, perHour(total))
         end
         lines[#lines + 1] = GT.TRF("Value: %s  (%s/hr)", PlainMoney(value), PlainMoney(perHour(value)))
+        local best, bestRate = GT.BestNodeByGold()
+        if best then
+            lines[#lines + 1] = GT.TRF("Best node: %s  (%s/hr)", nodes[best].label, PlainMoney(bestRate))
+        end
         if unpriced > 0 then
             lines[#lines + 1] = GT.TRF("%d item type(s) without a price, not in Value", unpriced)
         end
@@ -254,13 +289,20 @@ function GT.FormatStats(checkedOnly)
     else
         lines[#lines + 1] = GT.TR("Nothing counted yet. Loot a herb or ore, then type /gt debug to see what the addon detects.")
     end
+    if takenCount > 0 then lines[#lines + 1] = GT.TRF("Taken by someone else: %d", takenCount) end
+    -- Herbalism / Mining: how many more nodes (and minutes) to the next skill point (Gathering\SkillEta.lua)
+    if GT.SkillEtaLines then
+        local ok, eta = pcall(GT.SkillEtaLines)
+        if ok and eta then
+            for _, line in ipairs(eta) do lines[#lines + 1] = line end
+        end
+    end
     return table.concat(lines, "\n")
 end
 
 -- total gold value of this session, in copper (the same prices as the summary)
 local goldCache = { items = -1, copper = 0, t = 0 }
--- withIcon = true: the gold coin icon instead of the letter g (the minimized bar); plain "g" stays for text boxes
-function GT.SessionGoldText(withIcon)
+local function SessionCopper()
     local items = 0
     for _, key in ipairs(order) do items = items + (stats.counts[key] or 0) end
     for _, n in pairs(stats.other) do items = items + (n or 0) end
@@ -280,8 +322,23 @@ function GT.SessionGoldText(withIcon)
         end
         goldCache.items, goldCache.copper, goldCache.t = items, value, now
     end
+    return goldCache.copper
+end
+
+-- gold of this session in copper
+function GT.SessionGoldCopper() return SessionCopper() end
+
+-- gold per hour of this session in copper, nil during the first minute (too little data)
+function GT.SessionGoldPerHour()
+    local el = GetTime() - stats.start
+    if el < 60 then return nil end
+    return SessionCopper() / (el / 3600)
+end
+
+-- withIcon = true: the gold coin icon instead of the letter g (the minimized bar); plain "g" stays for text boxes
+function GT.SessionGoldText(withIcon)
     -- gold only: silver and copper are not shown
-    local g = math.floor(goldCache.copper / 10000)
+    local g = math.floor(SessionCopper() / 10000)
     if withIcon then return g .. "|TInterface\\MoneyFrame\\UI-GoldIcon:0:0:2:0|t" end
     return string.format("%dg", g)
 end
@@ -340,6 +397,8 @@ function GT.ResetSessionStats()
     wipe(stats.counts)
     wipe(stats.other)
     GT.SaveSession()
+    if GT.ResetSkillEta then pcall(GT.ResetSkillEta) end
+    takenCount = 0
     if GT.sessionGatheredSpots then wipe(GT.sessionGatheredSpots) end
     GT.UpdateList()
     if GT.SyncSpawnPins then pcall(GT.SyncSpawnPins) end

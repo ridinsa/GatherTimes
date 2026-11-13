@@ -248,7 +248,14 @@ function GT.MarkEmpty(sp, key, justNow)
     local node = GT.TimerNodeAt(key, sp)
     if node and (node.time + def.timer) > now then return false end
     sp.misses = (sp.misses or 0) + 1
+    -- Someone else took it.  Your own last loot here is no longer a reference for the respawn: the next loot would be
+    -- measured over two respawns (plus the time the other player held it) and teach the learner a timer that is too
+    -- long.  Without a reference time, GT.RecordInterval skips that sample.  (The "looks empty" estimate keeps it:
+    -- there the node may simply not be back yet, and the next loot is a good sample for a longer respawn.)
+    if justNow then sp.lootTime = nil end
+    if GT.NoteTaken then GT.NoteTaken(key) end
     if node then
+        node.taken = true                          -- shown as "taken" on the timer (map text, bar chip tooltip)
         if justNow then node.time = now
         else node.time = math.floor((node.time + def.timer + now) / 2) end
         node._hasAlerted, node._soundDone = nil, nil
@@ -256,7 +263,7 @@ function GT.MarkEmpty(sp, key, justNow)
         node.est = not justNow
     else
         table.insert(GatherTimesDB[key], {
-            mapID = sp.mapID, x = sp.x, y = sp.y, sid = sp.sid, est = not justNow, realm = GT.RealmName(),
+            mapID = sp.mapID, x = sp.x, y = sp.y, sid = sp.sid, est = not justNow, taken = true, realm = GT.RealmName(),
             time = justNow and now or (now - math.floor(def.timer / 2)),
         })
     end

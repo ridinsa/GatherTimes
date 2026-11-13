@@ -1,6 +1,6 @@
 -- Dropdown.lua : flat dropdown box (no Blizzard dropdown template)
 --   dd = GT:CreateDropdown(parent, w, h, items, onSelect [, maxRows])
---   items    : strings or { text = string, count = number }; counts are shown right-aligned
+--   items    : strings or { text = string, count = number, tooltip = string }; optional counts are right-aligned
 --              onSelect(index, text) runs when the user picks one
 --   maxRows  : rows shown before the list scrolls (default 10)
 --   dd:SetItems(list)  replace the entries at any time      dd:SetSelected(index)  set the shown entry
@@ -64,11 +64,18 @@ function GT:CreateDropdown(parent, w, h, items, onSelect, maxRows)
         row.count:SetPoint("RIGHT", -8, 0)
         row.count:SetWidth(34)
         row.count:SetJustifyH("RIGHT")
-        row:SetScript("OnEnter", function()
+        row:SetScript("OnEnter", function(self)
             hl:SetVertexColor(unpack(GT.colors.hover))
             hl:Show()
+            local item = self.item
+            if item and item.tooltip then
+                GT.Tip:SetOwner(self, "ANCHOR_RIGHT")
+                GT.Tip:AddLine(item.text)
+                GT.Tip:AddLine(GT.TR(item.tooltip), 0.85, 0.85, 0.85, true)
+                GT.Tip:Show()
+            end
         end)
-        row:SetScript("OnLeave", function() hl:Hide() end)
+        row:SetScript("OnLeave", function() hl:Hide(); GT.Tip:Hide() end)
         row:SetScript("OnClick", function(self)
             local it = self.item
             if not it then return end
@@ -114,7 +121,7 @@ function GT:CreateDropdown(parent, w, h, items, onSelect, maxRows)
         local data = {}
         for i, item in ipairs(newItems) do
             if type(item) == "table" then
-                data[i] = { index = i, text = item.text, count = item.count }
+                data[i] = { index = i, text = item.text, count = item.count, tooltip = item.tooltip }
             else
                 data[i] = { index = i, text = item }
             end

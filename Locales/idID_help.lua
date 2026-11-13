@@ -37,7 +37,7 @@ Mengubah minimap sungguhan menjadi peta besar tembus pandang yang membentang di 
 - Profil: simpan beberapa tampilan, beralih atau hapus. Profil digunakan bersama semua karakter; setiap karakter mengingat profilnya sendiri.
 - Atur ulang profil memulihkan nilai default.]]
 
-T.credits = H .. "GatherTimes 0.24.4" .. E .. [[
+T.credits = H .. "GatherTimes 0.24.7" .. E .. [[
 
 Penulis: miRidinsa
 Situs web: https://github.com/ridinsa/
@@ -87,6 +87,8 @@ Melacak kapan herbal dan bijih muncul kembali di zona tempat kamu berada, mengin
 - Seret bilah judul untuk memindahkan jendela. Judulnya menampilkan zona tempat kamu berada.
 - Tombol ? di bilah judul membuka bantuan ini.
 - Tombol - di bilah judul memperkecil jendela menjadi bilah tipis di sepanjang bagian atas layar. Klik kanan untuk pengaturan Minimize. Di dalam bilah: dropdown item, satu chip per grup, emas sesi, dan tombol "+" untuk mengembalikan jendela. Klik kanan dua kali pada emas untuk mereset sesi (ringkasannya dicetak ke chat terlebih dahulu).
+- Tombol XP (di bilah): menampilkan XP hero dan pet dalam satu baris sebagai pengganti timer: pertarungan ke level, XP per jam, waktu ke level, timer pertarungan, dan perolehan terakhir. Klik lagi, atau pilih item di daftar, untuk kembali. Waktu diam lebih dari 2 menit tidak dihitung dalam XP per jam (pengaturan minimalkan > XP > Abaikan waktu diam). Arahkan kursor ke tombol untuk riwayat sesi: tanggal, zona utama, XP per jam dan emas per jam dari sesi terakhirmu (10 disimpan per karakter, 5 ditampilkan), dengan satu baris sesi terbaik. Sesi berakhir dengan /gt xp reset atau saat login berikutnya setelah lebih dari 10 menit; /reload melanjutkannya.
+- Target (pengaturan minimalkan > Goals): kotak untuk emas (dikumpulkan sesi ini), level, skill (mining 300, herb 225), dan jam (waktu yang kamu berikan). Tekan Enter untuk mengatur, kosongkan untuk menghapus. /gt xp goal level 40 atau /gt xp goal 500g melakukan hal yang sama dari chat. Garis tipis di tepi bawah bilah terisi seiring kamu mendekat (dua atau tiga target berbagi garis itu); baris XP menampilkan persentase dan sisa waktu dengan laju sesi ini, dan pesan serta suara muncul sekali saat target tercapai. Jika jam diatur, target menjadi oranye saat waktu mepet dan merah saat tertinggal. /gt xp goal off menghapus semua target; target yang tercapai dihapus saat login berikutnya.
 
 ]]
 
@@ -191,6 +193,7 @@ T.cmds = H .. "Perintah slash" .. E .. [[
 /gt profile start | stop | report - profil loop timer
 /gt hud - minimap HUD (lihat di bawah)
 /gt min - kecilkan ke bilah, atau kembalikan jendela
+/gt xp - mode XP pada bilah yang dikecilkan (juga: /gt xp reset, /gt xp session, /gt xp history, /gt xp goal level 40, /gt xp goal 500g, /gt xp goal off)
 /gt dock - bilah mendorong frame atas game ke bawah (aktif) atau hanya menutupinya (nonaktif)
 /gt export - tampilkan titikmu sendiri sebagai teks untuk dibagikan
 /gt import - impor titik dari teks teman

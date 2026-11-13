@@ -1,7 +1,7 @@
 -- BarDock.lua : makes room for the minimized bar, like Titan Panel does.
--- The bar (UI\MiniBar.lua) is a full-width strip at the top of the screen.  While it is shown, the game's own
--- top-anchored frames (player, target, minimap, buffs ...) are moved down by the height of the bar; when the bar
--- goes away they go back to where they were.
+-- The bar (UI\MiniBar.lua) is a full-width strip at the top of the screen with a smaller panel below it.  While
+-- they are shown, the game's own top-anchored frames (player, target, minimap, buffs ...) are moved down by their
+-- combined height; when they go away they go back to where they were.
 --
 -- How a frame is handled:
 --   * Only a frame whose points are ALL anchored to the top of the screen (UIParent, a TOP* point) is moved. A frame
@@ -92,7 +92,10 @@ function Dock.Sync(off)
     local ui = GatherTimesDB and GatherTimesDB._ui
     local bar = GT.bar
     local want = not off and bar and bar:IsShown() and not (ui and ui.barDock == false)
-    local px = want and (bar:GetHeight() or 0) * bar:GetEffectiveScale() or 0
+    local secondaryHeight = bar and bar.secondary and bar.secondary:IsShown()
+        and (bar.secondary:GetHeight() or 0) * bar.secondary:GetEffectiveScale() or 0
+    local px = want and ((bar:GetHeight() or 0) * bar:GetEffectiveScale()
+        + secondaryHeight) or 0
 
     if want and not Dock.hookedManager and type(_G.UIParent_ManageFramePositions) == "function" then
         Dock.hookedManager = true

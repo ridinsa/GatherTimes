@@ -37,7 +37,7 @@ Verwandelt die echte Minimap in eine große, durchscheinende Karte auf deinem Bi
 - Profil: mehrere Darstellungen speichern, wechseln oder löschen. Profile gelten für alle Charaktere; jeder Charakter merkt sich sein eigenes.
 - Profil zurücksetzen stellt die Standardwerte wieder her.]]
 
-T.credits = H .. "GatherTimes 0.24.4" .. E .. [[
+T.credits = H .. "GatherTimes 0.24.7" .. E .. [[
 
 Autor: miRidinsa
 Website: https://github.com/ridinsa/
@@ -87,6 +87,8 @@ Zeigt, wann Kräuter und Erze in deiner Zone wieder erscheinen, merkt sich, wo d
 - Ziehe die Titelleiste, um das Fenster zu verschieben. Der Titel zeigt die Zone, in der du dich befindest.
 - Die Schaltfläche ? in der Titelleiste öffnet diese Hilfe.
 - Die Schaltfläche - in der Titelleiste verkleinert das Fenster zu einer schmalen Leiste oben am Bildschirm. Rechtsklick öffnet die Optionen für die Minimierung. In der Leiste: die Auswahl der Gegenstände, ein Kärtchen je Gruppe, das Gold der Sitzung und die Schaltfläche "+", die das Fenster wieder öffnet. Zweimal Rechtsklick auf das Gold setzt die Sitzung zurück (die Übersicht wird vorher im Chat ausgegeben).
+- XP-Schaltfläche (auf der Leiste): zeigt Helden- und Begleiter-XP in einer Zeile statt der Timer: Kämpfe bis zur Stufe, XP pro Stunde, Zeit bis zur Stufe, Kampfzeit und den letzten Gewinn. Noch einmal klicken oder einen Eintrag in der Auswahl wählen, um zurückzukehren. Zeit, in der du länger als 2 Minuten stillstehst, zählt bei XP pro Stunde nicht mit (Optionen für die Minimierung > XP > Leerlaufzeit ignorieren). Mit der Maus über der Schaltfläche siehst du den Sitzungsverlauf: Datum, Hauptzone, XP pro Stunde und Gold pro Stunde deiner letzten Sitzungen (10 pro Charakter gespeichert, 5 angezeigt) mit einer Zeile für die beste Sitzung. Eine Sitzung endet mit /gt xp reset oder beim nächsten Login nach mehr als 10 Minuten; ein /reload setzt sie fort.
+- Ziel (Optionen für die Minimierung > Goals): Felder für Gold (in dieser Sitzung erbeuten), Stufe, Fertigkeit (mining 300, herb 225) und Stunden (die Zeit, die du dir gibst). Mit Enter setzen, leer lassen zum Löschen. /gt xp goal level 40 oder /gt xp goal 500g macht dasselbe im Chat. Ein dünner Streifen am unteren Rand der Leiste füllt sich, je näher du kommst (zwei oder drei Ziele teilen ihn sich); die XP-Zeile zeigt Prozent und verbleibende Zeit im Tempo dieser Sitzung, und beim Erreichen erscheinen einmal eine Meldung und ein Ton. Sind Stunden gesetzt, wird das Ziel orange, wenn die Zeit knapp wird, und rot, wenn du im Rückstand bist. /gt xp goal off löscht alle Ziele; ein erreichtes Ziel wird beim nächsten Login gelöscht.
 
 ]]
 
@@ -191,6 +193,7 @@ T.cmds = H .. "Slash-Befehle" .. E .. [[
 /gt profile start | stop | report - Timer-Schleife profilieren
 /gt hud - Minimap-HUD (siehe unten)
 /gt min - auf die Leiste verkleinern oder das Fenster zurückholen
+/gt xp - XP-Modus auf der verkleinerten Leiste (auch: /gt xp reset, /gt xp session, /gt xp history, /gt xp goal level 40, /gt xp goal 500g, /gt xp goal off)
 /gt dock - die Leiste schiebt die oberen Rahmen des Spiels nach unten (an) oder überdeckt sie nur (aus)
 /gt export - eigene Punkte als Text zum Teilen anzeigen
 /gt import - Punkte aus dem Text eines Freundes importieren

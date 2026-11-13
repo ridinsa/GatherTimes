@@ -108,41 +108,50 @@ end
 -- Retail and Forever have no skill-line list; the two gathering professions are read from the profession list
 -- instead (skill line 186 = Mining, 182 = Herbalism).
 local PROFESSION_SKILL_LINE = { Mining = 186, Herbalism = 182 }
-local function ModernSkill(profession)
+local function ModernSkill(profession, baseOnly)
     if not (GetProfessions and GetProfessionInfo) then return nil end
     local want = PROFESSION_SKILL_LINE[profession]
     local list = { GetProfessions() }
     for i = 1, 6 do
         local idx = list[i]
         if idx then
-            local _, _, rank, _, _, _, skillLine, rankModifier = GetProfessionInfo(idx)
-            if skillLine == want then return (rank or 0) + (rankModifier or 0) end
+            local _, _, rank, maxRank, _, _, skillLine, rankModifier = GetProfessionInfo(idx)
+            if skillLine == want then
+                if baseOnly then return rank or 0, maxRank end
+                return (rank or 0) + (rankModifier or 0), maxRank
+            end
         end
     end
     return nil
 end
 
-local function PlayerSkill(profession)
+-- baseOnly = true: the trained skill without gear / potion bonuses (the number that goes up by one at a skill-up).
+-- Second return value: the skill cap (maxRank), when the client tells it.
+local function PlayerSkill(profession, baseOnly)
     if not (GetNumSkillLines and GetSkillLineInfo) then
-        local ok, skill = pcall(ModernSkill, profession)
-        return ok and skill or nil
+        local ok, skill, maxRank = pcall(ModernSkill, profession, baseOnly)
+        if ok then return skill, maxRank end
+        return nil
     end
     local function scan()
         for i = 1, GetNumSkillLines() do
-            local name, header, _, rank, temp, mod = GetSkillLineInfo(i)
-            if not header and IsProfessionName(profession, name) then return (rank or 0) + (temp or 0) + (mod or 0) end
+            local name, header, _, rank, temp, mod, maxRank = GetSkillLineInfo(i)
+            if not header and IsProfessionName(profession, name) then
+                if baseOnly then return rank or 0, maxRank end
+                return (rank or 0) + (temp or 0) + (mod or 0), maxRank
+            end
         end
     end
-    local found = scan()
-    if found or not (ExpandSkillHeader and CollapseSkillHeader) then return found end
+    local found, foundMax = scan()
+    if found or not (ExpandSkillHeader and CollapseSkillHeader) then return found, foundMax end
     local opened = {}
     for i = GetNumSkillLines(), 1, -1 do
         local _, header, isExpanded = GetSkillLineInfo(i)
         if header and not isExpanded then ExpandSkillHeader(i); opened[#opened + 1] = i end
     end
-    found = scan()
+    found, foundMax = scan()
     for _, i in ipairs(opened) do CollapseSkillHeader(i) end       -- opened[] is highest index first
-    return found
+    return found, foundMax
 end
 
 GT.PlayerSkill = PlayerSkill
