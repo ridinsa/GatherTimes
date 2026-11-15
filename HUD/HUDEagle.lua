@@ -133,6 +133,7 @@ function HUD.EagleCheck()
             S.eagleBusy = true
             HUD.SetEnabled(true, eagleWasAuto)
             S.eagleBusy = false
+            HUD.CheckAutoGather()
         end
         local want = (eagle or S.eaglePreview) and S.active and not HUD.LowSpec()
         if want ~= S.eagleMode then
@@ -159,6 +160,7 @@ function HUD.EagleCheck()
         S.eagleBusy = true
         HUD.SetEnabled(true, eagleWasAuto)
         S.eagleBusy = false
+        HUD.CheckAutoGather()
     end
 end
 

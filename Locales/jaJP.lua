@@ -348,7 +348,6 @@ GT.locales.jaJP = {
     ["Show player arrow"] = "プレイヤー矢印を表示",
     ["Hide HUD while mounted"] = "騎乗中は HUD を隠す",
     ["Auto-enable with gathering tracking"] = "採集追跡で自動オン",
-    ["Restore HUD after /reload or login"] = "/reload・ログイン後に HUD を復元",
     ["Hide minimap addon skins / buttons"] = "ミニマップアドオンのスキン/ボタンを隠す",
     ["Deep scan for other minimap addons"] = "他のミニマップアドオンを詳細検索",
     ["Debug messages"] = "デバッグメッセージ",

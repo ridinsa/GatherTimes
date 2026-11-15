@@ -37,7 +37,7 @@ T.hud = H .. "小地图 HUD" .. E .. [[
 - 配置档：保存多种外观、切换或删除。所有角色共享配置档；每个角色分别记住自己的选择。
 - 重置配置档会恢复默认设置。]]
 
-T.credits = H .. "GatherTimes 0.24.7" .. E .. [[
+T.credits = H .. "GatherTimes 0.24.8" .. E .. [[
 
 作者：miRidinsa
 网站：https://github.com/ridinsa/
@@ -229,7 +229,6 @@ T.cmds = H .. "斜杠命令" .. E .. [[
 /gthud scan - 深度扫描小地图插件 开 / 关
 /gthud mountfade - 骑乘时隐藏 HUD 开 / 关
 /gthud autogather - 随采集追踪自动开启 开 / 关
-/gthud restore - 在 /reload 或登录后恢复 HUD 开 / 关
 /gthud profile - 列出配置文件；/gthud profile <n> 切换或创建
 /gthud profile delete <n> - 删除配置文件（Default 和当前配置文件不能删除）
 /gthud status | info | frames | debug - 状态、诊断或调试消息

@@ -37,7 +37,7 @@ T.hud = H .. "미니맵 HUD" .. E .. [[
 - 프로필: 여러 모양을 저장, 전환 또는 삭제합니다. 프로필은 모든 캐릭터가 공유하지만 각 캐릭터는 개별 설정을 기억합니다.
 - 프로필 초기화는 기본값을 복원합니다.]]
 
-T.credits = H .. "GatherTimes 0.24.7" .. E .. [[
+T.credits = H .. "GatherTimes 0.24.8" .. E .. [[
 
 제작자: miRidinsa
 웹사이트: https://github.com/ridinsa/
@@ -229,7 +229,6 @@ T.cmds = H .. "슬래시 명령어" .. E .. [[
 /gthud scan - 미니맵 애드온 심층 검사 켜기 / 끄기
 /gthud mountfade - 탈것 탑승 중 HUD 숨기기 켜기 / 끄기
 /gthud autogather - 채집 추적과 함께 자동 켜기 켜기 / 끄기
-/gthud restore - /reload나 로그인 후 HUD 복원 켜기 / 끄기
 /gthud profile - 프로필 목록 표시. /gthud profile <n>은 전환하거나 새로 만듦
 /gthud profile delete <n> - 프로필 삭제(Default와 활성 프로필은 삭제할 수 없음)
 /gthud status | info | frames | debug - 상태, 진단 또는 디버그 메시지

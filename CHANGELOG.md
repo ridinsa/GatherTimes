@@ -1,5 +1,21 @@
 # GatherTimes
 
+## 0.24.8 (2026-11-15)
+
+- New: map hover tooltips (HUD and Eagle map) are on by default. Hold Alt over the map to see node names; without Alt the game's own mob, NPC and player tooltips work through the HUD. Change the key with `/gthud hoverkey alt|ctrl|shift|always`.
+- New: memory use on the second bar, e.g. `mem:12.3MB` (Minimize settings > Pings, off by default).
+- New: "Compact map" option (HUD options): drawn at 75% with no rings, compass or heading.
+- New: HUD auto-off in resting cities, towns and inns (HUD options > Behaviour, on by default).
+- New: HUD map blip size 1.0x, 1.2x, 1.3x or 1.4x (default 1.3x).
+- Fix: Friend/Guild Notifier now also shows when someone comes online.
+- Fix: G1-Gx minimap labels no longer shimmer while moving or turning.
+- Fix: the hover point of group-member dots was off by the blip scale.
+- Fix: FPS and ping tooltips said "pings" instead of "bar".
+- Change: the Show time button is greyed out while the Notifier is off.
+- Change: removed the "Restore HUD after /reload or login" option and `/gthud restore`.
+- Change: Help covers the Notifier, Pings tab, arrow size and Performance levels.
+- Change: all labels, tooltips and bar messages are translated in every language.
+
 ## 0.24.7 (2026-11-13)
 
 - New: Friend/Guild Notifier (Settings > General). A pop-up on the right when a guild member or friend comes online (gold, Xbox sound) or goes offline (red, Windows sound). Shows for 3 to 20 s; click the time button to pick it.

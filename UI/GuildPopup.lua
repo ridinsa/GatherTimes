@@ -3,34 +3,71 @@
 local _, GT = ...
 
 GT.guildRoster = GT.guildRoster or {}
+GT.friendRoster = GT.friendRoster or {}
 local popup
 local showToken = 0                             -- counts the shows, so an old slide-out cannot hide a new pop-up
 
--- the guild member names (without the realm), refreshed by GUILD_ROSTER_UPDATE
+local function PlayerGuild()
+    if not GetGuildInfo then return nil end
+    local name = GetGuildInfo("player")
+    return name ~= "" and name or nil
+end
+
+local function RosterKey(name)
+    return name and (name:match("^[^-]+") or name)
+end
+
+-- guild member details (without realm names), refreshed by GUILD_ROSTER_UPDATE
 function GT.RefreshGuildRoster()
     local roster = {}
     if IsInGuild and IsInGuild() and GetNumGuildMembers and GetGuildRosterInfo then
+        local guild = PlayerGuild()
         for i = 1, (GetNumGuildMembers() or 0) do
-            local name = GetGuildRosterInfo(i)
-            if name then roster[name:match("^[^-]+") or name] = true end
+            local name, _, _, level, className, zone, _, _, online = GetGuildRosterInfo(i)
+            if name then
+                roster[RosterKey(name)] = {
+                    level = level,
+                    className = className,
+                    zone = zone,
+                    guild = guild,
+                    online = online,
+                }
+            end
         end
     end
     GT.guildRoster = roster
 end
 
--- the names on your friends list (without the realm), refreshed by FRIENDLIST_UPDATE
+-- friend details (without realm names), refreshed by FRIENDLIST_UPDATE
 function GT.RefreshFriendRoster()
     local roster = {}
     local n = (C_FriendList and C_FriendList.GetNumFriends and C_FriendList.GetNumFriends())
         or (GetNumFriends and GetNumFriends()) or 0
     for i = 1, n do
-        local name
+        local name, level, className, zone, connected, guild
         if C_FriendList and C_FriendList.GetFriendInfoByIndex then
             local info = C_FriendList.GetFriendInfoByIndex(i)
-            name = info and info.name
+            if info then
+                name = info.name
+                level = info.level
+                className = info.className
+                zone = info.area
+                connected = info.connected
+                guild = info.guildName
+            end
         end
-        if not name and GetFriendInfo then name = GetFriendInfo(i) end
-        if name then roster[name:match("^[^-]+") or name] = true end
+        if not name and GetFriendInfo then
+            name, level, className, zone, connected = GetFriendInfo(i)
+        end
+        if name then
+            roster[RosterKey(name)] = {
+                level = level,
+                className = className,
+                zone = zone,
+                guild = guild,
+                online = connected,
+            }
+        end
     end
     GT.friendRoster = roster
 end
@@ -88,9 +125,13 @@ local function BuildPopup()
     popup.gtBorderAlpha = 0.95      -- the border is almost solid
     if GT.SkinFrame then GT.SkinFrame(popup, "bg") end
     popup.text = popup:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    popup.text:SetPoint("LEFT", 10, 0)
-    popup.text:SetPoint("RIGHT", -10, 0)
     popup.text:SetJustifyH("LEFT")
+    popup.details = popup:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    popup.details:SetPoint("BOTTOMLEFT", 10, 8)
+    popup.details:SetPoint("RIGHT", -10, 0)
+    popup.details:SetJustifyH("LEFT")
+    popup.details:SetWordWrap(false)
+    popup.details:Hide()
     popup:SetScript("OnClick", function() HideSlide() end)
     popup:SetScript("OnUpdate", function(self, dt)
         if not slide.active then return end
@@ -115,10 +156,45 @@ local function PlayNotifySound(file)
     notifyHandle = (ok and willPlay) and handle or nil
 end
 
+local function PopupDetails(name)
+    local guildInfo = GT.guildRoster and GT.guildRoster[name]
+    local friendInfo = GT.friendRoster and GT.friendRoster[name]
+    if not guildInfo and not friendInfo then return nil end
+
+    local parts = {}
+    local level = guildInfo and guildInfo.level
+    if type(level) ~= "number" or level <= 0 then level = friendInfo and friendInfo.level end
+    if type(level) == "number" and level > 0 then parts[#parts + 1] = GT.TRF("Level %d", level) end
+    local className = guildInfo and guildInfo.className
+    if not className or className == "" then className = friendInfo and friendInfo.className end
+    if className and className ~= "" then parts[#parts + 1] = className end
+    local guild = (guildInfo and guildInfo.guild) or (friendInfo and friendInfo.guild)
+    if guild and guild ~= "" then parts[#parts + 1] = guild end
+    local zone = guildInfo and guildInfo.zone
+    if not zone or zone == "" then zone = friendInfo and friendInfo.zone end
+    if zone and zone ~= "" then parts[#parts + 1] = zone end
+    if #parts == 0 then return nil end
+    return table.concat(parts, " | ")
+end
+
 -- shows the pop-up for a name: it slides in, stays for the time set in Settings, then slides out.
 -- offline = true shows "is offline" in red; otherwise "is online" in gold.
 function GT.ShowGuildPopup(name, offline)
     local p = BuildPopup()
+    local details = PopupDetails(name)
+    p.text:ClearAllPoints()
+    if details then
+        p:SetSize(300, 58)
+        p.text:SetPoint("TOPLEFT", 10, -8)
+        p.text:SetPoint("RIGHT", -10, 0)
+        p.details:SetText(details)
+        p.details:Show()
+    else
+        p:SetSize(240, 40)
+        p.text:SetPoint("LEFT", 10, 0)
+        p.text:SetPoint("RIGHT", -10, 0)
+        p.details:Hide()
+    end
     if offline then
         p.text:SetText(GT.TRF("%s is offline", name))
         p.text:SetTextColor(1, 0.25, 0.25)
@@ -141,7 +217,11 @@ end
 -- the tail of a game line in this client's language, e.g. " has come online." or " has gone offline."
 local function LineTail(globalName, fallback)
     local fmt = _G[globalName] or ""
-    return fmt:match("|h(.-)$") or fallback
+    -- online: "|Hplayer:%s|h[%s]|h has come online."  -> text after the LAST |h (greedy ".*")
+    -- offline: "%s has gone offline."                  -> text after the last %s
+    local tail = fmt:match("^.*|h(.*)$") or fmt:match("^.*%%s(.*)$")
+    if tail and tail ~= "" then return tail end
+    return fallback
 end
 
 local COOLDOWN = 10                       -- seconds before the same person and state can show again

@@ -415,7 +415,6 @@ end
 -- is the full line, two or three divide it in equal parts (gold, level, skill from the left).
 local KIND_COLOR = { gold = { 1, 0.82, 0 }, level = { 0.4, 0.8, 1 }, skill = { 0.75, 0.5, 1 } }
 local PACE_TIGHT = 1.25          -- needs up to 25 % more time than is left: orange; more than that: red
-local PROFS = { "Mining", "Herbalism" }
 
 local function GoalStore()
     local t, key = Slot("xpGoal")

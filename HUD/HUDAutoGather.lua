@@ -58,7 +58,14 @@ local function GatheringTrackingActive()
 end
 
 function HUD.CheckAutoGather()
-    if not (HUD.db and HUD.db.autoGather) then return end
+    if not HUD.db then return end
+    -- Resting areas cover capital cities, towns and inns. Keep the HUD off there,
+    -- even when auto-gather is disabled or gathering tracking remains active.
+    if HUD.db.autoOffCity and IsResting and IsResting() then
+        if HUD.IsActive() then HUD.SetEnabled(false, true) end
+        return
+    end
+    if not HUD.db.autoGather then return end
     if HUD.EagleSuspended and HUD.EagleSuspended() then return end   -- Eagle Eye: the HUD comes back when it ends
     local ok, gathering = pcall(GatheringTrackingActive)
     if not ok then return end

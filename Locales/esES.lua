@@ -347,7 +347,6 @@ GT.locales.esES = {
     ["Show player arrow"] = "Mostrar flecha del jugador",
     ["Hide HUD while mounted"] = "Ocultar HUD a lomos",
     ["Auto-enable with gathering tracking"] = "Auto-activar con rastreo de recolección",
-    ["Restore HUD after /reload or login"] = "Restaurar HUD tras /reload",
     ["Hide minimap addon skins / buttons"] = "Ocultar skins de addons del minimapa",
     ["Deep scan for other minimap addons"] = "Análisis profundo de addons",
     ["Debug messages"] = "Mensajes de depuración",

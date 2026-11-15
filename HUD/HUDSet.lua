@@ -9,7 +9,7 @@ local OVERLAY_KEYS = { ring = true, ring2 = true, ringUnit = true, ringYd = true
                        ringThickness = true,
                        ringSegments = true, ringStyle = true, ringDensity = true, dirs = true, heading = true,
                        priorityReadout = true, routeReadout = true }
-local MAP_KEYS     = { size = true, alpha = true, zoom = true,
+local MAP_KEYS     = { size = true, blipScale = true, alpha = true, zoom = true,
                        rotate = true, arrow = true, mountFade = true }
 -- settings of the Eagle Eye map: they only change what is on screen while that map is up
 local EAGLE_KEYS   = { eagleSize = true, eagleAlpha = true, eagleZoom = true, eagleRotate = true,
@@ -72,7 +72,7 @@ function HUD.Set(key, value, fromUI)
         HUD.EagleCheck()
     elseif key == "eagleHideLabels" or key == "hideLabelsIdle" then
         HUD.UpdateEagleLabels()
-    elseif key == "hudHover" then
+    elseif key == "hudHover" or key == "hudHoverKey" then
         -- applies at once while the normal HUD is up (the Eagle map keeps its own "eagleHover" setting)
         if S.active and S.orig and not S.eagleMode then
             S.applying = true
@@ -87,7 +87,7 @@ function HUD.Set(key, value, fromUI)
         HUD.Refresh(true)       -- ApplyHud runs Overlay.Update in the light path too, so a size change needs nothing more
     elseif TRACK_KEYS[key] then
         HUD.Tracking.Place()
-    elseif key == "autoGather" then
+    elseif key == "autoGather" or key == "autoOffCity" then
         HUD.CheckAutoGather()
     elseif key == "trackIdle" then
         if not S.active then

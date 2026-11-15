@@ -424,6 +424,22 @@ local function BuildMap(f)
     Tip(size.slider, "HUD size", "How big the HUD map is, in pixels.")
     y = y - SLIDER_H
 
+    local function BlipIndex(v)
+        local selected = HUD.NormalizeBlipScale(v)
+        for i, scale in ipairs(HUD.BLIP_SCALES) do
+            if selected == scale then return i - 1 end
+        end
+        return 0
+    end
+    local maxBlipIndex = #HUD.BLIP_SCALES - 1
+    local blips = Slider(f, 0, y, "Blip size: %s", 0, maxBlipIndex, 1,
+        function() return BlipIndex(HUD.db.blipScale) end,
+        function(v) HUD.Set("blipScale", HUD.BLIP_SCALES[math.floor(v + 1.5)], true); ApplyGates() end,
+        function(v) return string.format("%.1fx", HUD.BLIP_SCALES[math.floor(v + 1.5)]) end)
+    byKey.blipScale = blips
+    Tip(blips.slider, "Blip size", "Scale minimap blips without changing the HUD map's visible size.")
+    y = y - SLIDER_H
+
     local arrowSize = KeySlider(f, 0, y, "Arrow size: %s", "arrowScale", 50, 200, 10, function(v) return v .. "%" end)
     Tip(arrowSize.slider, "Arrow size", "How big the player arrow in the middle of the map is. 100% is the game's own arrow. Needs Show player arrow.")
     Gate(function() return HUD.db.arrow and true or false end, { "arrowScale" })
@@ -543,8 +559,8 @@ local function BuildOverlay(f)
     Tip(heading, "Heading readout", "Show the direction you are facing as a number of degrees.")
     y = y - ROW_H
 
-    local hover = KeyCheck(f, 0, y, "Hover tooltips on nodes", "hudHover")
-    Tip(hover, "Hover tooltips on nodes", "Show the name of a gathering node when you hover it on the HUD map. The Eagle map has its own setting on the Eagle tab.")
+    local hover = KeyCheck(f, 0, y, "Hover tooltips on map", "hudHover")
+    Tip(hover, "Hover tooltips on map", "Show gathering node names and tooltips for grouped players or visible nameplate units when you hover their map positions. Units appear only when WoW provides their coordinates. While on, the map takes the mouse only while you hold Alt (change with /gthud hoverkey alt|ctrl|shift|always); otherwise the game's own mob, NPC and player tooltips work through the HUD. The Eagle map has its own node-hover setting on the Eagle tab.")
     y = y - ROW_H
 
     local priority = KeyCheck(f, 0, y, "Ready-first gathering readout", "priorityReadout")
@@ -646,10 +662,13 @@ local function BuildOptions(f)
         "On: the HUD hides while you are mounted and comes back when you dismount.")
     OptKey("Auto-enable with gathering tracking", "autoGather",
         "On: the HUD turns on by itself while a gathering tracking spell is active (Find Herbs, Find Minerals, Find Treasure), and turns off again afterwards.")
-    OptRoot("Restore HUD after /reload or login", "restoreOnLogin",
-        "On: if the HUD was on when you logged out or reloaded, it is turned on again.")
+    OptKey("Auto turn off in cities and inns", "autoOffCity",
+        "On: the HUD turns off in resting areas such as cities, towns and inns.")
     OptKey("Hide Gx and (G) timers while the HUD is off", "hideLabelsIdle",
         "On: the Gx labels and (G) timers on the minimap are hidden while the HUD is off.")
+
+    OptKey("Compact map", "compact",
+        "On: the map is drawn smaller (75%) with no rings, no compass letters and no heading readout. Turn it off to bring them back; your saved values are kept.")
 
     Section("Minimap addons")
     OptKey("Hide minimap addon skins / buttons", "hideAddons",
@@ -795,8 +814,8 @@ local function BuildEagle(f)
     local nearest = KeyCheck(f, 0, y, "Nearest node readout", "eagleNearest")
     Tip(nearest, "Nearest node readout", "On: shows the nearest gathering node and how far away it is.")
     y = y - ROW_H
-    local hover = KeyCheck(f, 0, y, "Hover tooltips on the map", "eagleHover")
-    Tip(hover, "Hover tooltips on the map", "On: hover a gathering node on the Eagle map to see its name.")
+    local hover = KeyCheck(f, 0, y, "Hover tooltips on the map (Alt key)", "eagleHover")
+    Tip(hover, "Hover tooltips on the map", "On: hold Alt and hover a gathering node on the Eagle map to see its name. Without the key the map ignores the mouse, so the game's own mob, NPC and player tooltips work. Change the key with /gthud hoverkey alt|ctrl|shift|always.")
     y = y - ROW_H
     local labels = KeyCheck(f, 0, y, "Hide Gx and (G) timers on the map", "eagleHideLabels")
     Tip(labels, "Hide Gx and (G) timers on the map", "On: the Gx labels and (G) timers are hidden on the Eagle map.")

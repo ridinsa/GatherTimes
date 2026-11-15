@@ -37,7 +37,7 @@ Transforme la vraie minicarte en une grande carte translucide sur votre écran, 
 - Profil : enregistrer plusieurs apparences, passer de l’une à l’autre ou les supprimer. Les profils sont partagés par tous les personnages ; chacun mémorise le sien.
 - Réinitialiser le profil restaure les valeurs par défaut.]]
 
-T.credits = H .. "GatherTimes 0.24.7" .. E .. [[
+T.credits = H .. "GatherTimes 0.24.8" .. E .. [[
 
 Auteur : miRidinsa
 Site web : https://github.com/ridinsa/
@@ -229,7 +229,6 @@ T.cmds = H .. "Commandes slash" .. E .. [[
 /gthud scan - recherche approfondie d'addons de minicarte activée / désactivée
 /gthud mountfade - masquer le HUD en monture activé / désactivé
 /gthud autogather - activation automatique avec le suivi de récolte activée / désactivée
-/gthud restore - rétablir le HUD après /reload ou connexion activé / désactivé
 /gthud profile - liste les profils ; /gthud profile <n> change de profil ou en crée un
 /gthud profile delete <n> - supprime un profil (Default et le profil actif ne peuvent pas être supprimés)
 /gthud status | info | frames | debug - état, diagnostic ou messages de débogage

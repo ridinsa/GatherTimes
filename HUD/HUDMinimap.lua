@@ -145,7 +145,9 @@ end
 
 local function ShowCustomArrow(scale)
     local a = ArrowFrame()
-    local size = ARROW_BASE * scale / 100
+    local db = HUD.Cfg()
+    local blipScale = (db and db.blipScale) or HUD.DEFAULTS.blipScale
+    local size = ARROW_BASE * scale / (100 * blipScale)
     a:SetSize(size, size)
     a:ClearAllPoints()
     a:SetPoint("CENTER", Minimap, "CENTER")
@@ -211,23 +213,32 @@ local function MinimapMouseMatches(hover)
     return (Minimap:IsMouseEnabled() and true or false) == hover
 end
 -- Does the map want the mouse (hover tooltips only, never clicks) right now?  The Eagle map follows "eagleHover"
--- (HUD.Cfg().hoverTips); the normal HUD follows "hudHover", off by default.
+-- (HUD.Cfg().hoverTips); the normal HUD follows "hudHover" (on by default), only while the hover key is held.
+local HOVER_KEYS = { alt = "IsAltKeyDown", ctrl = "IsControlKeyDown", shift = "IsShiftKeyDown" }
+local function HoverKeyHeld(db)
+    local fn = HOVER_KEYS[db.hudHoverKey or "alt"]
+    if not fn then return true end                       -- "always"
+    local f = _G[fn]
+    return f and f() and true or false
+end
 local function HoverWanted()
     local db = HUD.db
     if not db then return false end
     local on
     if S.eagleMode then
-        on = HUD.Cfg().hoverTips
+        on = HUD.Cfg().hoverTips and HoverKeyHeld(db)    -- same hold-key as the normal HUD (/gthud hoverkey)
     elseif HUD.LowSpec() and HUD.EagleEyeActive() then
-        on = db.eagleHover and true or false             -- lower-spec: no Eagle map, but Eagle Eye still shows the names
+        on = db.eagleHover and HoverKeyHeld(db)          -- lower-spec: no Eagle map, but Eagle Eye still shows the names
     else
-        on = db.hudHover
+        -- the HUD covers the 3D world: while the map has the mouse, the game's own tooltips for mobs, NPCs and players
+        -- cannot reach the units under it, so the map only takes the mouse while the hover key is held
+        on = db.hudHover and HoverKeyHeld(db)
     end
     return (on and CanHover()) and true or false
 end
 
 -- Safety net for the tooltip of a node under the mouse (the game shows it with the Minimap as owner): while the normal
--- HUD is up and "Hover tooltips on nodes" (hudHover) is off, it is hidden again as soon as it shows, even if the game
+-- HUD is up and "Hover tooltips on map" (hudHover) is off, it is hidden again as soon as it shows, even if the game
 -- or another addon turned the Minimap's mouse back on.  Not while the Eagle map is up (it has "eagleHover").
 local function TooltipSuppressed()
     local db = HUD.db
@@ -259,9 +270,10 @@ local function ConfigureMinimapInner(db)
     Minimap:SetParent(UIParent)
     Minimap:ClearAllPoints()
     Minimap:SetPoint("CENTER", UIParent, "CENTER")
-    Minimap:SetScale(1)
     local size = HUD.EffectiveSize(db)
-    Minimap:SetSize(size, size)
+    local blipScale = db.blipScale or HUD.DEFAULTS.blipScale
+    Minimap:SetScale(blipScale)
+    Minimap:SetSize(size / blipScale, size / blipScale)
     Minimap:SetFrameStrata("BACKGROUND")
     Minimap:SetFrameLevel(1)
     Minimap:SetAlpha(1)
@@ -355,6 +367,13 @@ local function QueueMouseFix()
 end
 for _, fn in ipairs({ "EnableMouse", "SetMouseClickEnabled", "SetMouseMotionEnabled", "SetPropagateMouseClicks" }) do
     if Minimap[fn] then pcall(hooksecurefunc, Minimap, fn, QueueMouseFix) end
+end
+
+do
+    local keyWatch = CreateFrame("Frame")
+    if pcall(keyWatch.RegisterEvent, keyWatch, "MODIFIER_STATE_CHANGED") then
+        keyWatch:SetScript("OnEvent", function() QueueMouseFix() end)
+    end
 end
 
 -- Minimap ping marker: clicking the map (or a party member pinging it) makes the game flash a blinking yellow ring

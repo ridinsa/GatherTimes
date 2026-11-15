@@ -37,7 +37,7 @@ Mengubah minimap sungguhan menjadi peta besar tembus pandang yang membentang di 
 - Profil: simpan beberapa tampilan, beralih atau hapus. Profil digunakan bersama semua karakter; setiap karakter mengingat profilnya sendiri.
 - Atur ulang profil memulihkan nilai default.]]
 
-T.credits = H .. "GatherTimes 0.24.7" .. E .. [[
+T.credits = H .. "GatherTimes 0.24.8" .. E .. [[
 
 Penulis: miRidinsa
 Situs web: https://github.com/ridinsa/
@@ -229,7 +229,6 @@ T.cmds = H .. "Perintah slash" .. E .. [[
 /gthud scan - pemindaian mendalam addon minimap aktif / nonaktif
 /gthud mountfade - sembunyikan HUD saat menunggang aktif / nonaktif
 /gthud autogather - aktifkan otomatis saat pelacakan pengumpulan aktif / nonaktif
-/gthud restore - pulihkan HUD setelah /reload atau login aktif / nonaktif
 /gthud profile - daftar profil; /gthud profile <n> berpindah atau membuat profil
 /gthud profile delete <n> - hapus profil (Default dan profil aktif tidak bisa dihapus)
 /gthud status | info | frames | debug - status, diagnostik, atau pesan debug

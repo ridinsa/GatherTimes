@@ -345,7 +345,6 @@ GT.locales.frFR = {
     ["Show player arrow"] = "Flèche du joueur",
     ["Hide HUD while mounted"] = "Masquer le HUD en monture",
     ["Auto-enable with gathering tracking"] = "Activer auto avec le pistage de récolte",
-    ["Restore HUD after /reload or login"] = "Restaurer HUD après /reload",
     ["Hide minimap addon skins / buttons"] = "Masquer apparences addons",
     ["Deep scan for other minimap addons"] = "Analyse approfondie addons",
     ["Debug messages"] = "Messages debug",

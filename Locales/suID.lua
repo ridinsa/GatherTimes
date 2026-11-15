@@ -349,7 +349,6 @@ GT.locales.suID = {
     ["Show player arrow"] = "Témbongkeun panah pamaén",
     ["Hide HUD while mounted"] = "Sumputkeun HUD waktu numpak",
     ["Auto-enable with gathering tracking"] = "Otomatis hurung jeung lacak ngumpulkeun",
-    ["Restore HUD after /reload or login"] = "Balikkeun HUD sanggeus /reload atawa login",
     ["Hide minimap addon skins / buttons"] = "Sumputkeun skin/tombol addon minimap",
     ["Deep scan for other minimap addons"] = "Scan jero addon minimap séjén",
     ["Debug messages"] = "Pesen debug",

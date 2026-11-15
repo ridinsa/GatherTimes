@@ -345,7 +345,6 @@ GT.locales.idID = {
     ["Show player arrow"] = "Tampilkan panah pemain",
     ["Hide HUD while mounted"] = "Sembunyikan HUD saat menunggang",
     ["Auto-enable with gathering tracking"] = "Aktif otomatis dengan pelacakan pengumpulan",
-    ["Restore HUD after /reload or login"] = "Pulihkan HUD setelah /reload atau login",
     ["Hide minimap addon skins / buttons"] = "Sembunyikan skin / tombol addon minimap",
     ["Deep scan for other minimap addons"] = "Pindai mendalam addon minimap lain",
     ["Debug messages"] = "Pesan debug",

@@ -346,7 +346,6 @@ GT.locales.ruRU = {
     ["Show player arrow"] = "Стрелка игрока",
     ["Hide HUD while mounted"] = "Скрывать HUD верхом",
     ["Auto-enable with gathering tracking"] = "Авто с отслеж. сбора",
-    ["Restore HUD after /reload or login"] = "Вернуть HUD после /reload",
     ["Hide minimap addon skins / buttons"] = "Скрыть оформл. аддонов",
     ["Deep scan for other minimap addons"] = "Глубокий поиск аддонов",
     ["Debug messages"] = "Отладка",

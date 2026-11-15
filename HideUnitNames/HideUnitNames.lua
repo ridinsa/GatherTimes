@@ -168,17 +168,21 @@ local function IsWordByte(b)
     return b ~= nil and ((b >= 48 and b <= 57) or (b >= 65 and b <= 90) or (b >= 97 and b <= 122) or b == 95)
 end
 
+local function IsWholeNameMatch(text, first, last)
+    local before = first - 1
+    local colorStart = first - 10
+    if colorStart > 0 and text:sub(colorStart, first - 1):match("^|c%x%x%x%x%x%x%x%x$") then
+        before = colorStart - 1
+    end
+    return not IsWordByte(text:byte(before)) and not IsWordByte(text:byte(last + 1))
+end
+
 local function ContainsWholeName(text, name)
     local pos = 1
     while true do
         local first, last = text:find(name, pos, true)
         if not first then return false end
-        local before = first - 1
-        local colorStart = first - 10
-        if colorStart > 0 and text:sub(colorStart, first - 1):match("^|c%x%x%x%x%x%x%x%x$") then
-            before = colorStart - 1
-        end
-        if not IsWordByte(text:byte(before)) and not IsWordByte(text:byte(last + 1)) then return true end
+        if IsWholeNameMatch(text, first, last) then return true end
         pos = last + 1
     end
 end
@@ -191,7 +195,7 @@ local function ReplaceName(s, real, fake)
     while true do
         local a, b = s:find(real, pos, true)
         if not a then break end
-        if not IsWordByte(s:byte(a - 1)) and not IsWordByte(s:byte(b + 1)) then
+        if IsWholeNameMatch(s, a, b) then
             out[#out + 1] = s:sub(pos, a - 1)
             out[#out + 1] = fake
             changed = true

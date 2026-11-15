@@ -116,6 +116,7 @@ local function InitCfg()
     if type(c.miniHomePing) ~= "boolean" then c.miniHomePing = perfWas end
     if type(c.miniWorldPing) ~= "boolean" then c.miniWorldPing = perfWas end
     c.miniPerf = nil
+    if type(c.miniMem) ~= "boolean" then c.miniMem = false end                     -- minimized bar: memory use of this addon (mem:12.3MB)
     if type(c.bagWarn) ~= "boolean" then c.bagWarn = true end                      -- alert + red chip when the bags are nearly full
     c.bagWarnSlots = GT.Clamp(c.bagWarnSlots, 1, 30, 5)                            -- ... at this many free slots or fewer
     if c.showSpawns == nil then c.showSpawns = false end

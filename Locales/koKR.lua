@@ -349,7 +349,6 @@ GT.locales.koKR = {
     ["Show player arrow"] = "플레이어 화살표 표시",
     ["Hide HUD while mounted"] = "탈것 탑승 중 HUD 숨김",
     ["Auto-enable with gathering tracking"] = "채집 추적 시 자동 켜기",
-    ["Restore HUD after /reload or login"] = "/reload·접속 후 HUD 복원",
     ["Hide minimap addon skins / buttons"] = "미니맵 애드온 스킨/버튼 숨김",
     ["Deep scan for other minimap addons"] = "다른 미니맵 애드온 정밀 검색",
     ["Debug messages"] = "디버그 메시지",

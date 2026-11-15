@@ -93,7 +93,20 @@ Right-click the Settings button in the main window to open it (right-click again
 - Randomize Names: picks new random names and a fake level. The Random level range slider sets the level's maximum. Opacity fades the window background while keeping its text readable.
 - Shown on: your unit frames (also when you target yourself or your pet), unit tooltip, character window title and chat. When the disguise is on, matching character names are also hidden in item tooltips.
 - Commands: /hun (toggles the disguise), /hun player <name>, /hun pet <name>, /hun random, /hun status, /hun help.
-- If the standalone HideUnitNames addon is loaded, Random Name here is switched off. Use that addon instead.]] }
+- If the standalone HideUnitNames addon is loaded, Random Name here is switched off. Use that addon instead.
+]] .. H .. "Minimize settings (right-click the - button in the main window)" .. E .. [[
+
+- Bar: always show, the summary, bar size and opacity, and fading.
+- Chips: group chips, urgency colours, and the blink and bag warnings.
+- XP: the XP button, what its line shows, and the level-up alerts.
+- Goals: the goal boxes shown on the bar.
+- Pings: which pings show on the bar, and the sound for a red ping. Tick "Sound when ping is red", then use < > to pick a sound (each click plays it). "Repeat every" sets how often the sound repeats while a ping stays red (1 to 60 s, default 10). Unticking it stops any sound playing.
+
+]] .. H .. "Friend/Guild Notifier (Settings > General)" .. E .. [[
+
+A small pop-up on the right when a guild member or a friend comes online (gold, with the Xbox sound) or goes offline (red, with the Windows sound). It stays for the time on its button: 3, 6, 10 or 20 seconds. Left click the button for the next time, right click for the previous one; each click shows a demo. The same person shows at most once every 10 seconds. Untick the box to turn it off.
+
+]] }
 
 TOPICS[#TOPICS + 1] = { "tips", "Tips", H .. "Groups" .. E .. [[
 
@@ -147,10 +160,20 @@ Turns the real minimap into a big see-through map across your screen, with optio
 - Map: HUD size, map opacity (0% = the map is blank and only the pins show, 100% = opaque; 10 steps), minimap zoom, keybinding.
 - Rings: ring radius, second ring (the Unit button at the top right switches them between pixels and yards: in yards a ring keeps its real distance at any HUD size or zoom, is labelled, and is hidden when it is farther than the map shows), thickness, smoothness, ring style (line, stripes or dots: the button cycles them), ring density, ring colours (Ring colour... opens the picker: sliders for each ring, and a Random colour button for the ring whose tab is open), compass letters (N E S W), heading readout, Ready-first gathering readout (nearest ready node, otherwise nearest respawn), and route progress readout (current planned route step). Each readout can be switched on or off.
 - Track: the tracking button while the HUD is on (size 20-80 px and position) and what it does while the HUD is off (auto, own or stock).
-- Options: rotate map with player, player arrow, hide HUD while mounted, auto-enable with gathering tracking, restore HUD after /reload or login, hide minimap addon skins, diagnostics.
+- Options: rotate map with player, player arrow, hide HUD while mounted, auto-enable with gathering tracking, hide minimap addon skins, diagnostics.
 - Eagle: the map shown during a remote view: a hunter's Eagle Eye and Eyes of the Beast, a shaman's Far Sight, a priest's Mind Vision, a warlock's Eye of Kilrogg. The HUD stays on but turns into a smaller map with its own size, opacity, zoom, rotation and an optional ring; compass letters are hidden. Hover tooltips on the map lets the game's own herb / ore tooltips show when you point at a blip (clicks pass through to the world; the map does not ping). Key Bindings > AddOns has keys for zoom in, zoom out and next size (saved size, bigger, smaller). Distance scale labels the edge of the map and a ring half-way in with the yards they stand for (it follows the zoom and indoors / outdoors). Nearest node readout shows the closest known node, READY or time left, and its distance. Preview Eagle map shows it without casting Eagle Eye. Switch it off to have the HUD turn off during Eagle Eye instead.
 - Profile: save several looks, switch or delete them. Profiles are shared by all characters; each character remembers its own.
-- Reset profile restores the defaults.]] }
+- Reset profile restores the defaults.
+]] .. H .. "Arrow size and performance" .. E .. [[
+
+- Arrow size: HUD settings > Map tab. 100% is the game's own arrow; other sizes draw the addon's arrow. The arrow hides during Eagle Eye and comes back after.
+- Performance: HUD settings > Performance tab, or /gthud perf full | balanced | lowest.
+  - Full: as saved.
+  - Balanced: the Eagle map stays but without rings, rings are limited to 48 pieces, the update loops run slower, and deep scan is off.
+  - Lowest: no rings and no Eagle map (node names still show during Eagle Eye), the slowest loops, and timers refresh every 2 seconds.
+Saved ring values are kept, so going back to Full brings them back.
+
+]] }
 
 TOPICS[#TOPICS + 1] = { "cmds", "Cmds", H .. "Slash commands" .. E .. [[
 
@@ -205,14 +228,13 @@ TOPICS[#TOPICS + 1] = { "cmds", "Cmds", H .. "Slash commands" .. E .. [[
 /gthud eagle - Eagle Eye map on / off (also: preview, size, zoom, alpha, rotate, ring, scale, nearest, hover, debug)
 /gthud mountfade - hide HUD while mounted on / off
 /gthud autogather - auto-enable with gathering tracking on / off
-/gthud restore - restore HUD after /reload or login on / off
 /gthud profile - list profiles; /gthud profile <name> switches or creates one
 /gthud profile delete <name> - delete a profile (Default and the active profile cannot be deleted)
 /gthud status | info | frames | debug - status, diagnostics, or debug messages
 /gthud reset - reset the current profile
 /gthud help - show command help]] }
 
-TOPICS[#TOPICS + 1] = { "credits", "Credits", H .. "GatherTimes 0.24.7" .. E .. [[
+TOPICS[#TOPICS + 1] = { "credits", "Credits", H .. "GatherTimes 0.24.8" .. E .. [[
 
 Author: miRidinsa
 Website: https://github.com/ridinsa/

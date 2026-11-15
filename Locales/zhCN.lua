@@ -351,7 +351,6 @@ GT.locales.zhCN = {
     ["Show player arrow"] = "显示玩家箭头",
     ["Hide HUD while mounted"] = "骑乘时隐藏 HUD",
     ["Auto-enable with gathering tracking"] = "采集追踪时自动开启",
-    ["Restore HUD after /reload or login"] = "/reload 或登录后恢复 HUD",
     ["Hide minimap addon skins / buttons"] = "隐藏小地图插件皮肤/按钮",
     ["Deep scan for other minimap addons"] = "深度扫描其他小地图插件",
     ["Debug messages"] = "调试信息",

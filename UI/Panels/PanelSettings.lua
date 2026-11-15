@@ -161,10 +161,14 @@ GT.panelBuilders.Settings = function(panel, content)
         "Choose how long a timer stays marked READY before it returns to idle.")
 
     -- guild members and friends: a small pop-up on the right and a sound (UI\GuildPopup.lua). One row: on/off and the time.
+    local UpdateSecsState   -- set below, once the time button exists
     Check(general, -306, "Friend/Guild Notifier",
         function() return cfg().guildOnline == true end,
-        function(v) cfg().guildOnline = v end,
-        "On: a small pop-up on the right of the screen when a guild member or a friend comes online (gold, with a sound) or goes offline (red, with a sound). It hides by itself after the time on the button next to it. Clicking that button shows a demo.")
+        function(v)
+            cfg().guildOnline = v
+            if UpdateSecsState then UpdateSecsState() end
+        end,
+        "On: a small pop-up on the right of the screen when a guild member or a friend comes online (gold, with a sound) or goes offline (red, with a sound). When available, it also shows their level, class, guild and location. It hides by itself after the time on the button next to it. Clicking that button shows a demo.")
     local secsBtn = Button(general, "", 96, 176, -306)
     local SECS_STEPS = { 3, 6, 10, 20 }
     local function SecsLabel()
@@ -172,6 +176,14 @@ GT.panelBuilders.Settings = function(panel, content)
     end
     secsBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     AddOptionTip(secsBtn, "Show time", "Left click: the next time. Right click: the previous time. Each click shows a demo.")
+    -- the time button works only while the Friend/Guild Notifier is on: greyed out and not clickable otherwise
+    UpdateSecsState = function()
+        local on = cfg().guildOnline == true
+        secsBtn:SetAlpha(on and 1 or 0.4)
+        if on then secsBtn:Enable() else secsBtn:Disable() end
+    end
+    UpdateSecsState()
+    GT.uiRefresh[#GT.uiRefresh + 1] = UpdateSecsState
     secsBtn:SetScript("OnClick", function(_, button)
         local cur = cfg().guildOnlineSecs or 6
         local idx = 1

@@ -37,7 +37,7 @@ Verwandelt die echte Minimap in eine große, durchscheinende Karte auf deinem Bi
 - Profil: mehrere Darstellungen speichern, wechseln oder löschen. Profile gelten für alle Charaktere; jeder Charakter merkt sich sein eigenes.
 - Profil zurücksetzen stellt die Standardwerte wieder her.]]
 
-T.credits = H .. "GatherTimes 0.24.7" .. E .. [[
+T.credits = H .. "GatherTimes 0.24.8" .. E .. [[
 
 Autor: miRidinsa
 Website: https://github.com/ridinsa/
@@ -229,7 +229,6 @@ T.cmds = H .. "Slash-Befehle" .. E .. [[
 /gthud scan - tiefe Suche nach Minimap-Addons an / aus
 /gthud mountfade - HUD beim Reiten ausblenden an / aus
 /gthud autogather - automatisch einschalten mit Sammel-Verfolgung an / aus
-/gthud restore - HUD nach /reload oder Login wiederherstellen an / aus
 /gthud profile - Profile auflisten; /gthud profile <n> wechselt oder erstellt eines
 /gthud profile delete <n> - Profil löschen (Default und das aktive Profil können nicht gelöscht werden)
 /gthud status | info | frames | debug - Status, Diagnose oder Debug-Meldungen

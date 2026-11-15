@@ -30,7 +30,7 @@ function HUD.Init()
 end
 
 -- Forwarded by Events.lua: ADDON_LOADED (other addons only), PLAYER_ENTERING_WORLD, PLAYER_LOGOUT,
--- MINIMAP_UPDATE_TRACKING, PLAYER_MOUNT_DISPLAY_CHANGED, UNIT_AURA, UNIT_SPELLCAST_* (player).
+-- MINIMAP_UPDATE_TRACKING, zone/resting changes, PLAYER_MOUNT_DISPLAY_CHANGED, UNIT_AURA, UNIT_SPELLCAST_* (player).
 function HUD.OnEvent(event, arg1, arg2, arg3)
     if event == "ADDON_LOADED" then
         -- another addon loaded: it may have created minimap buttons
@@ -42,16 +42,10 @@ function HUD.OnEvent(event, arg1, arg2, arg3)
 
     if event == "PLAYER_ENTERING_WORLD" then
         local isLogin, isReload = arg1, arg2
-        local justEnabled = false
         if isLogin or isReload then
             RegisterLDBIconCallback()
-            if HUD.root.restoreOnLogin and S.charState.wasActive then
-                S.charState.wasActive = false
-                HUD.SetEnabled(true)
-                justEnabled = true
-            end
         end
-        if S.active and not justEnabled then
+        if S.active then
             HUD.I.ApplyHud()                      -- minimap can be reset by the loading screen
             C_Timer.After(2, HUD.I.Enforce)
         end
@@ -60,6 +54,10 @@ function HUD.OnEvent(event, arg1, arg2, arg3)
 
     elseif event == "MINIMAP_UPDATE_TRACKING" then
         HUD.Tracking.Refresh()
+        HUD.CheckAutoGather()
+
+    elseif event == "PLAYER_UPDATE_RESTING" or event == "ZONE_CHANGED"
+        or event == "ZONE_CHANGED_INDOORS" or event == "ZONE_CHANGED_NEW_AREA" then
         HUD.CheckAutoGather()
 
     elseif event == "UNIT_SPELLCAST_CHANNEL_START" or event == "UNIT_SPELLCAST_CHANNEL_STOP"
@@ -80,7 +78,6 @@ function HUD.OnEvent(event, arg1, arg2, arg3)
         if S.active then HUD.UpdateVisibility() end       -- mounts (if the option is on)
 
     elseif event == "PLAYER_LOGOUT" then
-        if S.charState then S.charState.wasActive = S.active or S.eagleSuspended end
         if S.active and S.orig then
             -- the CVar and zoom outlive the UI session; put them back
             pcall(SetCVar, "rotateMinimap", S.orig.rotate)
@@ -137,6 +134,7 @@ function HUD.OnUpdate(dt)
     if not HUD.db then return end
     Guard("eagle", HUD.EagleTick, dt)                      -- switch the HUD back on after Eagle Eye (0.5 s)
     Guard("mouse", HUD.MouseTick, dt)                      -- keeps the Minimap's mouse state right (0.5 s)
+    Guard("units", HUD.UnitHoverUpdate, dt)                -- visible unit markers / tooltips when hovering the HUD map
     Guard("overlay", HUD.Overlay.OnUpdate, dt)             -- compass letters / heading (every 0.03 s)
     Guard("tracking", HUD.Tracking.OnUpdate)               -- dragging the tracking button
     Guard("watcher", HUD.WatcherTick, dt)                      -- keeps the stock tracking button right (0.1 s)

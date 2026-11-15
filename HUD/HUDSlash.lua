@@ -28,9 +28,9 @@ local function Status()
     Print(string.format("ring %d  ring2 %d  thick %d  seg %d  rotate %s  dirs %s  heading %s  arrow %s",
         db.ring, db.ring2, db.ringThickness, db.ringSegments, OnOff(db.rotate), OnOff(db.dirs),
         OnOff(db.heading), OnOff(db.arrow)))
-    Print(string.format("tracking %s (offset %d,%d)  hide addons %s  deep scan %s  mount fade %s  auto gather %s  restore on login %s",
+    Print(string.format("tracking %s (offset %d,%d)  hide addons %s  deep scan %s  mount fade %s  auto gather %s",
         OnOff(db.tracking), db.trackingX, db.trackingY, OnOff(db.hideAddons), OnOff(HUD.root.deepScan),
-        OnOff(db.mountFade), OnOff(db.autoGather), OnOff(HUD.root.restoreOnLogin)))
+        OnOff(db.mountFade), OnOff(db.autoGather)))
     Print("performance level " .. HUD.PERF_LEVELS[HUD.PerfLevel()] .. "  suggest on low FPS " .. OnOff(HUD.root.perfSuggest))
 end
 
@@ -389,6 +389,13 @@ function HUD.Slash(msg)
     elseif cmd == "heading" then Toggle("heading", "Heading readout")
     elseif cmd == "arrow" then Toggle("arrow", "Player arrow")
     elseif cmd == "hover" then Toggle("hudHover", "Hover tooltips on the HUD map")
+    elseif cmd == "hoverkey" then
+        local k = (args[2] or ""):lower()
+        if k ~= "alt" and k ~= "ctrl" and k ~= "shift" and k ~= "always" then
+            return Print("Usage: /gthud hoverkey alt | ctrl | shift | always   (now: " .. tostring(db.hudHoverKey or "alt") .. ")")
+        end
+        HUD.Set("hudHoverKey", k)
+        Print("HUD map hover tooltips (need /gthud hover on): " .. (k == "always" and "always on (mob / NPC / player tooltips are blocked)" or ("while holding " .. k)))
     elseif cmd == "tracking" then Toggle("tracking", "Tracking button on HUD")
     elseif cmd == "trackmode" then
         local m = args[2] or ""
@@ -467,10 +474,6 @@ function HUD.Slash(msg)
         if HUD.Config then HUD.Config.Refresh() end
     elseif cmd == "mountfade" then Toggle("mountFade", "Hide HUD while mounted")
     elseif cmd == "autogather" then Toggle("autoGather", "Auto-enable while gathering tracking is active")
-    elseif cmd == "restore" then
-        HUD.SetRoot("restoreOnLogin", not HUD.root.restoreOnLogin)
-        Print("Restore HUD after /reload or login: " .. OnOff(HUD.root.restoreOnLogin))
-        if HUD.Config then HUD.Config.Refresh() end
     elseif cmd == "perf" or cmd == "lowspec" then
         local want = cmd == "lowspec" and "lowest" or a
         if want and want ~= "" then

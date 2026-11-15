@@ -347,7 +347,6 @@ GT.locales.itIT = {
     ["Show player arrow"] = "Mostra freccia giocatore",
     ["Hide HUD while mounted"] = "Nascondi HUD in sella",
     ["Auto-enable with gathering tracking"] = "Auto-attiva con ricerca raccolta",
-    ["Restore HUD after /reload or login"] = "Ripristina HUD dopo /reload",
     ["Hide minimap addon skins / buttons"] = "Nascondi skin addon minimappa",
     ["Deep scan for other minimap addons"] = "Scansione addon minimappa",
     ["Debug messages"] = "Messaggi debug",

@@ -347,7 +347,6 @@ GT.locales.deDE = {
     ["Show player arrow"] = "Spielerpfeil zeigen",
     ["Hide HUD while mounted"] = "HUD beim Reiten ausblenden",
     ["Auto-enable with gathering tracking"] = "Auto-An mit Sammelsuche",
-    ["Restore HUD after /reload or login"] = "HUD nach /reload wiederherstellen",
     ["Hide minimap addon skins / buttons"] = "Minimap-Addon-Skins ausblenden",
     ["Deep scan for other minimap addons"] = "Tiefensuche nach Minimap-Addons",
     ["Debug messages"] = "Debug-Meldungen",

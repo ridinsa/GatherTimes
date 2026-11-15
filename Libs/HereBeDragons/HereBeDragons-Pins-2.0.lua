@@ -46,7 +46,7 @@ pins.Minimap = pins.Minimap or Minimap
 local WORLD_MAP_ID = 947
 
 -- upvalue lua api
-local cos, sin, max = math.cos, math.sin, math.max
+local cos, sin, max, floor = math.cos, math.sin, math.max, math.floor
 local type, pairs = type, pairs
 
 -- upvalue wow api
@@ -125,7 +125,7 @@ local rotateMinimap = GetCVar("rotateMinimap") == "1"
 local indoors = GetCVar("minimapZoom")+0 == pins.Minimap:GetZoom() and "outdoor" or "indoor"
 
 local minimapPinCount, queueFullUpdate = 0, false
-local minimapScale, minimapShape, mapRadius, minimapWidth, minimapHeight, mapSin, mapCos
+local minimapScale, minimapEffectiveScale, minimapShape, mapRadius, minimapWidth, minimapHeight, mapSin, mapCos
 local lastZoom, lastFacing, lastXY, lastYY
 
 local function drawMinimapPin(pin, data)
@@ -170,8 +170,17 @@ local function drawMinimapPin(pin, data)
 
     if dist <= 1 or data.floatOnEdge then
         pin:Show()
-        pin:ClearAllPoints()
-        pin:SetPoint("CENTER", pins.Minimap, "CENTER", diffX * minimapWidth, -diffY * minimapHeight)
+        -- Snap to physical pixels and avoid resetting unchanged anchors; this reduces label shimmer while moving.
+        local offsetX, offsetY = diffX * minimapWidth, -diffY * minimapHeight
+        if minimapEffectiveScale and minimapEffectiveScale > 0 then
+            offsetX = floor(offsetX * minimapEffectiveScale + 0.5) / minimapEffectiveScale
+            offsetY = floor(offsetY * minimapEffectiveScale + 0.5) / minimapEffectiveScale
+        end
+        if pin._hbdMinimap ~= pins.Minimap or pin._hbdX ~= offsetX or pin._hbdY ~= offsetY then
+            pin:ClearAllPoints()
+            pin:SetPoint("CENTER", pins.Minimap, "CENTER", offsetX, offsetY)
+            pin._hbdMinimap, pin._hbdX, pin._hbdY = pins.Minimap, offsetX, offsetY
+        end
         data.onEdge = (dist > 1)
     else
         pin:Hide()
@@ -223,8 +232,10 @@ local function UpdateMinimapPins(force)
     end
 
     local newScale = pins.Minimap:GetScale()
-    if minimapScale ~= newScale then
+    local newEffectiveScale = pins.Minimap:GetEffectiveScale()
+    if minimapScale ~= newScale or minimapEffectiveScale ~= newEffectiveScale then
         minimapScale = newScale
+        minimapEffectiveScale = newEffectiveScale
         force = true
     end
 
@@ -303,8 +314,10 @@ local function UpdateMinimapIconPosition()
 
     local refresh
     local newScale = pins.Minimap:GetScale()
-    if minimapScale ~= newScale then
+    local newEffectiveScale = pins.Minimap:GetEffectiveScale()
+    if minimapScale ~= newScale or minimapEffectiveScale ~= newEffectiveScale then
         minimapScale = newScale
+        minimapEffectiveScale = newEffectiveScale
         refresh = true
     end
 

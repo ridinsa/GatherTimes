@@ -6,7 +6,7 @@
 --   Chips  : group chips, urgency colours, blink and bag warnings
 --   XP     : the XP button and what its line shows, level-up alerts
 --   Goals  : the goal boxes shown on the bar
---   Pings  : which pings show on the bar, the red-ping sound and its repeat delay
+--   Pings  : what shows on the second bar (fps, pings, memory), the red-ping sound and its repeat delay
 -- Every setting keeps its saved key and default. Options with no effect right now are greyed out.
 local _, GT = ...
 GT.panelBuilders = GT.panelBuilders or {}
@@ -433,21 +433,28 @@ GT.panelBuilders.Minimize = function(panel, content)
             cfg().miniFps = v
             Touch()
         end,
-        "On: the smaller pings below the main pings shows your frame rate as fps:60.")
+        "On: the smaller bar below the main bar shows your frame rate as fps:60.")
     Check(pings, "Show home ping (H)",
         function() return cfg().miniHomePing ~= false end,
         function(v)
             cfg().miniHomePing = v
             Touch()
         end,
-        "On: the smaller pings below the main pings shows your home latency in ms as H:45 (the connection to the realm). Green under 300, yellow under 500, and red and blinking at 500 or more.")
+        "On: the smaller bar below the main bar shows your home latency in ms as H:45 (the connection to the realm). Green under 300, yellow under 500, and red and blinking at 500 or more.")
     Check(pings, "Show world ping (W)",
         function() return cfg().miniWorldPing ~= false end,
         function(v)
             cfg().miniWorldPing = v
             Touch()
         end,
-        "On: the smaller pings below the main pings shows your world latency in ms as W:60 (the connection that carries movement and combat). Green under 300, yellow under 500, and red and blinking at 500 or more.")
+        "On: the smaller bar below the main bar shows your world latency in ms as W:60 (the connection that carries movement and combat). Green under 300, yellow under 500, and red and blinking at 500 or more.")
+    Check(pings, "Show memory use (mem)",
+        function() return cfg().miniMem == true end,
+        function(v)
+            cfg().miniMem = v
+            Touch()
+        end,
+        "On: the smaller bar below the main bar shows how much memory GatherTimes uses, in MB, as mem:12.3MB. It updates every 2 seconds. If the game cannot report one addon, it shows the memory of all addons as mem(all).")
 
     Heading(pings, "Ping sound")
     Check(pings, "Sound when ping is red",
@@ -457,7 +464,7 @@ GT.panelBuilders.Minimize = function(panel, content)
             if not v then GT.StopPingSound() end
             Touch()                                   -- greys or enables the < > buttons and the sound name
         end,
-        "On: a sound plays once when your home or world ping turns red (500 ms or more). It waits 20 seconds before it can play again. Only the pings shown on the pings count.",
+        "On: a sound plays once when your home or world ping turns red (500 ms or more). It waits 20 seconds before it can play again. Only the pings shown on the bar count.",
         function() return cfg().miniHomePing ~= false or cfg().miniWorldPing ~= false end)
     -- sound picker: < and > step through the sounds found in Media\ from GT.SoundList (built-in and added).
     -- Each click plays the sound it lands on. The name is shown below the buttons, in grey.

@@ -390,14 +390,39 @@ function GT.StopPingSound()
     lastPingHandle = nil
 end
 
--- "fps:60 | H:45 | W:60": frame rate, home and world latency in ms. Each part has its own switch
--- (options miniFps, miniHomePing, miniWorldPing, all on by default) and only the switched-on parts are shown.
+-- Memory use of this addon in MB, for the "mem:" part. The game only updates its per-addon numbers when asked
+-- (UpdateAddOnMemoryUsage walks every addon), so it is sampled every 2 s, not on every bar refresh. If the client
+-- cannot report one addon, the Lua memory of all addons is shown instead and the label says so ("mem(all)").
+local memKB, memAll, memAt = 0, false, -100
+local function MemoryText()
+    local now = GetTime()
+    if now - memAt >= 2 then
+        memAt = now
+        local get = (C_AddOns and C_AddOns.GetAddOnMemoryUsage) or GetAddOnMemoryUsage
+        local ok, kb = false, nil
+        if get then
+            if UpdateAddOnMemoryUsage then pcall(UpdateAddOnMemoryUsage) end
+            ok, kb = pcall(get, "GatherTimes")
+        end
+        if ok and type(kb) == "number" and kb > 0 then
+            memKB, memAll = kb, false
+        else
+            memKB, memAll = collectgarbage("count"), true
+        end
+    end
+    return string.format("%s:%.1fMB", memAll and "mem(all)" or "mem", memKB / 1024)
+end
+
+-- "fps:60 | H:45 | W:60 | mem:12.3MB": frame rate, home and world latency in ms, memory use. Each part has its own
+-- switch (options miniFps, miniHomePing, miniWorldPing - on by default - and miniMem - off by default) and only the
+-- switched-on parts are shown.
 -- Returns the text and whether it should blink (a shown latency is 500 ms or more).
 local function PerfText()
     local c = GT.cfg and GT.cfg()
     if not c then return nil end
     local wantFps, wantHome, wantWorld = c.miniFps ~= false, c.miniHomePing ~= false, c.miniWorldPing ~= false
-    if not (wantFps or wantHome or wantWorld) then return nil end
+    local wantMem = c.miniMem == true
+    if not (wantFps or wantHome or wantWorld or wantMem) then return nil end
     local home, world = 0, 0
     if wantHome or wantWorld then
         local ok, _, _, h, w = pcall(GetNetStats)
@@ -416,6 +441,7 @@ local function PerfText()
         parts[#parts + 1] = string.format("W:%s%d|r", PingColor(world), world)
         if world >= 500 then alarm = true end
     end
+    if wantMem then parts[#parts + 1] = MemoryText() end
     return table.concat(parts, " | "), alarm
 end
 

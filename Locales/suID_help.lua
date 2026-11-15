@@ -37,7 +37,7 @@ Ngarobah minimap asli jadi peta gedé transparan nu nutupan layar, kalawan pilih
 - Profil: simpen sababaraha tampilan, pindah atawa hapus. Profil dipaké bareng ku sakabéh karakter; unggal karakter nyimpen pilihanana sorangan.
 - Reset profil mulangkeun setélan baku.]]
 
-T.credits = H .. "GatherTimes 0.24.7" .. E .. [[
+T.credits = H .. "GatherTimes 0.24.8" .. E .. [[
 
 Nu nyieun: miRidinsa
 Website: https://github.com/ridinsa/
@@ -229,7 +229,6 @@ T.cmds = H .. "Paréntah slash" .. E .. [[
 /gthud scan - scan jero addon minimap hurung / pareum
 /gthud mountfade - sumputkeun HUD nalika numpak hurung / pareum
 /gthud autogather - hurungkeun otomatis jeung tracking kumpulan hurung / pareum
-/gthud restore - balikeun HUD sanggeus /reload atawa login hurung / pareum
 /gthud profile - daptar profil; /gthud profile <n> ganti atawa nyieun
 /gthud profile delete <n> - hapus profil (Default jeung profil aktif teu bisa dihapus)
 /gthud status | info | frames | debug - status, diagnostik, atawa pesan debug

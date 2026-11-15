@@ -37,7 +37,7 @@ T.hud = H .. "ミニマップ HUD" .. E .. [[
 - プロフィール：複数の外観を保存、切替、削除できます。プロフィールは全キャラクターで共有され、設定はキャラクターごとに記憶されます。
 - 「プロフィールをリセット」で既定値に戻します。]]
 
-T.credits = H .. "GatherTimes 0.24.7" .. E .. [[
+T.credits = H .. "GatherTimes 0.24.8" .. E .. [[
 
 作者：miRidinsa
 ウェブサイト：https://github.com/ridinsa/
@@ -229,7 +229,6 @@ T.cmds = H .. "スラッシュコマンド" .. E .. [[
 /gthud scan - ミニマップアドオンの詳細スキャン オン / オフ
 /gthud mountfade - 騎乗中はHUDを隠す オン / オフ
 /gthud autogather - 採取追跡と一緒に自動で有効化 オン / オフ
-/gthud restore - /reload やログイン後にHUDを復元 オン / オフ
 /gthud profile - プロファイルの一覧。/gthud profile <n> で切り替えまたは作成
 /gthud profile delete <n> - プロファイルを削除（Default と現在のプロファイルは削除できません）
 /gthud status | info | frames | debug - 状態、診断、またはデバッグメッセージ

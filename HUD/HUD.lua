@@ -66,6 +66,7 @@ local STOCK_MASK     = "Textures\\MinimapMask"
 local STOCK_ARROW    = "Interface\\Minimap\\MinimapArrow"
 HUD.MINIMAP_BASE_SIZE = MINIMAP_BASE_SIZE   -- (HUDFrames.lua)
 
+HUD.BLIP_SCALES = { 1, 1.2, 1.3, 1.4 }
 HUD.LIMITS = {
     size = { 150, 1400 },
     eagleSize = { 150, 1400 },
@@ -83,10 +84,12 @@ HUD.LIMITS = {
 -- Per-profile settings
 HUD.DEFAULTS = {
     size          = 800,
+    blipScale     = 1.3,           -- scale minimap blips while keeping the HUD map the same size
     alpha         = 0,             -- 0 = fully transparent map, 1 = opaque (10% steps)
     zoom          = 0,
     rotate        = true,
     arrow         = true,          -- show the player arrow
+    compact       = false,         -- compact map: 75% size, no rings, no compass letters, no heading readout
     arrowScale    = 100,           -- player arrow size in %; 100 = the game's own arrow, anything else = the addon's arrow
     dirs          = false,         -- N/E/S/W letters
     heading       = false,         -- heading readout (e.g. "NE 45")
@@ -113,6 +116,7 @@ HUD.DEFAULTS = {
     hideAddons    = true,          -- hide minimap addon skins / button frames (SexyMap, ElvUI, LibDBIcon ...)
     mountFade     = false,         -- hide the HUD while mounted
     autoGather    = false,         -- auto-enable while Find Herbs/Minerals/Treasure is active
+    autoOffCity   = true,          -- auto-disable the HUD in resting cities, towns and inns
     -- Eagle Eye map: while the hunter's Eagle Eye is on, the HUD stays on but the map is drawn centred, at its
     -- own size / mask / zoom, without the compass letters and readouts (the camera is away from the character).
     eagleMap      = true,          -- false = the old behaviour: the HUD is switched off during Eagle Eye
@@ -126,8 +130,18 @@ HUD.DEFAULTS = {
     eagleHideLabels = true,        -- hide the Gx group labels and the (G) timers on the map while the Eagle map is up
     eagleHideLayer = false,        -- hide the layer info (e.g. NovaWorldBuffs "Layer 1") on the Eagle map
     eagleHover    = true,          -- the Eagle map takes the mouse (clicks pass through) so the game's herb / ore hover tooltips work
-    hudHover      = false,         -- the normal HUD map also shows the game's herb / ore hover tooltips (off: it ignores the mouse)
+    hudHoverKey   = "alt",         -- map hover (normal HUD and Eagle map): the map takes the mouse only while this key is held (alt / ctrl / shift), so the game's own mob / NPC / player tooltips reach the world otherwise; "always" = the map keeps the mouse (blocks those tooltips)
+    hudHover      = true,          -- the HUD map shows node hover tooltips while the hover key (Alt) is held (off: it ignores the mouse)
 }
+
+function HUD.NormalizeBlipScale(value)
+    local best, distance = HUD.BLIP_SCALES[1], math.huge
+    for _, scale in ipairs(HUD.BLIP_SCALES) do
+        local d = math.abs(value - scale)
+        if d < distance then best, distance = scale, d end
+    end
+    return best
+end
 
 
 ---------------------------------------------------------------------------
@@ -227,9 +241,22 @@ local balView = setmetatable({}, {
     end,
 })
 
+-- Compact map (profile option, Options tab): drawn at 75% of the size, with no rings, no compass letters and no
+-- heading readout. The saved settings are read through this view, so they are not changed.
+local COMPACT_SCALE = 0.75
+local compactView = setmetatable({ ring = 0, ring2 = 0, ringYd = 0, ring2Yd = 0, dirs = false, heading = false }, {
+    __index = function(_, k)
+        local db = HUD.db
+        if not db then return nil end
+        if k == "size" then return math.floor((db.size or HUD.DEFAULTS.size) * COMPACT_SCALE + 0.5) end
+        return db[k]
+    end,
+})
+
 function HUD.Cfg()
     local db = HUD.db
     if not (S.eagleMode and db) then
+        if db and db.compact then return compactView end
         if db and HUD.LowSpec() then return lowView end
         if db and HUD.PerfLevel() == 1 then return balView end
         return db

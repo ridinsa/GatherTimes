@@ -26,6 +26,7 @@ local function FillDefaults(p)
     end
     local L = HUD.LIMITS
     p.size = Clamp(p.size, L.size[1], L.size[2])      -- screen limit is applied in HUD.EffectiveSize, not saved
+    p.blipScale = HUD.NormalizeBlipScale(p.blipScale)
     p.alpha = Clamp(p.alpha, 0, 1)
     p.eagleSize = Clamp(p.eagleSize, L.eagleSize[1], L.eagleSize[2])
     p.eagleAlpha = Clamp(p.eagleAlpha, 0, 1)
@@ -56,7 +57,7 @@ local function FillDefaults(p)
 end
 
 -- GatherTimesDB.hud layout:
---   ver, restoreOnLogin, deepScan, debug, origRotate   account-wide switches / crash-recovery value
+--   ver, deepScan, debug, origRotate   account-wide switches / crash-recovery value
 --   perfLevel (0 Full / 1 Balanced / 2 Lowest), perfSuggest, perfSuggested   performance (was: lowSpec)
 --   profiles  = { [name] = { size, alpha, x, y, ... } } every HUD setting (see HUD.DEFAULTS)
 --   chars     = { ["Name-Realm"] = { profile, wasActive } }
@@ -71,7 +72,6 @@ local function InitDB()
     if type(root.profiles) ~= "table" then root.profiles = {} end
     if type(root.chars) ~= "table" then root.chars = {} end
     root.ui = nil                       -- (the settings are a fixed panel now; no window position to keep)
-    if type(root.restoreOnLogin) ~= "boolean" then root.restoreOnLogin = false end
     if type(root.deepScan) ~= "boolean" then root.deepScan = false end
     if type(root.debug) ~= "boolean" then root.debug = false end
     -- performance level; the old Lower-spec checkbox (lowSpec) becomes "Lowest"

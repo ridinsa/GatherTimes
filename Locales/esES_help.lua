@@ -37,7 +37,7 @@ Convierte el minimapa real en un gran mapa translúcido que ocupa la pantalla, c
 - Perfil: guardar varios aspectos, cambiar entre ellos o borrarlos. Los perfiles se comparten entre todos los personajes; cada personaje recuerda el suyo.
 - Restablecer perfil restaura los valores predeterminados.]]
 
-T.credits = H .. "GatherTimes 0.24.7" .. E .. [[
+T.credits = H .. "GatherTimes 0.24.8" .. E .. [[
 
 Autor: miRidinsa
 Web: https://github.com/ridinsa/
@@ -229,7 +229,6 @@ T.cmds = H .. "Comandos slash" .. E .. [[
 /gthud scan - análisis profundo de addons del minimapa activado / desactivado
 /gthud mountfade - ocultar el HUD montado activado / desactivado
 /gthud autogather - activar automáticamente con el seguimiento de recolección activado / desactivado
-/gthud restore - restaurar el HUD tras /reload o login activado / desactivado
 /gthud profile - lista perfiles; /gthud profile <n> cambia o crea uno
 /gthud profile delete <n> - borra un perfil (Default y el perfil activo no se pueden borrar)
 /gthud status | info | frames | debug - estado, diagnóstico o mensajes de depuración
