@@ -300,25 +300,24 @@ local function OpenColorPicker()
 end
 
 -- ----------------------------------------------------------------------------------------------- keybinding
--- Binds a key to the native "Toggle HUD" binding (Bindings.xml: GATHERTIMES_HUD_TOGGLE), so it also shows up
--- in Key Bindings -> AddOns -> GatherTimes. Click the key button, press the key (with Shift / Ctrl / Alt if you
--- like); Esc cancels. Bindings cannot be changed in combat.
-local BIND_ACTION = "GATHERTIMES_HUD_TOGGLE"
+-- Key button for the native binding "Toggle HUD" (Bindings.xml: GATHERTIMES_HUD_TOGGLE); it also shows up in Key Bindings -> AddOns -> GatherTimes (a new binding needs a full
+-- game restart to appear there). Click a key button, press the key (with Shift / Ctrl / Alt if you like); Esc cancels.
+-- Bindings cannot be changed in combat.
 local IGNORE_KEYS = {
     LSHIFT = true, RSHIFT = true, LCTRL = true, RCTRL = true,
     LALT = true, RALT = true, LMETA = true, RMETA = true,
 }
 
-local function BoundKeyText()
-    local k1, k2 = GetBindingKey(BIND_ACTION)
+local function BoundKeyText(action)
+    local k1, k2 = GetBindingKey(action)
     if not k1 then return GT.TR("Not bound") end
     local t = GetBindingText(k1) or k1
     if k2 then t = t .. ", " .. (GetBindingText(k2) or k2) end
     return t
 end
 
-local function ClearHudBinding()
-    local keys = { GetBindingKey(BIND_ACTION) }
+local function ClearBindingOf(action)
+    local keys = { GetBindingKey(action) }
     for _, k in ipairs(keys) do SetBinding(k) end
 end
 
@@ -328,80 +327,68 @@ end
 
 local function BuildKeybind(f, y)
     Heading(f, 0, y, "Keybinding")
-    local keyBtn = Button(f, "", 190, 0, y - 22)
-    local clear  = Button(f, "Clear", 94, 194, y - 22)
-    Tip(keyBtn, "Toggle key", "Bind a key that shows or hides the HUD. Click the button, then press the key. Esc cancels.")
-    Tip(clear, "Clear", "Remove the key that shows or hides the HUD.")
-    local capturing = false
 
-    -- every GatherTimes key with what it does (the names are the game's own binding names)
-    local BIND_LIST = { "GATHERTIMES_HUD_TOGGLE", "GATHERTIMES_EAGLE_ZOOM_IN", "GATHERTIMES_EAGLE_ZOOM_OUT", "GATHERTIMES_EAGLE_SIZE" }
-    local bindRows = {}
-    for i = 1, #BIND_LIST do
-        local fs = GT.Font(f, nil, "OVERLAY", "GameFontHighlightSmall")
-        fs:SetPoint("TOPLEFT", 2, y - 50 - (i - 1) * 16)
-        fs:SetWidth(COL_W - 4)
-        fs:SetJustifyH("LEFT")
-        fs:SetWordWrap(false)
-        GT.MakeFitting(fs, COL_W - 4)
-        bindRows[i] = fs
-    end
-    local function UpdateList()
-        for i, action in ipairs(BIND_LIST) do
-            local k1 = GetBindingKey(action)
-            local keyText = k1 and (GetBindingText(k1) or k1) or GT.TR("Not bound")
-            bindRows[i]:SetText(GT.TR(_G["BINDING_NAME_" .. action] or action) .. ":  " .. keyText)
+    -- one row: the key button (click, then press the key) and its Clear button
+    local function KeyRow(rowY, action, tipTitle, tipText, clearText, takenText)
+        local keyBtn = Button(f, "", 190, 0, rowY)
+        local clear  = Button(f, "Clear", 94, 194, rowY)
+        Tip(keyBtn, tipTitle, tipText)
+        Tip(clear, "Clear", clearText)
+        local capturing = false
+
+        local function Update()
+            keyBtn.label:SetText(capturing and GT.TR("Press a key...  (Esc = cancel)") or BoundKeyText(action))
+            GT:SetButtonActive(keyBtn, capturing)
         end
-    end
 
-    local function Update()
-        keyBtn.label:SetText(capturing and GT.TR("Press a key...  (Esc = cancel)") or BoundKeyText())
-        GT:SetButtonActive(keyBtn, capturing)
-        UpdateList()
-    end
+        local function StopCapture()
+            capturing = false
+            keyBtn:EnableKeyboard(false)
+            keyBtn:SetScript("OnKeyDown", nil)
+            Update()
+        end
 
-    local function StopCapture()
-        capturing = false
-        keyBtn:EnableKeyboard(false)
-        keyBtn:SetScript("OnKeyDown", nil)
-        Update()
-    end
-
-    local function StartCapture()
-        if InCombatLockdown() then return HUD.Print(GT.TR("Cannot change key bindings in combat.")) end
-        capturing = true
-        keyBtn:EnableKeyboard(true)
-        if keyBtn.SetPropagateKeyboardInput then keyBtn:SetPropagateKeyboardInput(false) end
-        keyBtn:SetScript("OnKeyDown", function(_, key)
-            if IGNORE_KEYS[key] then return end              -- wait for the real key
-            if key == "ESCAPE" then return StopCapture() end
-            if InCombatLockdown() then StopCapture(); return HUD.Print(GT.TR("Cannot change key bindings in combat.")) end
-            local combo = (IsAltKeyDown() and "ALT-" or "") .. (IsControlKeyDown() and "CTRL-" or "")
-                .. (IsShiftKeyDown() and "SHIFT-" or "") .. key
-            local other = GetBindingAction(combo)
-            ClearHudBinding()                                -- one key at a time
-            if SetBinding(combo, BIND_ACTION) then
-                SaveBindingsNow()
-                if other and other ~= "" and other ~= BIND_ACTION then
-                    HUD.Print(GT.TRF("Key %s was bound to another action; it now toggles the HUD.", GetBindingText(combo) or combo))
+        local function StartCapture()
+            if InCombatLockdown() then return HUD.Print(GT.TR("Cannot change key bindings in combat.")) end
+            capturing = true
+            keyBtn:EnableKeyboard(true)
+            if keyBtn.SetPropagateKeyboardInput then keyBtn:SetPropagateKeyboardInput(false) end
+            keyBtn:SetScript("OnKeyDown", function(_, key)
+                if IGNORE_KEYS[key] then return end              -- wait for the real key
+                if key == "ESCAPE" then return StopCapture() end
+                if InCombatLockdown() then StopCapture(); return HUD.Print(GT.TR("Cannot change key bindings in combat.")) end
+                local combo = (IsAltKeyDown() and "ALT-" or "") .. (IsControlKeyDown() and "CTRL-" or "")
+                    .. (IsShiftKeyDown() and "SHIFT-" or "") .. key
+                local other = GetBindingAction(combo)
+                ClearBindingOf(action)                           -- one key at a time
+                if SetBinding(combo, action) then
+                    SaveBindingsNow()
+                    if other and other ~= "" and other ~= action then
+                        HUD.Print(GT.TRF(takenText, GetBindingText(combo) or combo))
+                    end
+                else
+                    HUD.Print(GT.TR("That key cannot be bound."))
                 end
-            else
-                HUD.Print(GT.TR("That key cannot be bound."))
-            end
-            StopCapture()
+                StopCapture()
+            end)
+            Update()
+        end
+
+        keyBtn:SetScript("OnClick", function() if capturing then StopCapture() else StartCapture() end end)
+        keyBtn:SetScript("OnHide", function() if capturing then StopCapture() end end)
+        clear:SetScript("OnClick", function()
+            if InCombatLockdown() then return HUD.Print(GT.TR("Cannot change key bindings in combat.")) end
+            ClearBindingOf(action)
+            SaveBindingsNow()
+            if capturing then StopCapture() else Update() end
         end)
-        Update()
+        refreshers[#refreshers + 1] = Update
     end
 
-    keyBtn:SetScript("OnClick", function() if capturing then StopCapture() else StartCapture() end end)
-    keyBtn:SetScript("OnHide", function() if capturing then StopCapture() end end)
-    clear:SetScript("OnClick", function()
-        if InCombatLockdown() then return HUD.Print(GT.TR("Cannot change key bindings in combat.")) end
-        ClearHudBinding()
-        SaveBindingsNow()
-        if capturing then StopCapture() else Update() end
-    end)
-    refreshers[#refreshers + 1] = Update
+    KeyRow(y - 22, "GATHERTIMES_HUD_TOGGLE", "Toggle key",
+        "Bind a key that shows or hides the HUD. Click the button, then press the key. Esc cancels.",
+        "Remove the key that shows or hides the HUD.",
+        "Key %s was bound to another action; it now toggles the HUD.")
 end
 
 -- ----------------------------------------------------------------------------------------------- tabs
@@ -560,7 +547,7 @@ local function BuildOverlay(f)
     y = y - ROW_H
 
     local hover = KeyCheck(f, 0, y, "Hover tooltips on map", "hudHover")
-    Tip(hover, "Hover tooltips on map", "Show gathering node names and tooltips for grouped players or visible nameplate units when you hover their map positions. Units appear only when WoW provides their coordinates. While on, the map takes the mouse only while you hold Alt (change with /gthud hoverkey alt|ctrl|shift|always); otherwise the game's own mob, NPC and player tooltips work through the HUD. The Eagle map has its own node-hover setting on the Eagle tab.")
+    Tip(hover, "Hover tooltips on map", "Show gathering node names and tooltips for grouped players or visible nameplate units when you hover their map positions. Units appear only when WoW provides their coordinates. Auto: the map takes the mouse over herb/ore blips and hands it back to the game when you rest on a mob, NPC or player, so both tooltips work. (Advanced: /gthud hoverkey ctrl|shift|always.) The Eagle map has its own node-hover setting on the Eagle tab.")
     y = y - ROW_H
 
     local priority = KeyCheck(f, 0, y, "Ready-first gathering readout", "priorityReadout")
@@ -669,6 +656,26 @@ local function BuildOptions(f)
 
     OptKey("Compact map", "compact",
         "On: the map is drawn smaller (75%) with no rings, no compass letters and no heading readout. Turn it off to bring them back; your saved values are kept.")
+
+    -- hover key: which key makes the HUD map take the mouse for tooltips; click to cycle through the modes
+    local HOVER_KEY_ORDER = { "alt", "ctrl", "shift", "always", "auto" }
+    local hoverKeyBtn = Button(f, "", 170, 0, y)
+    local function HoverKeyLabel()
+        hoverKeyBtn.label:SetText(GT.TRF("Hover key: %s", HUD.db.hudHoverKey or "alt"))
+    end
+    hoverKeyBtn:SetScript("OnClick", function()
+        local cur = HUD.db.hudHoverKey or "alt"
+        local nextKey = HOVER_KEY_ORDER[1]
+        for i, k in ipairs(HOVER_KEY_ORDER) do
+            if k == cur then nextKey = HOVER_KEY_ORDER[(i % #HOVER_KEY_ORDER) + 1] end
+        end
+        HUD.Set("hudHoverKey", nextKey, true)
+        HoverKeyLabel()
+    end)
+    refreshers[#refreshers + 1] = HoverKeyLabel
+    HoverKeyLabel()
+    Tip(hoverKeyBtn, "Hover key", "Which key makes the HUD map take the mouse for tooltips. Click to cycle: alt, ctrl, shift, always, auto (experimental).")
+    y = y - ROW
 
     Section("Minimap addons")
     OptKey("Hide minimap addon skins / buttons", "hideAddons",
@@ -814,8 +821,8 @@ local function BuildEagle(f)
     local nearest = KeyCheck(f, 0, y, "Nearest node readout", "eagleNearest")
     Tip(nearest, "Nearest node readout", "On: shows the nearest gathering node and how far away it is.")
     y = y - ROW_H
-    local hover = KeyCheck(f, 0, y, "Hover tooltips on the map (Alt key)", "eagleHover")
-    Tip(hover, "Hover tooltips on the map", "On: hold Alt and hover a gathering node on the Eagle map to see its name. Without the key the map ignores the mouse, so the game's own mob, NPC and player tooltips work. Change the key with /gthud hoverkey alt|ctrl|shift|always.")
+    local hover = KeyCheck(f, 0, y, "Hover tooltips on the map", "eagleHover")
+    Tip(hover, "Hover tooltips on the map", "On: hover a gathering node on the Eagle map to see its name; the map switches automatically so the game's own mob, NPC and player tooltips still work.")
     y = y - ROW_H
     local labels = KeyCheck(f, 0, y, "Hide Gx and (G) timers on the map", "eagleHideLabels")
     Tip(labels, "Hide Gx and (G) timers on the map", "On: the Gx labels and (G) timers are hidden on the Eagle map.")

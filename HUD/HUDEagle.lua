@@ -114,6 +114,14 @@ function HUD.EagleCastEnd() lastT = nil; castUntil = 0 end
 local eagleWasAuto, eagleAcc = false, 0
 function HUD.EagleSuspended() return S.eagleSuspended end
 
+-- Eagle Eye is over: the map hover toggle (HUD.ToggleHover, key / /gthud hovertoggle) goes back to off, so the map does
+-- not keep the mouse (and block the game's mob / player tooltips) on the normal HUD.
+local function DropHoverLatch()
+    if not S.hoverLatched then return end
+    S.hoverLatched = false
+    HUD.Print(GT.TR("Map hover tooltips: off"))
+end
+
 function HUD.EagleCheck()
     local db = HUD.db
     if not db then return end
@@ -123,6 +131,7 @@ function HUD.EagleCheck()
         local names = eagle and true or false
         if names ~= (S.lowEagleNames or false) then
             S.lowEagleNames = names
+            if not names then DropHoverLatch() end
             HUD.Refresh(true)
         end
     end
@@ -137,6 +146,7 @@ function HUD.EagleCheck()
         end
         local want = (eagle or S.eaglePreview) and S.active and not HUD.LowSpec()
         if want ~= S.eagleMode then
+            if S.eagleMode and not want then DropHoverLatch() end     -- the Eagle map is going away
             S.eagleMode = want
             S.eagleSizeStep = 1                         -- the "next size" key starts from the saved size each time
             if S.active then HUD.Refresh(true) end      -- same Minimap, new size / mask / zoom / rotation, in one pass
@@ -145,6 +155,7 @@ function HUD.EagleCheck()
         return
     end
     if S.eagleMode then                                  -- option switched off while the Eagle map was up
+        DropHoverLatch()
         S.eagleMode = false
         S.eagleSizeStep = 1
         if S.active then HUD.Refresh(true) end

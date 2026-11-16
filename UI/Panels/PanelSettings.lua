@@ -55,8 +55,8 @@ GT.panelBuilders.Settings = function(panel, content)
     local look    = AddSub("look",    "Look",    144)
     local tools   = AddSub("tools",   "Tools",   216)
 
-    local function Check(parent, y, text, get, set, description)
-        local cb = GT:CreateCheckLabel(parent, text, get, set)
+    local function Check(parent, y, text, get, set, description, maxW)
+        local cb = GT:CreateCheckLabel(parent, text, get, set, maxW)
         cb:SetPoint("TOPLEFT", 2, y)
         AddOptionTip(cb, text, description)
         return cb
@@ -168,8 +168,22 @@ GT.panelBuilders.Settings = function(panel, content)
             cfg().guildOnline = v
             if UpdateSecsState then UpdateSecsState() end
         end,
-        "On: a small pop-up on the right of the screen when a guild member or a friend comes online (gold, with a sound) or goes offline (red, with a sound). When available, it also shows their level, class, guild and location. It hides by itself after the time on the button next to it. Clicking that button shows a demo.")
-    local secsBtn = Button(general, "", 96, 176, -306)
+        "On: a small pop-up on the right of the screen when a guild member or a friend comes online (gold, with a sound) or goes offline (red, with a sound). When available, it also shows their level, class, guild and location. It hides by itself after the time on the button next to it. Clicking that button shows a demo.", 122)
+    local secsBtn = Button(general, "", 66, 148, -306)
+    -- the voice button, next to the time button: off, or the voice that reads "Name is online" out loud (the game's
+    -- text-to-speech, UI\GuildPopup.lua). A female voice comes first when the computer has one.
+    local voiceBtn = Button(general, "", 70, 218, -306)
+    voiceBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    AddOptionTip(voiceBtn, "Voice", "Reads the name and \"is online\" or \"is offline\" out loud with the game's text-to-speech. Left click: the next voice (a female voice first, when your computer has one), then off. Right click: the previous one. Each click shows a demo. Works only while the Friend/Guild Notifier is on.")
+    local function VoiceLabel()
+        voiceBtn.label:SetText(GT.GuildVoiceName and GT.GuildVoiceName() or "")
+    end
+    voiceBtn:SetScript("OnClick", function(_, button)
+        local speaking = GT.GuildVoiceStep and GT.GuildVoiceStep(button == "RightButton" and -1 or 1)
+        VoiceLabel()
+        if speaking and GT.GuildPopupDemo then GT.GuildPopupDemo() end     -- the demo speaks with the chosen voice
+    end)
+    VoiceLabel()
     local SECS_STEPS = { 3, 6, 10, 20 }
     local function SecsLabel()
         secsBtn.label:SetText(GT.TRF("Show %d s", cfg().guildOnlineSecs or 6))
@@ -181,6 +195,8 @@ GT.panelBuilders.Settings = function(panel, content)
         local on = cfg().guildOnline == true
         secsBtn:SetAlpha(on and 1 or 0.4)
         if on then secsBtn:Enable() else secsBtn:Disable() end
+        voiceBtn:SetAlpha(on and 1 or 0.4)
+        if on then voiceBtn:Enable() else voiceBtn:Disable() end
     end
     UpdateSecsState()
     GT.uiRefresh[#GT.uiRefresh + 1] = UpdateSecsState

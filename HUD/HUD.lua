@@ -131,7 +131,7 @@ HUD.DEFAULTS = {
     eagleHideLayer = false,        -- hide the layer info (e.g. NovaWorldBuffs "Layer 1") on the Eagle map
     eagleHover    = true,          -- the Eagle map takes the mouse (clicks pass through) so the game's herb / ore hover tooltips work
     hudHoverKey   = "alt",         -- map hover (normal HUD and Eagle map): the map takes the mouse only while this key is held (alt / ctrl / shift), so the game's own mob / NPC / player tooltips reach the world otherwise; "always" = the map keeps the mouse (blocks those tooltips)
-    hudHover      = true,          -- the HUD map shows node hover tooltips while the hover key (Alt) is held (off: it ignores the mouse)
+    hudHover      = true,          -- the HUD map shows node hover tooltips in auto mode (off: it ignores the mouse)
 }
 
 function HUD.NormalizeBlipScale(value)

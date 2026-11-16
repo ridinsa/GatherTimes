@@ -13,7 +13,11 @@
 --   * Nothing is moved during combat (the player and target frames are protected); it is done when combat ends.
 --   * The frames are put back at logout / reload, because a frame the player moved with the mouse is saved by the
 --     game with the position it has at that moment.
+--   * The player and target frames (the pet frame follows the player frame) only move down by the main bar, so they sit
+--     level with the fps / ping panel instead of below it - as long as that panel is not in their way sideways. If it
+--     is (small screen, big frames), they move down by both bars like the rest.
 -- GatherTimesDB._ui.barDock = false turns the whole thing off (the bar then just covers the top of the screen).
+-- GatherTimesDB._ui.barDockSameLine = false puts the player and target frames below the fps / ping panel again.
 local _, GT = ...
 
 local Dock = {}
@@ -26,6 +30,9 @@ local NAMES = {
     "UIWidgetTopCenterContainerFrame", "WorldStateAlwaysUpFrame", "ObjectiveTrackerFrame",
     "QuestWatchFrame", "WatchFrame", "DurabilityFrame", "TicketStatusFrame",
 }
+
+-- these sit level with the fps / ping panel (they only clear the main bar) when there is room beside the panel
+local SAME_LINE = { PlayerFrame = true, TargetFrame = true }
 
 local state = {}                       -- frame -> { orig = points, shifted = points }
 local hooked = {}
@@ -75,6 +82,17 @@ local function Shifted(frame, pts, px)
     return out
 end
 
+-- Is the frame clear of the fps / ping panel sideways (so it can sit on the same line as the panel)? Screen pixels.
+-- When the frame has no position yet, say no: it then gets the safe, lower place.
+local function ClearOfPanel(frame, panel)
+    local fl, fr = frame:GetLeft(), frame:GetRight()
+    local pl, pr = panel:GetLeft(), panel:GetRight()
+    if not (fl and fr and pl and pr) then return false end
+    local fs, ps = frame:GetEffectiveScale() or 1, panel:GetEffectiveScale() or 1
+    local margin = 60                  -- the panel's width changes with the fps text, so keep some room
+    return fr * fs < pl * ps - margin or fl * fs > pr * ps + margin
+end
+
 local function Mark() if not guard then dirty = true end end
 
 local function Hook(frame)
@@ -94,8 +112,9 @@ function Dock.Sync(off)
     local want = not off and bar and bar:IsShown() and not (ui and ui.barDock == false)
     local secondaryHeight = bar and bar.secondary and bar.secondary:IsShown()
         and (bar.secondary:GetHeight() or 0) * bar.secondary:GetEffectiveScale() or 0
-    local px = want and ((bar:GetHeight() or 0) * bar:GetEffectiveScale()
-        + secondaryHeight) or 0
+    local barPx = want and (bar:GetHeight() or 0) * bar:GetEffectiveScale() or 0
+    local px = want and (barPx + secondaryHeight) or 0
+    local sameLine = want and secondaryHeight > 0 and not (ui and ui.barDockSameLine == false)
 
     if want and not Dock.hookedManager and type(_G.UIParent_ManageFramePositions) == "function" then
         Dock.hookedManager = true
@@ -111,7 +130,9 @@ function Dock.Sync(off)
                 if want then
                     Hook(frame)
                     local base = untouched and rec.orig or cur         -- what the game has, not what we set
-                    local sh = Shifted(frame, base, px)
+                    local framePx = px
+                    if sameLine and SAME_LINE[name] and ClearOfPanel(frame, bar.secondary) then framePx = barPx end
+                    local sh = Shifted(frame, base, framePx)
                     if sh then
                         if not (untouched and Same(sh, rec.shifted)) then Apply(frame, sh) end
                         state[frame] = { orig = base, shifted = sh }

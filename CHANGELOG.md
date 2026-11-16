@@ -1,37 +1,36 @@
 # GatherTimes
 
+## 0.24.9 (2026-11-16)
+
+- New: automatic map hover tooltips on the HUD and Eagle maps, and a Hover key button on the HUD Options tab.
+- New: the Notifier voice button (off, voice, next voice) speaks the name, online or offline, and the zone.
+- New: the Notifier pop-up shows Friend, Guild Member or both, the guild name, level, class and zone, in a smaller size.
+- Change: the player and target frames sit level with the fps / ping panel.
+- Change: the HUD tab descriptions, tracking tooltips, sound buttons and hover tooltips are translated.
+- Change: the Help panel covers the Notifier voice, the compact map and the hover options.
+
 ## 0.24.8 (2026-11-15)
 
-- New: map hover tooltips (HUD and Eagle map) are on by default. Hold Alt over the map to see node names; without Alt the game's own mob, NPC and player tooltips work through the HUD. Change the key with `/gthud hoverkey alt|ctrl|shift|always`.
-- New: memory use on the second bar, e.g. `mem:12.3MB` (Minimize settings > Pings, off by default).
-- New: "Compact map" option (HUD options): drawn at 75% with no rings, compass or heading.
-- New: HUD auto-off in resting cities, towns and inns (HUD options > Behaviour, on by default).
-- New: HUD map blip size 1.0x, 1.2x, 1.3x or 1.4x (default 1.3x).
-- Fix: Friend/Guild Notifier now also shows when someone comes online.
-- Fix: G1-Gx minimap labels no longer shimmer while moving or turning.
-- Fix: the hover point of group-member dots was off by the blip scale.
-- Fix: FPS and ping tooltips said "pings" instead of "bar".
-- Change: the Show time button is greyed out while the Notifier is off.
-- Change: removed the "Restore HUD after /reload or login" option and `/gthud restore`.
-- Change: Help covers the Notifier, Pings tab, arrow size and Performance levels.
-- Change: all labels, tooltips and bar messages are translated in every language.
+- New: map hover tooltips are on by default (hold Alt over the map to see node names); change the key with `/gthud hoverkey`.
+- New: Compact map option (HUD Options): 75% size, no rings, compass or heading readout.
+- New: HUD auto-off in cities, towns and inns; HUD blip size 1.0x to 1.4x.
+- New: memory readout on the second bar (Pings tab, off by default).
+- Fix: the Notifier shows when someone comes online; the FPS and ping tooltips say "bar"; G1-Gx labels no longer shimmer; group-member dots hover correctly.
+- Change: the Show time button is greyed out while the Notifier is off; "Restore HUD after /reload or login" is removed.
+- Change: Help covers the Notifier, Pings, arrow size and Performance; all labels and tooltips are translated.
 
 ## 0.24.7 (2026-11-13)
 
-- New: Friend/Guild Notifier (Settings > General). A pop-up on the right when a guild member or friend comes online (gold, Xbox sound) or goes offline (red, Windows sound). Shows for 3 to 20 s; click the time button to pick it.
-- Change: Xbox and Windows are no longer in the ping and Nodes sound lists.
+- New: Friend/Guild Notifier: a pop-up with a sound when a guild member or friend comes online or goes offline.
+- Change: Xbox and Windows are removed from the ping and Nodes sound lists.
 
 ## 0.24.6 (2026-11-12)
 
-- New: Performance tab in the HUD settings: Full, Balanced or Lowest. Saved ring values are kept. Command: /gthud perf full | balanced | lowest.
-- New: Pings tab in Minimize settings, with a repeat delay for the red-ping sound (1 to 60 s).
-- New: the red-ping sound repeats while the ping stays red. The Nodes sound button also plays your Media sounds.
-- New: arrow size slider on the HUD Map tab (50 to 200%).
-- New: XP goals and XP session history. "Ignore idle time" for XP per hour.
-- Change: the player arrow hides during Eagle Eye and comes back after.
-- Change: Boom.ogg removed. The ping sound defaults to the first sound in the list.
-- Change: more space and tooltips in Minimize and HUD settings. Options with no effect are greyed out.
-- Fix: the minimized bar keeps its fps, H and W switches, and the level-up and pet messages follow their own settings.
+- New: Performance tab (Full, Balanced, Lowest) and Pings tab, with a red-ping sound that repeats with a set delay.
+- New: arrow size slider; XP goals and XP session history.
+- Change: the player arrow hides during Eagle Eye; Boom.ogg is removed.
+- Change: more space and tooltips in Minimize and HUD settings; options with no effect are greyed out.
+- Fix: the minimized bar keeps its fps, H and W switches.
 
 ## 0.24.5 (2026-11-11)
 

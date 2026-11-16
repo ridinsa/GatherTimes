@@ -215,7 +215,15 @@ end
 -- Does the map want the mouse (hover tooltips only, never clicks) right now?  The Eagle map follows "eagleHover"
 -- (HUD.Cfg().hoverTips); the normal HUD follows "hudHover" (on by default), only while the hover key is held.
 local HOVER_KEYS = { alt = "IsAltKeyDown", ctrl = "IsControlKeyDown", shift = "IsShiftKeyDown" }
+-- Auto mode is the default (hoverkey alt / auto); ctrl / shift / always remain as advanced /gthud hoverkey choices
+local function AutoHover(db)
+    local k = db.hudHoverKey or "alt"
+    if k == "auto" then return true end
+    return k == "alt"
+end
 local function HoverKeyHeld(db)
+    if S.hoverLatched then return true end               -- switched on by the toggle key (HUD.ToggleHover)
+    if AutoHover(db) then return S.autoWorld ~= true end   -- map takes the mouse unless a mob/player is under it
     local fn = HOVER_KEYS[db.hudHoverKey or "alt"]
     if not fn then return true end                       -- "always"
     local f = _G[fn]
@@ -374,6 +382,47 @@ do
     if pcall(keyWatch.RegisterEvent, keyWatch, "MODIFIER_STATE_CHANGED") then
         keyWatch:SetScript("OnEvent", function() QueueMouseFix() end)
     end
+end
+
+-- Experimental "auto" hover (/gthud hoverkey auto): the map holds the mouse so herb/ore blip tooltips work; when the cursor
+-- rests on the map without a blip tooltip it hands the mouse to the world for a moment, and stays there while a unit is
+-- under the cursor (mob / NPC / player tooltip), otherwise it swaps back to probing the blips.
+do
+    local DWELL, acc, since = 0.15, 0, 0
+    local auto = CreateFrame("Frame")
+    auto:SetScript("OnUpdate", function(_, dt)
+        acc = acc + dt
+        if acc < 0.05 then return end
+        local step = acc; acc = 0
+        local db = HUD.db
+        if not (db and S.active and S.orig and AutoHover(db)) or S.hoverLatched then
+            if S.autoWorld then S.autoWorld = false; QueueMouseFix() end
+            since = 0
+            return
+        end
+        local want = S.autoWorld and true or false
+        if not (Minimap:IsShown() and MouseIsOver(Minimap)) then
+            since = 0
+            if want then S.autoWorld = false; QueueMouseFix() end
+            return
+        end
+        since = since + step
+        local flip = false
+        if S.autoWorld then
+            if UnitExists("mouseover") then since = 0 elseif since >= DWELL then flip = true end
+        else
+            local o = GameTooltip and GameTooltip:IsShown() and GameTooltip:GetOwner()
+            if o and (o == Minimap or (o.GetParent and o:GetParent() == Minimap)) then since = 0
+            elseif since >= DWELL then flip = true end
+        end
+        if flip then
+            since = 0
+            S.autoWorld = not S.autoWorld
+            S.applying = true
+            pcall(SetMinimapMouse, HoverWanted())
+            S.applying = false
+        end
+    end)
 end
 
 -- Minimap ping marker: clicking the map (or a party member pinging it) makes the game flash a blinking yellow ring

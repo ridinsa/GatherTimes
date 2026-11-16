@@ -50,6 +50,7 @@ function HUD.SetEnabled(state, auto)
         if state and S.active then S.autoEnabled = false end -- manual "on" while auto-enabled: the player owns it now
     end
     if state == S.active then return end
+    S.hoverLatched = false                               -- the hover toggle key starts from off again
     S.autoEnabled = (auto and state) and true or false
     if state then HUD.I.ApplyHud() else HUD.I.RestoreHud() end
     -- HUD switched on in the middle of Eagle Eye: go straight to the Eagle map

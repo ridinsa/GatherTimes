@@ -104,7 +104,9 @@ Right-click the Settings button in the main window to open it (right-click again
 
 ]] .. H .. "Friend/Guild Notifier (Settings > General)" .. E .. [[
 
-A small pop-up on the right when a guild member or a friend comes online (gold, with the Xbox sound) or goes offline (red, with the Windows sound). It stays for the time on its button: 3, 6, 10 or 20 seconds. Left click the button for the next time, right click for the previous one; each click shows a demo. The same person shows at most once every 10 seconds. Untick the box to turn it off.
+A small pop-up on the right when a guild member or a friend comes online (gold, with the Xbox sound) or goes offline (red, with the Windows sound). It shows the name, whether they are a Friend, a Guild Member or both, their guild, and their level, class and zone when known. It stays for the time on its button: 3, 6, 10 or 20 seconds. Left click the button for the next time, right click for the previous one; each click shows a demo. The same person shows at most once every 10 seconds.
+- Voice: the voice button next to the time button makes the Notifier read the name and the online or offline state out loud (off, then a voice, then the next voice).
+- Untick the box to turn the whole Notifier off.
 
 ]] }
 
@@ -164,13 +166,15 @@ Turns the real minimap into a big see-through map across your screen, with optio
 - Eagle: the map shown during a remote view: a hunter's Eagle Eye and Eyes of the Beast, a shaman's Far Sight, a priest's Mind Vision, a warlock's Eye of Kilrogg. The HUD stays on but turns into a smaller map with its own size, opacity, zoom, rotation and an optional ring; compass letters are hidden. Hover tooltips on the map lets the game's own herb / ore tooltips show when you point at a blip (clicks pass through to the world; the map does not ping). Key Bindings > AddOns has keys for zoom in, zoom out and next size (saved size, bigger, smaller). Distance scale labels the edge of the map and a ring half-way in with the yards they stand for (it follows the zoom and indoors / outdoors). Nearest node readout shows the closest known node, READY or time left, and its distance. Preview Eagle map shows it without casting Eagle Eye. Switch it off to have the HUD turn off during Eagle Eye instead.
 - Profile: save several looks, switch or delete them. Profiles are shared by all characters; each character remembers its own.
 - Reset profile restores the defaults.
-]] .. H .. "Arrow size and performance" .. E .. [[
+]] .. H .. "Arrow, performance, compact map and hover" .. E .. [[
 
 - Arrow size: HUD settings > Map tab. 100% is the game's own arrow; other sizes draw the addon's arrow. The arrow hides during Eagle Eye and comes back after.
 - Performance: HUD settings > Performance tab, or /gthud perf full | balanced | lowest.
   - Full: as saved.
   - Balanced: the Eagle map stays but without rings, rings are limited to 48 pieces, the update loops run slower, and deep scan is off.
   - Lowest: no rings and no Eagle map (node names still show during Eagle Eye), the slowest loops, and timers refresh every 2 seconds.
+- Compact map (HUD Options > Behaviour): drawn at 75% with no rings, compass letters or heading readout. Your saved values are kept.
+- Hover tooltips: on by default. Auto shows herb and ore names, and the game's own tooltip when you rest on a mob, NPC or player. The Hover key button on the HUD Options tab cycles alt, ctrl, shift, always and auto.
 Saved ring values are kept, so going back to Full brings them back.
 
 ]] }
@@ -234,11 +238,20 @@ TOPICS[#TOPICS + 1] = { "cmds", "Cmds", H .. "Slash commands" .. E .. [[
 /gthud reset - reset the current profile
 /gthud help - show command help]] }
 
-TOPICS[#TOPICS + 1] = { "credits", "Credits", H .. "GatherTimes 0.24.8" .. E .. [[
+TOPICS[#TOPICS + 1] = { "credits", "Credits", H .. "GatherTimes 0.24.9" .. E .. [[
 
 Author: miRidinsa
 Website: https://github.com/ridinsa/
 License: GNU GPL v3 or later (see the LICENSE file in the addon folder).
+
+]] .. H .. "What's new in 0.24.9" .. E .. [[
+
+- New: automatic map hover tooltips on the HUD and Eagle maps, and a Hover key button on the HUD Options tab.
+- New: the Notifier voice button (off, voice, next voice) speaks the name, online or offline, and the zone.
+- New: the Notifier pop-up shows Friend, Guild Member or both, the guild name, level, class and zone, in a smaller size.
+- Change: the player and target frames sit level with the fps / ping panel.
+- Change: the HUD tab descriptions, tracking tooltips, sound buttons and hover tooltips are translated.
+- Change: the Help panel covers the Notifier voice, the compact map and the hover options.
 
 ]] .. H .. "Libraries" .. E .. [[
 
