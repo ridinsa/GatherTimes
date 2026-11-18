@@ -1,6 +1,7 @@
 -- HUDEagle.lua : Eagle Eye / remote-view detection, the Eagle map switch, preview, zoom and size keys. Part of the HUD module (see HUD.lua).
-local _, GT = ...
+local GT = _G.GatherTimesAddon     -- load-on-demand part: it gets its own private table, so take the shared one
 local HUD = GT.HUD
+HUD.EagleLoaded = true      -- HUD.lua has stand-ins for everything below until this file is loaded (Core\Modules.lua)
 local S = HUD.S
 local Clamp = HUD.Clamp
 local EAGLE_SIZE_STEPS = HUD.EAGLE_SIZE_STEPS
@@ -207,31 +208,13 @@ end
 
 -- polled while the Eagle map is up (or the HUD is suspended) in case the "channel stopped" event was missed
 -- (e.g. a loading screen)
----------------------------------------------------------------------------
--- Layer text ("Layer 1" from other addons) is hidden while the Eagle map is up
----------------------------------------------------------------------------
-
--- NovaWorldBuffs draws its "Layer N" label in the global frame MinimapLayerFrame (a child of the Minimap).
--- While the Eagle map is up and "eagleHideLayer" is on, that frame is made transparent; it is restored after.
--- NovaWorldBuffs only calls Show / Hide on that frame, so the transparency is not fought.
-local layerFrameHidden = false
-function HUD.HideLayerText(force)
-    local f = _G.MinimapLayerFrame
-    if not f then return end
-    local active = (S.active and S.eagleMode and HUD.db and HUD.db.eagleHideLayer) and true or false
-    if active then
-        if not layerFrameHidden or force then f:SetAlpha(0); layerFrameHidden = true end
-    elseif layerFrameHidden then
-        f:SetAlpha(1)
-        layerFrameHidden = false
-    end
-end
-
 function HUD.EagleTick(dt)
-    if S.eagleMode then HUD.HideLayerText() end      -- the NovaWorldBuffs layer label stays hidden while the Eagle map is up
     if not (S.eagleSuspended or S.eagleMode) then eagleAcc = 0; return end
     eagleAcc = eagleAcc + (dt or 0)
     if eagleAcc < 0.5 then return end
     eagleAcc = 0
     HUD.EagleCheck()
 end
+
+-- loaded in the world (Preview, or the option was switched on): look at once whether a remote view is up
+if HUD.db then pcall(HUD.EagleCheck) end

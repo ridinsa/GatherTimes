@@ -1,16 +1,18 @@
 -- Dropdown.lua : flat dropdown box (no Blizzard dropdown template)
---   dd = GT:CreateDropdown(parent, w, h, items, onSelect [, maxRows])
+--   dd = GT:CreateDropdown(parent, w, h, items, onSelect [, maxRows [, rowH]])
 --   items    : strings or { text = string, count = number, tooltip = string }; optional counts are right-aligned
 --              onSelect(index, text) runs when the user picks one
 --   maxRows  : rows shown before the list scrolls (default 10)
+--   rowH     : height of one list row (default 18; the minimized bar uses a smaller one)
 --   dd:SetItems(list)  replace the entries at any time      dd:SetSelected(index)  set the shown entry
 local _, GT = ...
 
 local FLAT = "Interface\\Buttons\\WHITE8X8"
 local ROW_H = 18
 
-function GT:CreateDropdown(parent, w, h, items, onSelect, maxRows)
+function GT:CreateDropdown(parent, w, h, items, onSelect, maxRows, rowH)
     maxRows = maxRows or 10
+    local ROW_H = rowH or ROW_H
     local dd = self:CreateFlatButton(parent, "", w, h)
     dd.items = items
 

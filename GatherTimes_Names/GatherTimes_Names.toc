@@ -1,0 +1,11 @@
+## Interface: 11509, 20506, 40402, 50503, 50504, 16001, 120105
+## Title: GatherTimes - Random Name
+## Notes: Disguises your character and pet names on screen (Random Name window). Loaded on demand by GatherTimes (do not enable it on its own).
+## Author: miRidinsa
+## Version: 0.25.0
+## X-License: GPL-3.0-or-later
+## Dependencies: GatherTimes
+## LoadOnDemand: 1
+
+HideUnitNames.lua
+NameDisguiseFrame.lua

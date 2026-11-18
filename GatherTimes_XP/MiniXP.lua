@@ -14,7 +14,7 @@
 -- A /reload or quick relog continues the XP session, so a reload does not split it in two.
 -- Idle time (standing still for more than 2 minutes) is left out of XP/hr, time to level and the goal pace: miniXPIdle (on by default).
 -- Tracking runs all the time.  The numbers of the session in progress are saved only in that way (at logout).
-local _, GT = ...
+local GT = _G.GatherTimesAddon     -- load-on-demand part: it gets its own private table, so take the shared one
 local XP = {}
 GT.MiniXP = XP
 
@@ -1110,6 +1110,9 @@ ev:SetScript("OnEvent", function(_, event, arg1)
     local ok, err = pcall(Handle, event, arg1)
     if not ok then GT.ReportError("XP " .. event, err) end
 end)
+
+-- loaded after login (the module was switched on in the world): the login step has already happened, run it now
+if _G.IsLoggedIn and _G.IsLoggedIn() then pcall(Handle, "PLAYER_ENTERING_WORLD") end
 
 -- idle check every 2 seconds (cheap: a few API calls)
 local idleErrored = false

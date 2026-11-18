@@ -1288,3 +1288,13 @@ SyncTicker = function()
     events:SetScript("OnUpdate", (Enabled() and not standalone) and OnTick or nil)
 end
 SyncTicker()
+
+-- Loaded later than login (the Random Name window was opened in the world): PLAYER_LOGIN has already happened, so run its set-up now.
+if _G.IsLoggedIn and _G.IsLoggedIn() then
+    local onEvent = events:GetScript("OnEvent")
+    if onEvent then
+        pcall(onEvent, events, "ADDON_LOADED", ADDON_NAME)
+        pcall(onEvent, events, "PLAYER_LOGIN")
+        pcall(onEvent, events, "PLAYER_ENTERING_WORLD")
+    end
+end

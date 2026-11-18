@@ -9,19 +9,19 @@ local _, GT = ...
 GT.locales = GT.locales or {}
 GT.LANGS = {                      -- { code, name shown in the Settings > Display dropdown }
     { "enUS", "English (default)" },
-    { "deDE", "German" },
-    { "frFR", "French" },
-    { "itIT", "Italian" },
-    { "koKR", "Korean" },
-    { "jaJP", "Japanese" },
-    { "ruRU", "Russian" },
-    { "zhCN", "Chinese (Simplified)" },
-    { "zhTW", "Chinese (Traditional)" },
-    { "ptBR", "Portuguese (Brazil)" },
-    { "esMX", "Spanish (Latin America)" },
-    { "esES", "Spanish (Spain)" },
+    { "deDE", "Deutsch" },
+    { "frFR", "Français" },
+    { "itIT", "Italiano" },
+    { "koKR", "한국어" },
+    { "jaJP", "日本語" },
+    { "ruRU", "Русский" },
+    { "zhCN", "简体中文" },
+    { "zhTW", "繁體中文" },
+    { "ptBR", "Português (Brasil)" },
+    { "esMX", "Español (Latinoamérica)" },
+    { "esES", "Español (España)" },
     { "idID", "Bahasa Indonesia" },
-    { "suID", "Sundanese" },
+    { "suID", "Basa Sunda" },
 }
 
 -- true when code is one of the languages in GT.LANGS
@@ -51,6 +51,22 @@ function GT.TextLang()
     local a = GT.LANG_ALIAS[c]
     if a and type(GT.locales[a]) == "table" then return a end     -- alias only when its text really loaded
     return c
+end
+
+-- Memory: every language file is loaded at start-up (a client cannot load an add-on file on demand), but only one
+-- language is ever shown, and changing the language always reloads the UI.  Once the saved language is known
+-- (GT.Startup) the tables of all other languages and their help texts are dropped so the garbage collector can
+-- free them.  The shown language (and the one it borrows from, see LANG_ALIAS) stays.
+function GT.TrimLocales()
+    local keep = GT.TextLang()
+    for code in pairs(GT.locales) do
+        if code ~= keep then GT.locales[code] = nil end
+    end
+    if type(GT.helpText) == "table" then
+        for code in pairs(GT.helpText) do
+            if code ~= keep then GT.helpText[code] = nil end
+        end
+    end
 end
 
 -- Fonts: the default Blizzard font of a Western client may lack glyphs for some selected languages. For languages

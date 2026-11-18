@@ -17,7 +17,7 @@
 ## Notes-zhCN: 草药和矿石的刷新计时、刷新点位、采集路线，以及全屏小地图 HUD (/gt, /gt hud)。
 ## Notes-zhTW: 草藥與礦石的重生計時、刷新點位、採集路線，以及全螢幕小地圖 HUD (/gt, /gt hud)。
 ## Author: miRidinsa
-## Version: 0.24.9
+## Version: 0.25.0
 ## X-License: GPL-3.0-or-later
 ## X-Website: https://github.com/ridinsa/GatherTimes
 ## SavedVariables: GatherTimesDB, GatherTimesHUNDB
@@ -37,6 +37,7 @@ Libs\HereBeDragons\HereBeDragons-Pins-2.0.lua
 # core (namespace, helpers, data, saved settings)
 Core\Compat.lua
 Core\Core.lua
+Core\Modules.lua
 Media\SoundList.lua
 
 # translations (Locales.lua = engine, <code>.lua = one language each)
@@ -67,6 +68,7 @@ Locales\Coverage.lua
 Locales\Missing.lua
 Locales\XPExtra.lua
 Locales\GatherExtra.lua
+Locales\Nodes.lua
 
 # window / layout
 UI\Style.lua
@@ -75,7 +77,6 @@ UI\Tip.lua
 UI\TooltipSkin.lua
 UI\Dropdown.lua
 UI\Widgets.lua
-UI\GuildPopup.lua
 UI\Panels.lua
 UI\Panels\PanelTimers.lua
 UI\Panels\PanelNodes.lua
@@ -88,7 +89,6 @@ UI\Panels\PanelSummary.lua
 UI\MainTable.lua
 UI\BarDock.lua
 UI\MiniBar.lua
-UI\MiniXP.lua
 UI\SpotMenu.lua
 UI\MainFrame.lua
 
@@ -114,7 +114,6 @@ Gathering\SkillEta.lua
 Gathering\BagSpace.lua
 Gathering\Loot.lua
 Gathering\Import.lua
-Gathering\Share.lua
 Core\Report.lua
 Core\Broker.lua
 
@@ -125,7 +124,6 @@ HUD\HUD.lua
 HUD\HUDProfiles.lua
 HUD\HUDMinimap.lua
 HUD\HUDUnitHover.lua
-HUD\HUDEagle.lua
 HUD\HUDApply.lua
 HUD\HUDSet.lua
 HUD\HUDLifecycle.lua
@@ -139,6 +137,5 @@ HUD\HUDConfig.lua
 
 Core\Events.lua
 
-# Name disguise module
-HideUnitNames\HideUnitNames.lua
-UI\NameDisguiseFrame.lua
+# Random Name, Mini XP, the Notifier and the Eagle map are load-on-demand folders (GatherTimes_Names / _XP / _Notifier / _Eagle),
+# loaded by Core\Modules.lua only when they are in use.

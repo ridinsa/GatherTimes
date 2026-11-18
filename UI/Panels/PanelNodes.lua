@@ -184,12 +184,12 @@ local function UpdateRow(r, key)
     if r.minutes:HasFocus() and r.minutes.editKey ~= key then r.minutes:ClearFocus() end
     r.key = key
     r.check:SetChecked(GT.IsEnabled(key))
-    r.name:SetText(def.label)
+    GT.SetTextIfChanged(r.name, def.label)
     r.name:SetTextColor(col[1], col[2], col[3])
     if not r.minutes:HasFocus() then r.minutes:SetText(MinText(def.timer)) end
     r.swatch:SetVertexColor(col[1], col[2], col[3], 1)
     r.alertCheck:SetChecked(c.alertItems[key] ~= false)
-    r.sound.label:SetText(SoundText(c.sounds[key] or 1))
+    GT.SetTextIfChanged(r.sound.label, SoundText(c.sounds[key] or 1))
 end
 
 GT.panelBuilders.Nodes = function(panel, content)

@@ -409,7 +409,7 @@ do
 
     local function ShowTooltip(self)
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-        GameTooltip:SetText(_G.TRACKING or "Tracking", 1, 1, 1)
+        GameTooltip:SetText(_G.TRACKING or GT.TR("Tracking"), 1, 1, 1)
         local any = false
         for _, t in ipairs(ReadTypes()) do
             if t.active then GameTooltip:AddLine(t.name, 0.2, 1, 0.2); any = true end
@@ -417,9 +417,9 @@ do
         if not any then
             local tex = ActiveTexture(ReadTypes())
             if tex then
-                GameTooltip:AddLine(ActiveName(tex) or "Active", 0.2, 1, 0.2)
+                GameTooltip:AddLine(ActiveName(tex) or GT.TR("Active"), 0.2, 1, 0.2)
             else
-                GameTooltip:AddLine(_G.NONE or "None", 0.6, 0.6, 0.6)
+                GameTooltip:AddLine(_G.NONE or GT.TR("None"), 0.6, 0.6, 0.6)
             end
         end
         if not HUD.IsActive() then

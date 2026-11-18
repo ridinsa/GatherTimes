@@ -105,7 +105,7 @@ function GT.SkillEta(prof)
     return r
 end
 
--- Progress towards a skill goal ("Mining 300", UI\MiniXP.lua): fraction 0..1 from the skill you had when the goal was set,
+-- Progress towards a skill goal ("Mining 300", GatherTimes_XP\MiniXP.lua): fraction 0..1 from the skill you had when the goal was set,
 -- reached (true / false) and the seconds to go at this session's pace (nil until a skill-up gave a rate and 3 gathers were made).
 -- nil when the profession is not known (not learned).
 local missAt = {}                 -- profession -> GetTime() when it was last not found (not learned): not looked up again at once

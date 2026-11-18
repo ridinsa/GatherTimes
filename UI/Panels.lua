@@ -29,7 +29,7 @@ function GT:CreatePanel(name)
             p.text:Show()
             p.text:SetWidth(280)
             p.text:SetJustifyH("LEFT")
-            p.text:SetText("|cffff5555Panel failed to load:|r\n" .. tostring(err))
+            p.text:SetText("|cffff5555" .. GT.TR("Panel failed to load:") .. "|r\n" .. tostring(err))
             GT.cprint("|cffff5555panel '" .. name .. "' failed:|r " .. tostring(err))
         end
     end

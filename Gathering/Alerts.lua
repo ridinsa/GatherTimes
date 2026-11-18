@@ -301,6 +301,18 @@ function GT.CooldownOK(kind, key, ref, secs)
     return true
 end
 
+-- Clears the alert state: the one-alert-per-group cool-downs and every alert still on screen.  Used by the Timing
+-- panel option "Clear timers and alerts when I change zone" (Timers.lua, GT.CheckZoneClear).
+function GT.ClearAlerts()
+    for k in pairs(cool) do cool[k] = nil end
+    for _, f in ipairs(toasts) do f:Hide() end
+    for i = #toastActive, 1, -1 do toastActive[i] = nil end
+    if toastDriver then toastDriver:Hide() end
+    if banner then banner:Hide() end
+    if textFrame then textFrame:Hide() end
+    if flash then flash:Hide() end
+end
+
 -- force = true skips the cool-down (used by the "Test alert" button)
 -- Gathering sounds are silent in the first minute after login (saved timers can run out while you are
 -- logged in in town).  Screen alerts are not affected.

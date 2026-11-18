@@ -9,7 +9,7 @@
 --   HUD.lua            this file, the core: constants, defaults, helpers, the shared state table HUD.S, HUD.Cfg
 --   HUDProfiles.lua    saved variables (GatherTimesDB.hud) and the profiles
 --   HUDMinimap.lua     minimap mask, takeover / restore, player arrow, mouse state, ping marker
---   HUDEagle.lua       Eagle Eye / remote-view detection, the Eagle map switch, preview, zoom and size keys
+--   GatherTimes_Eagle\HUDEagle.lua (load on demand)  Eagle Eye / remote-view detection, the Eagle map switch, preview, zoom and size keys
 --   HUDApply.lua       applying and restoring the HUD, keeping it in place against other minimap addons
 --   HUDSet.lua         Preview, SetEnabled / Toggle and HUD.Set (the one entry point for settings)
 --   HUDLifecycle.lua   HUD.Init / OnEvent / OnUpdate (called by Events.lua)
@@ -128,7 +128,7 @@ HUD.DEFAULTS = {
     eagleNearest  = true,          -- readout of the nearest known node (name, ready / time left, yards) while it is up
     hideLabelsIdle = true,         -- hide the Gx labels and (G) timers on the normal minimap; they show while the HUD is on
     eagleHideLabels = true,        -- hide the Gx group labels and the (G) timers on the map while the Eagle map is up
-    eagleHideLayer = false,        -- hide the layer info (e.g. NovaWorldBuffs "Layer 1") on the Eagle map
+    hideLayer     = false,         -- hide the layer info (e.g. "Layer 1") while the HUD or the Eagle map is on (off by default)
     eagleHover    = true,          -- the Eagle map takes the mouse (clicks pass through) so the game's herb / ore hover tooltips work
     hudHoverKey   = "alt",         -- map hover (normal HUD and Eagle map): the map takes the mouse only while this key is held (alt / ctrl / shift), so the game's own mob / NPC / player tooltips reach the world otherwise; "always" = the map keeps the mouse (blocks those tooltips)
     hudHover      = true,          -- the HUD map shows node hover tooltips in auto mode (off: it ignores the mouse)
@@ -195,6 +195,28 @@ HUD.I = {}         -- internal functions shared between the HUD files (not part 
 local EAGLE_SIZE_STEPS = { 1, 1.5, 0.65 }   -- the "next size" key: the saved size, then bigger, then smaller (this view only)
 HUD.EAGLE_SIZE_STEPS = EAGLE_SIZE_STEPS
 function HUD.EagleSizeMul() return EAGLE_SIZE_STEPS[S.eagleSizeStep] or 1 end
+
+-- The Eagle map code lives in the load-on-demand folder GatherTimes_Eagle (Core\Modules.lua loads it when it is in use).
+-- Until it is loaded these answer "no remote view / nothing to do"; the real functions replace them (HUDEagle.lua).
+do
+    local function No() return false end
+    local function Nothing() end
+    HUD.EagleClass, HUD.EagleEyeActive, HUD.EagleSuspended, HUD.EaglePreviewing, HUD.EagleCastIsView = No, No, No, No, No
+    HUD.EagleInvalidate, HUD.EagleCast, HUD.EagleCastEnd, HUD.EagleZoom, HUD.EagleNextSize = Nothing, Nothing, Nothing, Nothing, Nothing
+    -- the option was switched on in the world: load the map when this class has a remote view
+    function HUD.EagleCheck()
+        if not HUD.EagleLoaded and GT.ModuleWanted and GT.ModuleWanted("eagle") and GT.LoadModule("eagle", true) and HUD.EagleLoaded then
+            return HUD.EagleCheck()
+        end
+    end
+    -- Preview works for every class: it loads the map on the first click
+    function HUD.EaglePreview(state)
+        if not HUD.EagleLoaded and GT.LoadModule and GT.LoadModule("eagle") and HUD.EagleLoaded then
+            return HUD.EaglePreview(state)
+        end
+        return false
+    end
+end
 
 
 function HUD.IsActive() return S.active end
@@ -304,7 +326,24 @@ function HUD.MiniLabelAlpha()
 end
 function HUD.UpdateEagleLabels()
     if GT.RefreshMiniLabelAlpha then pcall(GT.RefreshMiniLabelAlpha) end
-    if HUD.HideLayerText then pcall(HUD.HideLayerText, true) end      -- layer text: hidden / restored with the Eagle map
+    if HUD.HideLayerText then pcall(HUD.HideLayerText, true) end      -- layer text: hidden / restored with the HUD
+end
+
+-- Layer text ("Layer 1" from other addons) is hidden while the HUD is up
+-- The layer label lives in the global frame MinimapLayerFrame (a child of the Minimap). While the HUD is on and
+-- "hideLayer" is set, that frame is made transparent; it is restored after. Its owner only calls Show / Hide on it,
+-- so the transparency is not fought.
+local layerFrameHidden = false
+function HUD.HideLayerText(force)
+    local f = _G.MinimapLayerFrame
+    if not f then return end
+    local active = (S.active and HUD.db and HUD.db.hideLayer) and true or false
+    if active then
+        if not layerFrameHidden or force then f:SetAlpha(0); layerFrameHidden = true end
+    elseif layerFrameHidden then
+        f:SetAlpha(1)
+        layerFrameHidden = false
+    end
 end
 
 -- How far the minimap sees right now: the distance from the centre to the edge of the map, in yards. It depends on

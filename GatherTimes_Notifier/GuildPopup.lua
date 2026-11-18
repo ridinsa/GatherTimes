@@ -1,9 +1,7 @@
 -- GuildPopup.lua : a small pop-up on the right of the screen when a guild member comes online.
 -- Settings > General: "Friend/Guild Notifier" (on/off) and "Show N s" (how long it stays; clicking it shows a demo).
-local _, GT = ...
+local GT = _G.GatherTimesAddon     -- load-on-demand part: it gets its own private table, so take the shared one
 
-GT.guildRoster = GT.guildRoster or {}
-GT.friendRoster = GT.friendRoster or {}
 local popup
 local showToken = 0                             -- counts the shows, so an old slide-out cannot hide a new pop-up
 
@@ -13,64 +11,52 @@ local function PlayerGuild()
     return name ~= "" and name or nil
 end
 
-local function RosterKey(name)
-    return name and (name:match("^[^-]+") or name)
+-- Nothing is kept of the guild or friend list: the details of ONE person are read from the game's own list when
+-- they are needed (a name comes online / offline), into two reused tables. The old code rebuilt a table for every
+-- member on every roster update, which was a lot of garbage for a big guild.
+local gInfo, fInfo = {}, {}
+local lookedName, lookedAt
+
+-- a roster name is "Name" or "Name-Realm": same person as `name` (no realm) without building a string
+local function SameName(full, name)
+    local n = #name
+    if full == name then return true end
+    return #full > n and full:byte(n + 1) == 45 and full:sub(1, n) == name
 end
 
--- guild member details (without realm names), refreshed by GUILD_ROSTER_UPDATE
-function GT.RefreshGuildRoster()
-    local roster = {}
+local function Lookup(name)
+    local now = GetTime()
+    if lookedName == name and lookedAt == now then return end            -- the same question twice in one frame
+    lookedName, lookedAt = name, now
+    gInfo.found, fInfo.found = false, false
+    if type(name) ~= "string" or name == "" then return end
     if IsInGuild and IsInGuild() and GetNumGuildMembers and GetGuildRosterInfo then
-        local guild = PlayerGuild()
         for i = 1, (GetNumGuildMembers() or 0) do
-            local name, _, _, level, className, zone, _, _, online = GetGuildRosterInfo(i)
-            if name then
-                roster[RosterKey(name)] = {
-                    level = level,
-                    className = className,
-                    zone = zone,
-                    guild = guild,
-                    online = online,
-                }
+            local full, _, _, level, className, zone = GetGuildRosterInfo(i)
+            if full and SameName(full, name) then
+                gInfo.found, gInfo.level, gInfo.className, gInfo.zone, gInfo.guild = true, level, className, zone, PlayerGuild()
+                break
             end
         end
     end
-    GT.guildRoster = roster
-end
-
--- friend details (without realm names), refreshed by FRIENDLIST_UPDATE
-function GT.RefreshFriendRoster()
-    local roster = {}
-    local n = (C_FriendList and C_FriendList.GetNumFriends and C_FriendList.GetNumFriends())
-        or (GetNumFriends and GetNumFriends()) or 0
+    local api = C_FriendList
+    local n = (api and api.GetNumFriends and api.GetNumFriends()) or (GetNumFriends and GetNumFriends()) or 0
     for i = 1, n do
-        local name, level, className, zone, connected, guild
-        if C_FriendList and C_FriendList.GetFriendInfoByIndex then
-            local info = C_FriendList.GetFriendInfoByIndex(i)
-            if info then
-                name = info.name
-                level = info.level
-                className = info.className
-                zone = info.area
-                connected = info.connected
-                guild = info.guildName
-            end
+        local full, level, className, zone, guild
+        local info = api and api.GetFriendInfoByIndex and api.GetFriendInfoByIndex(i)
+        if info then
+            full, level, className, zone, guild = info.name, info.level, info.className, info.area, info.guildName
+        elseif GetFriendInfo then
+            full, level, className, zone = GetFriendInfo(i)
         end
-        if not name and GetFriendInfo then
-            name, level, className, zone, connected = GetFriendInfo(i)
-        end
-        if name then
-            roster[RosterKey(name)] = {
-                level = level,
-                className = className,
-                zone = zone,
-                guild = guild,
-                online = connected,
-            }
+        if full and SameName(full, name) then
+            fInfo.found, fInfo.level, fInfo.className, fInfo.zone, fInfo.guild = true, level, className, zone, guild
+            break
         end
     end
-    GT.friendRoster = roster
 end
+local function GuildInfo(name) Lookup(name); return gInfo.found and gInfo or nil end
+local function FriendInfo(name) Lookup(name); return fInfo.found and fInfo or nil end
 
 -- asks the server for the roster every minute, only while the option is on
 function GT.StartGuildRosterTicker()
@@ -193,7 +179,9 @@ end
 
 -- the voices in the order the Settings button goes through them: the default one first (a female voice if the computer
 -- has one, else the first), then the others
+local voiceOrder
 local function VoiceOrder()
+    if voiceOrder then return voiceOrder end                -- the computer's voices do not change while playing
     local voices = GT.GuildVoices()
     local first
     for i, v in ipairs(voices) do
@@ -204,6 +192,7 @@ local function VoiceOrder()
     for i, v in ipairs(voices) do
         if i ~= first then out[#out + 1] = v end
     end
+    if #out > 0 then voiceOrder = out end                   -- an empty answer may be "not ready yet": ask again next time
     return out
 end
 
@@ -282,8 +271,8 @@ local function SpeakLine(text)
 end
 
 local function ZoneOf(name)
-    local guildInfo = GT.guildRoster and GT.guildRoster[name]
-    local friendInfo = GT.friendRoster and GT.friendRoster[name]
+    local guildInfo = GuildInfo(name)
+    local friendInfo = FriendInfo(name)
     local zone = guildInfo and guildInfo.zone
     if not zone or zone == "" then zone = friendInfo and friendInfo.zone end
     if type(zone) == "string" and zone ~= "" then return zone end
@@ -291,8 +280,8 @@ local function ZoneOf(name)
 end
 
 local function PopupDetails(name)
-    local guildInfo = GT.guildRoster and GT.guildRoster[name]
-    local friendInfo = GT.friendRoster and GT.friendRoster[name]
+    local guildInfo = GuildInfo(name)
+    local friendInfo = FriendInfo(name)
     if not guildInfo and not friendInfo then return nil end
 
     local parts = {}
@@ -311,8 +300,8 @@ end
 
 -- how this person is known: "friend", "guild" or "both" (nil when neither list has them)
 local function RoleOf(name)
-    local isGuild = GT.guildRoster and GT.guildRoster[name] and true or false
-    local isFriend = GT.friendRoster and GT.friendRoster[name] and true or false
+    local isGuild = GuildInfo(name) and true or false
+    local isFriend = FriendInfo(name) and true or false
     if isGuild and isFriend then return "both" end
     return (isFriend and "friend") or (isGuild and "guild") or nil
 end
@@ -322,8 +311,8 @@ local ROLE_COLOR = { friend = { 0.4, 0.8, 1 }, guild = { 0.3, 1, 0.3 }, both = {
 
 -- the guild name of a person from either list (nil when there is none)
 local function GuildNameOf(name)
-    local g = GT.guildRoster and GT.guildRoster[name]
-    local f = GT.friendRoster and GT.friendRoster[name]
+    local g = GuildInfo(name)
+    local f = FriendInfo(name)
     local guild = (g and g.guild) or (f and f.guild)
     if guild and guild ~= "" then return guild end
     return nil
@@ -436,13 +425,16 @@ function GT.OnGuildOnlineMessage(text)
     local name = text:match("|Hplayer:([^:|]+)") or text:match("^%[?([^%s%]|]+)")
     if not name then return end
     name = name:match("^[^-]+") or name
-    local known = (GT.guildRoster and GT.guildRoster[name]) or (GT.friendRoster and GT.friendRoster[name])
+    local known = (GuildInfo(name)) or (FriendInfo(name))
     if not known then return end
     -- no spam: the same person and the same state (online / offline) shows at most once per COOLDOWN seconds
     local key = name .. (isOffline and "|off" or "|on")
     local now = GetTime and GetTime() or 0
     if lastShown[key] and now - lastShown[key] < COOLDOWN then return end
     lastShown[key] = now
+    for k, t in pairs(lastShown) do                 -- forget the old ones, the table must not grow all session
+        if now - t >= COOLDOWN then lastShown[k] = nil end
+    end
     GT.ShowGuildPopup(name, isOffline)
 end
 

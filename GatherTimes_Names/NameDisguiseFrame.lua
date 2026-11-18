@@ -1,6 +1,6 @@
 -- NameDisguiseFrame.lua : the "Random Name" window (right-click the main window's Settings button).
 -- It only talks to the HideUnitNames module through _G.GatherTimesNameDisguise.
-local _, GT = ...
+local GT = _G.GatherTimesAddon     -- load-on-demand part: it gets its own private table, so take the shared one
 
 local FRAME_H = 400
 local ALPHA_MIN = 0.2                      -- never fully invisible: the window must stay findable

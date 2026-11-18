@@ -37,11 +37,22 @@ Mengubah minimap sungguhan menjadi peta besar tembus pandang yang membentang di 
 - Profil: simpan beberapa tampilan, beralih atau hapus. Profil digunakan bersama semua karakter; setiap karakter mengingat profilnya sendiri.
 - Atur ulang profil memulihkan nilai default.]]
 
-T.credits = H .. "GatherTimes 0.24.9" .. E .. [[
+T.credits = H .. "GatherTimes 0.25.0" .. E .. [[
 
 Penulis: miRidinsa
 Situs web: https://github.com/ridinsa/
 Lisensi: GNU GPL v3 atau lebih baru (lihat file LICENSE di folder addon).
+
+]] .. H .. "Yang baru" .. E .. [[
+
+- Baru: opsi Timing "Hapus timer dan peringatan saat pindah zona" (nonaktif secara default). Waktu yang dipelajari tetap disimpan.
+- Baru: masuk ke kota akan menghapus waypoint GatherTimes; panah rute dan node terdekat tetap mati di sana.
+- Baru: baris fps / ping dapat menampilkan layer, daya tahan, serta jam game dan jam lokal (tab Pings).
+- Baru: "Buff sejajar dengan bar" dan slider "Offset atas" (Minimalkan > Bar, untuk Titan Panel dll.).
+- Baru: Nama Acak, Mini XP, Notifier, dan peta Elang dimuat sesuai kebutuhan: `/gt module <nama> on|off`, `/gt modules`.
+- Baru: opsi Alat untuk mengimpor data GatherMate2 saat pindah zona; "Sembunyikan info layer" di HUD.
+- Perubahan: timer dan pin selalu hanya menampilkan zona Anda saat ini (opsi hanya zona dihapus).
+- Perubahan: CPU dan memori lebih hemat; ekspor dan impor titik dimuat sesuai kebutuhan (GatherTimes_Share).
 
 ]] .. H .. "Pustaka" .. E .. [[
 

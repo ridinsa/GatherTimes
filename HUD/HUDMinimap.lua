@@ -197,6 +197,15 @@ local function CanHover()
     return (Minimap.SetMouseClickEnabled and Minimap.SetMouseMotionEnabled
             or Minimap.SetPropagateMouseClicks) and true or false
 end
+-- SetPropagateMouseClicks is blocked in combat for addon code ("Interface action failed because of an AddOn", and the HUD's
+-- mouse check runs several times a second): in combat it is only remembered and done by HUD.MouseTick once combat is over.
+local pendingPropagate
+local function SetPropagate(value)
+    if not Minimap.SetPropagateMouseClicks then return end
+    if InCombatLockdown and InCombatLockdown() then pendingPropagate = value and true or false; return end
+    pendingPropagate = nil
+    pcall(Minimap.SetPropagateMouseClicks, Minimap, value)
+end
 local function SetMinimapMouse(hover)
     Minimap:EnableMouse(hover)
     if Minimap.SetMouseClickEnabled and Minimap.SetMouseMotionEnabled then
@@ -204,7 +213,7 @@ local function SetMinimapMouse(hover)
         pcall(Minimap.SetMouseMotionEnabled, Minimap, hover)
     end
     SwapMouseUp(true)                                           -- the stock click handler (map ping) is never wanted on the HUD
-    if Minimap.SetPropagateMouseClicks then pcall(Minimap.SetPropagateMouseClicks, Minimap, hover) end
+    SetPropagate(hover)
 end
 local function MinimapMouseMatches(hover)
     if Minimap.SetMouseMotionEnabled and Minimap.IsMouseMotionEnabled and Minimap.IsMouseClickEnabled then
@@ -327,7 +336,7 @@ local function RestoreMinimapFromOrig()
     SetMask(lastMask or STOCK_MASK)
     appliedMask = nil
     SwapMouseUp(false)
-    if Minimap.SetPropagateMouseClicks then pcall(Minimap.SetPropagateMouseClicks, Minimap, false) end
+    SetPropagate(false)
     Minimap:EnableMouse(S.orig.mouse)
     if Minimap.SetMouseClickEnabled and Minimap.SetMouseMotionEnabled then       -- the stock minimap takes clicks and hover
         pcall(Minimap.SetMouseClickEnabled, Minimap, S.orig.mouse and true or false)
@@ -345,6 +354,7 @@ end
 -- looked at twice a second and put right.
 local mouseAcc = 0
 function HUD.MouseTick(dt)
+    if pendingPropagate ~= nil and not (InCombatLockdown and InCombatLockdown()) then SetPropagate(pendingPropagate) end   -- left over from combat
     if not (S.active and S.orig) then mouseAcc = 0; return end
     mouseAcc = mouseAcc + (dt or 0)
     if mouseAcc < 0.5 then return end

@@ -300,6 +300,10 @@ do
         if #candidates < 2 then
             GT.cprint(GT.TRF("Route Optimizer: need at least 2 nodes. Found: %d", #candidates))
             currentRoute = nil
+            currentStep = 1
+            GT.routeTarget = nil
+            self:ClearMap()
+            if UI.ClearTomTom then UI.ClearTomTom() end
             return
         end
         local startIdx = 1
@@ -315,8 +319,13 @@ do
         currentRoute = { nodes = candidates, order = route, totalDist = totalDist, plannedAt = GetTime() }
         currentStep = 1
         GT.cprint(GT.TRF("Route planned: %d nodes, %.0f yd total distance", #candidates, totalDist))
-        if GT.cfg().routeDrawMap then self:DrawOnMap() end
-        if GT.cfg().routeAutoArrow then self:GoToStep(1) end
+        if GT.cfg().routeDrawMap then self:DrawOnMap() else self:ClearMap() end
+        if GT.cfg().routeAutoArrow then
+            self:GoToStep(1)
+        else
+            GT.routeTarget = nil
+            if UI.ClearTomTom then UI.ClearTomTom() end
+        end
     end
 
     function RouteOptimizer:IsActive() return currentRoute ~= nil end

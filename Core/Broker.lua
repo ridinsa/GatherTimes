@@ -43,6 +43,17 @@ local function Text()
     return "|cff888888" .. TR("no timers") .. "|r"
 end
 
+-- display addons that read a data-broker text (Titan Panel, ChocolateBar, Bazooka, StatBlockCore, FuBar)
+local DISPLAYS = { "Titan", "TitanClassic", "Bazooka", "ChocolateBar", "StatBlockCore", "FuBar" }
+local function DisplayLoaded()
+    local fn = (C_AddOns and C_AddOns.IsAddOnLoaded) or IsAddOnLoaded
+    if not fn then return true end                  -- cannot tell: keep the feed live
+    for _, name in ipairs(DISPLAYS) do
+        if fn(name) then return true end
+    end
+    return false
+end
+
 local function Setup()
     local ldb = LibStub and LibStub("LibDataBroker-1.1", true)
     if not ldb then return end
@@ -78,7 +89,9 @@ local function Setup()
     local obj = ldb:NewDataObject("GatherTimes", def) or ldb:GetDataObjectByName("GatherTimes")
     if not obj then return end
     Broker.object = obj
-    C_Timer.NewTicker(2, function() obj.text = Text() end)
+    obj.text = Text()
+    -- the live text is only read by a display addon (its bar or panel), so the 2 s ticker runs only when one is loaded
+    if DisplayLoaded() then C_Timer.NewTicker(2, function() obj.text = Text() end) end
 end
 
 local f = CreateFrame("Frame")

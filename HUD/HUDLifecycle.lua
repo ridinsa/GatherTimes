@@ -130,14 +130,26 @@ function HUD.PerfWatch(dt)
     end
 end
 
+-- Per frame: only what must follow the mouse or the screen every frame (the compass overlay, which has its own
+-- rotation timer, and the tracking button while it is being dragged). Everything else runs from one 0.1 s timer
+-- and gets the accumulated time, so each of those functions keeps its own interval as before.
+local SLOW_STEP = 0.1
+local slowAcc = 0
+
 function HUD.OnUpdate(dt)
     if not HUD.db then return end
-    Guard("eagle", HUD.EagleTick, dt)                      -- switch the HUD back on after Eagle Eye (0.5 s)
-    Guard("mouse", HUD.MouseTick, dt)                      -- keeps the Minimap's mouse state right (0.5 s)
-    Guard("units", HUD.UnitHoverUpdate, dt)                -- visible unit markers / tooltips when hovering the HUD map
-    Guard("overlay", HUD.Overlay.OnUpdate, dt)             -- compass letters / heading (every 0.03 s)
-    Guard("tracking", HUD.Tracking.OnUpdate)               -- dragging the tracking button
-    Guard("watcher", HUD.WatcherTick, dt)                      -- keeps the stock tracking button right (0.1 s)
-    Guard("perf", HUD.PerfWatch, dt)                           -- one-time low-FPS hint (30 s average)
-    Guard("skins", HUD.SkinSweep, dt)                          -- hides minimap skin frames SexyMap adds later (0.5 s)
+    Guard("overlay", HUD.Overlay.OnUpdate, dt)              -- compass letters / heading (every 0.03 s while it rotates)
+    Guard("tracking", HUD.Tracking.OnUpdate)                -- dragging the tracking button (a flag check when not dragging)
+
+    slowAcc = slowAcc + (dt or 0)
+    if slowAcc < SLOW_STEP then return end
+    local step = slowAcc
+    slowAcc = 0
+    Guard("layer", HUD.HideLayerText)                       -- layer label hidden while the HUD is up, restored after
+    if HUD.EagleLoaded then Guard("eagle", HUD.EagleTick, step) end   -- switch the HUD back on after Eagle Eye (0.5 s)
+    Guard("mouse", HUD.MouseTick, step)                     -- keeps the Minimap's mouse state right (0.5 s)
+    Guard("units", HUD.UnitHoverUpdate, step)               -- visible unit markers / tooltips when hovering the HUD map
+    Guard("watcher", HUD.WatcherTick, step)                 -- keeps the stock tracking button right (0.1 s)
+    Guard("perf", HUD.PerfWatch, step)                      -- one-time low-FPS hint (30 s average)
+    Guard("skins", HUD.SkinSweep, step)                     -- hides minimap skin frames SexyMap adds later (0.5 s)
 end

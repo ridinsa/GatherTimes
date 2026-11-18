@@ -69,12 +69,12 @@ Choose what you track and how.
 
 Per node: Now = the respawn time in use. Learned (n) = the range measured from your own visits, fastest-typical (e.g. 10.5-12.0), n = number of samples (orange under 5, yellow 5-9, green 10+; green learned time means the typical value is quicker than Now; * = item-wide value shown in Per zone mode). Respawns vary, so expect anything in that range. Apply / auto-apply use the typical (right-hand) value. Taken = how often a spot was found empty.
 - Learned times: Per item (one learned time per herb / ore, default) or Per zone (the zone you are in once it has 5 samples).
-- One shared timer per group, Detect empty nodes, Use game messages, Auto-adjust learned times (shorter or longer, never more than twice the factory time). The zone switch is in Settings > General.
+- One shared timer per group, Detect empty nodes, Use game messages, Auto-adjust learned times (shorter or longer, never more than twice the factory time). Clear timers and alerts when I change zone (off by default): changing zone, or entering a town, city or inn, removes every timer and pending ready sound / alert; learned times are kept.
 - Apply all faster copies the learned times into Now. Reset learned timings clears them.
 
 ]] .. H .. "Settings" .. E .. [[
 
-- General: on-screen alert and Alert time, minimum and maximum ready-alert distance (0 disables that bound), alert when chat announces maintenance (flash colour 1-7), low health warning (Hardcore), Ready status lasts, and Only show timers and pins of the zone I am in.
+- General: on-screen alert and Alert time, minimum and maximum ready-alert distance (0 disables that bound), alert when chat announces maintenance (flash colour 1-7), low health warning (Hardcore) and Ready status lasts.
 - Display: map text size, window size, see-through while moving, keep windows visible (ESC does not close them), and item tooltip on hover. Graphics quality (Off / Low / Very low / Minimal) lowers view distance, particles, ground clutter, shadows, water and sky detail for a slow PC; Off puts your own settings back. Screen effects turns off the ghost screen effect and invisibility's edge effect. Drunken haze turns off the blur drunkenness draws over the screen (it is the game's full screen glow, so it also removes that glow everywhere). Weather density (Off / Low / Medium / High) and Max camera zoom (1.0x to 4.0x) are also here. Some graphics changes only fully apply after /console gxrestart. The language dropdown is under Look; it takes effect after a UI reload (shown as "w/reload").
 - Look: Language, Frame skin (colour themes for the windows and tooltips; Pastel Pink and Sakura use dark text, and their text has a thin outline), Font (Friz Quadrata, Arial Narrow, Skurri, Morpheus, or Friends when the client has it) and Font size (80% to 130%). Korean, Chinese, Japanese and Russian keep their own font, so the font choice is replaced by a note for them.
 - Tools: status of the addon and its helpers, Import GatherMate2, Clear learned spawn points, Export my spots / Import spots (share spots with friends), Copy debug report (one block of text for a bug report), Reset timers, Start a new session at login, and the error log.
@@ -238,20 +238,22 @@ TOPICS[#TOPICS + 1] = { "cmds", "Cmds", H .. "Slash commands" .. E .. [[
 /gthud reset - reset the current profile
 /gthud help - show command help]] }
 
-TOPICS[#TOPICS + 1] = { "credits", "Credits", H .. "GatherTimes 0.24.9" .. E .. [[
+TOPICS[#TOPICS + 1] = { "credits", "Credits", H .. "GatherTimes 0.25.0" .. E .. [[
 
 Author: miRidinsa
 Website: https://github.com/ridinsa/
 License: GNU GPL v3 or later (see the LICENSE file in the addon folder).
 
-]] .. H .. "What's new in 0.24.9" .. E .. [[
+]] .. H .. "What's new" .. E .. [[
 
-- New: automatic map hover tooltips on the HUD and Eagle maps, and a Hover key button on the HUD Options tab.
-- New: the Notifier voice button (off, voice, next voice) speaks the name, online or offline, and the zone.
-- New: the Notifier pop-up shows Friend, Guild Member or both, the guild name, level, class and zone, in a smaller size.
-- Change: the player and target frames sit level with the fps / ping panel.
-- Change: the HUD tab descriptions, tracking tooltips, sound buttons and hover tooltips are translated.
-- Change: the Help panel covers the Notifier voice, the compact map and the hover options.
+- New: Timing option "Clear timers and alerts when I change zone" (off by default). Learned times are kept.
+- New: entering a town or city clears GatherTimes waypoints; route and nearest-node arrows stay off there.
+- New: the fps / ping line can show layer, durability and the game and local clocks (Pings tab).
+- New: "Buffs level with the bar" and "Top offset" slider (Minimize > Bar, for Titan Panel etc.).
+- New: Random Name, Mini XP, Notifier and Eagle map load on demand: `/gt module <name> on|off`, `/gt modules`.
+- New: Tools option to import GatherMate2 data on zone change; "Hide layer info" on the HUD.
+- Change: timers and pins always show only your current zone (the zone-only option is removed).
+- Change: less CPU and memory; spot export and import load on demand (GatherTimes_Share).
 
 ]] .. H .. "Libraries" .. E .. [[
 

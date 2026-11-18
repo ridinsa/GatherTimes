@@ -37,11 +37,22 @@ Convierte el minimapa real en un gran mapa translúcido que ocupa la pantalla, c
 - Perfil: guardar varios aspectos, cambiar entre ellos o borrarlos. Los perfiles se comparten entre todos los personajes; cada personaje recuerda el suyo.
 - Restablecer perfil restaura los valores predeterminados.]]
 
-T.credits = H .. "GatherTimes 0.24.9" .. E .. [[
+T.credits = H .. "GatherTimes 0.25.0" .. E .. [[
 
 Autor: miRidinsa
 Web: https://github.com/ridinsa/
 Licencia: GNU GPL v3 o posterior (consulta el archivo LICENSE en la carpeta del addon).
+
+]] .. H .. "Novedades" .. E .. [[
+
+- Nuevo: opción Timing «Borrar temporizadores y alertas al cambiar de zona» (desactivada por defecto). Se conservan los tiempos aprendidos.
+- Nuevo: al entrar en una ciudad se borran los puntos de ruta de GatherTimes; las flechas de ruta y del nodo más cercano siguen apagadas.
+- Nuevo: la línea de fps / ping puede mostrar el layer, la durabilidad y los relojes del juego y local (pestaña Pings).
+- Nuevo: «Buffs a la altura de la barra» y control «Desplazamiento superior» (Minimizar > Barra, para Titan Panel, etc.).
+- Nuevo: Nombre aleatorio, Mini XP, Notifier y mapa Águila se cargan bajo demanda: `/gt module <nombre> on|off`, `/gt modules`.
+- Nuevo: opción de Herramientas para importar datos de GatherMate2 al cambiar de zona; «Ocultar info de layer» en el HUD.
+- Cambio: los temporizadores y marcadores muestran siempre solo tu zona actual (se elimina la opción de solo zona).
+- Cambio: menos CPU y memoria; la exportación e importación de puntos se cargan bajo demanda (GatherTimes_Share).
 
 ]] .. H .. "Bibliotecas" .. E .. [[
 

@@ -215,3 +215,11 @@ function GT.RepaintText()
         end
     end
 end
+
+-- sets a label's text only when it differs from the text it already shows (the per-second refreshes call this a lot)
+function GT.SetTextIfChanged(fs, text)
+    if fs and fs.gtShownText ~= text then
+        fs.gtShownText = text
+        fs:SetText(text)
+    end
+end

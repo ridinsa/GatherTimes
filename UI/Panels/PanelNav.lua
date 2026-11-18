@@ -222,10 +222,10 @@ GT.panelBuilders.Nav = function(panel, content)
         if t >= 1 then
             t = 0
             if active == "route" then                       -- only while the Route tab is open
-                status:SetText(GT.TR("Route:") .. " " .. GT.UI.RouteOptimizer:GetStatus())
+                GT.SetTextIfChanged(status, GT.TR("Route:") .. " " .. GT.UI.RouteOptimizer:GetStatus())
             end
         end
     end)
-    status:SetText(GT.TR("Route:") .. " " .. GT.UI.RouteOptimizer:GetStatus())
+    GT.SetTextIfChanged(status, GT.TR("Route:") .. " " .. GT.UI.RouteOptimizer:GetStatus())
     ShowSub("route")
 end

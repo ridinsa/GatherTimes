@@ -13,7 +13,7 @@
 --   * Nothing is moved during combat (the player and target frames are protected); it is done when combat ends.
 --   * The frames are put back at logout / reload, because a frame the player moved with the mouse is saved by the
 --     game with the position it has at that moment.
---   * The player and target frames (the pet frame follows the player frame) only move down by the main bar, so they sit
+--   * The player, target and buff frames (the pet frame follows the player frame) only move down by the main bar, so they sit
 --     level with the fps / ping panel instead of below it - as long as that panel is not in their way sideways. If it
 --     is (small screen, big frames), they move down by both bars like the rest.
 -- GatherTimesDB._ui.barDock = false turns the whole thing off (the bar then just covers the top of the screen).
@@ -32,7 +32,9 @@ local NAMES = {
 }
 
 -- these sit level with the fps / ping panel (they only clear the main bar) when there is room beside the panel
-local SAME_LINE = { PlayerFrame = true, TargetFrame = true }
+-- The buffs are anchored to the minimap cluster, not to the screen, so they follow it: the cluster is what has to sit on the
+-- same line (moving BuffFrame itself does nothing, it is not anchored to the top of the screen).
+local SAME_LINE = { PlayerFrame = true, TargetFrame = true, BuffFrame = true, MinimapCluster = true }
 
 local state = {}                       -- frame -> { orig = points, shifted = points }
 local hooked = {}
@@ -84,16 +86,29 @@ end
 
 -- Is the frame clear of the fps / ping panel sideways (so it can sit on the same line as the panel)? Screen pixels.
 -- When the frame has no position yet, say no: it then gets the safe, lower place.
-local function ClearOfPanel(frame, panel)
+local function ClearOfPanel(frame, panel, margin)
     local fl, fr = frame:GetLeft(), frame:GetRight()
     local pl, pr = panel:GetLeft(), panel:GetRight()
     if not (fl and fr and pl and pr) then return false end
     local fs, ps = frame:GetEffectiveScale() or 1, panel:GetEffectiveScale() or 1
-    local margin = 60                  -- the panel's width changes with the fps text, so keep some room
+    margin = margin or 60              -- the panel's width changes with the fps text, so keep some room
     return fr * fs < pl * ps - margin or fl * fs > pr * ps + margin
 end
 
-local function Mark() if not guard then dirty = true end end
+-- a frame moved: sync once, 0.1 s later (one timer at a time), instead of checking the flag every frame
+local flushScheduled = false
+local function Flush()
+    flushScheduled = false
+    if dirty and GT.bar and GT.bar:IsShown() then Dock.Sync() end
+end
+local function Mark()
+    if guard then return end
+    dirty = true
+    if not flushScheduled then
+        flushScheduled = true
+        C_Timer.After(0.1, Flush)
+    end
+end
 
 local function Hook(frame)
     if hooked[frame] then return end
@@ -112,7 +127,8 @@ function Dock.Sync(off)
     local want = not off and bar and bar:IsShown() and not (ui and ui.barDock == false)
     local secondaryHeight = bar and bar.secondary and bar.secondary:IsShown()
         and (bar.secondary:GetHeight() or 0) * bar.secondary:GetEffectiveScale() or 0
-    local barPx = want and (bar:GetHeight() or 0) * bar:GetEffectiveScale() or 0
+    local topOffPx = want and ((ui and ui.barTopOffset) or 0) * (UIParent:GetEffectiveScale() or 1) or 0   -- the bar's top offset
+    local barPx = want and (bar:GetHeight() or 0) * bar:GetEffectiveScale() + topOffPx or 0
     local px = want and (barPx + secondaryHeight) or 0
     local sameLine = want and secondaryHeight > 0 and not (ui and ui.barDockSameLine == false)
 
@@ -131,7 +147,12 @@ function Dock.Sync(off)
                     Hook(frame)
                     local base = untouched and rec.orig or cur         -- what the game has, not what we set
                     local framePx = px
-                    if sameLine and SAME_LINE[name] and ClearOfPanel(frame, bar.secondary) then framePx = barPx end
+                    -- the Buff frame sits at the top right and its icons are narrow, so it only needs a small gap from the panel
+                    -- the Buff frame stays level with the bar by default (its icons sit at its right edge, so a wide
+                    -- fps / ping line does not really cover them). Minimize > Bar can turn that off.
+                    local buffsAlways = not (ui and ui.buffAlwaysSameLine == false)
+                    local level = (name == "BuffFrame" and buffsAlways) or ClearOfPanel(frame, bar.secondary)
+                    if sameLine and SAME_LINE[name] and level then framePx = barPx end
                     local sh = Shifted(frame, base, framePx)
                     if sh then
                         if not (untouched and Same(sh, rec.shifted)) then Apply(frame, sh) end
@@ -153,6 +174,43 @@ function Dock.Sync(off)
     end
 end
 
+-- /gt dock debug : where every frame the dock knows is anchored, and what the dock did with it (to find out why one does not move)
+local function Nm(f) return f and (f.GetName and f:GetName()) or tostring(f) end
+local function Pts(f)
+    local out = {}
+    for i = 1, (f.GetNumPoints and f:GetNumPoints() or 0) do
+        local p, rel, rp, x, y = f:GetPoint(i)
+        out[#out + 1] = string.format("%s>%s:%s %+.0f,%+.0f", p, Nm(rel or UIParent), tostring(rp), x or 0, y or 0)
+    end
+    return table.concat(out, " ; ")
+end
+function Dock.Debug()
+    local bar = GT.bar
+    GT.cprint(string.format("dock: bar shown=%s  secondary shown=%s  barDock=%s  in combat=%s", tostring(bar and bar:IsShown()),
+        tostring(bar and bar.secondary and bar.secondary:IsShown()), tostring(not (GatherTimesDB._ui.barDock == false)), tostring(InCombatLockdown())))
+    for _, name in ipairs(NAMES) do
+        local f = _G[name]
+        if type(f) == "table" and f.GetNumPoints then
+            local clear = bar and bar.secondary and ClearOfPanel(f, bar.secondary)
+            GT.cprint(string.format("%s: top=%s moved=%s sameLineFrame=%s clearOfPanel=%s protected=%s parent=%s", name,
+                tostring(f:GetTop() and math.floor(f:GetTop() * f:GetEffectiveScale() + 0.5)), tostring(state[f] ~= nil),
+                tostring(SAME_LINE[name] or false), tostring(clear), tostring(f.IsProtected and f:IsProtected()), Nm(f:GetParent())))
+            GT.cprint("    " .. Pts(f))
+        else
+            GT.cprint(name .. ": (none)")
+        end
+    end
+    -- the chain behind the buffs: what the buff frame hangs on
+    local f, depth = _G.BuffFrame, 0
+    while f and depth < 6 do
+        local _, rel = f:GetPoint(1)
+        GT.cprint(string.format("buff chain %d: %s  top=%s  points: %s", depth, Nm(f),
+            tostring(f:GetTop() and math.floor(f:GetTop() * f:GetEffectiveScale() + 0.5)), Pts(f)))
+        f, depth = rel, depth + 1
+        if f == UIParent or f == nil then break end
+    end
+end
+
 -- events and the once-per-frame check for frames the game re-anchored
 local ev = CreateFrame("Frame")
 ev:RegisterEvent("PLAYER_REGEN_ENABLED")
@@ -163,6 +221,4 @@ ev:SetScript("OnEvent", function(_, event)
     if event == "PLAYER_LOGOUT" then Dock.Sync(true)
     elseif GT.bar and GT.bar:IsShown() or pending then Dock.Sync() end
 end)
-ev:SetScript("OnUpdate", function()
-    if dirty and GT.bar and GT.bar:IsShown() then Dock.Sync() end
-end)
+pcall(ev.RegisterEvent, ev, "PLAYER_REGEN_ENABLED")   -- leaving combat: sync what was held back (pending)

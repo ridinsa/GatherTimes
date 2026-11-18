@@ -21,6 +21,8 @@ do
             pcall(TomTom.RemoveWaypoint, TomTom, uid)
         end
     end
+    -- towns, capital cities and inns are resting areas: no automatic waypoint there
+    local function InCity() return IsResting and IsResting() and true or false end
     function UI.ClearTomTom()
         Remove(wp)
         wp, wpKey = nil, nil
@@ -34,7 +36,7 @@ do
         UI.ClearTomTom()
     end
     function UI.UpdateTomTom()
-        if not Have() or not GT.routeTarget or not GT.routeTarget.mapID then
+        if not Have() or not GT.routeTarget or not GT.routeTarget.mapID or InCity() then
             if wp then UI.ClearTomTom() end
             return
         end
@@ -83,6 +85,12 @@ do
         if nearestTimer then nearestTimer:Cancel(); nearestTimer = nil end   -- called directly (login, checkbox): drop the pending tick
         if not Have() then GT.dprint("Auto-nearest: TomTom not available"); return end
         if not GT.cfg().tomTomAutoNearest then GT.dprint("Auto-nearest: disabled in config"); return end
+        if InCity() then                                         -- in a town or city: no arrow; checks again shortly
+            Remove(nearestWp)
+            nearestWp, nearestWpKey = nil, nil
+            ScheduleNearest()
+            return
+        end
         local curMap = C_Map.GetBestMapForUnit("player")
         if not curMap then ScheduleNearest() return end          -- loading screen: try again shortly
         local best, bestD, bestKey
@@ -110,6 +118,23 @@ do
             end
         end
         ScheduleNearest()
+    end
+    -- on ENTERING a town or city: remove every GatherTimes waypoint (the route and nearest arrows stay switched on
+    -- in the settings and come back outside; a waypoint you set by hand inside the city is left alone)
+    local wasCity
+    function UI.ClearWaypointsInCity()
+        local now = InCity()
+        if now and not wasCity then
+            Remove(wp); wp, wpKey = nil, nil
+            Remove(aimWp); aimWp = nil
+            Remove(nearestWp); nearestWp, nearestWpKey = nil, nil
+            if TomTom and TomTom.RemoveWaypoint then
+                if GT.listWp then pcall(TomTom.RemoveWaypoint, TomTom, GT.listWp) end
+                if GT.navWp then pcall(TomTom.RemoveWaypoint, TomTom, GT.navWp) end
+            end
+            GT.listWp, GT.navWp = nil, nil
+        end
+        wasCity = now
     end
     function UI.StopTomTomAutoNearest()
         if nearestTimer then

@@ -44,14 +44,16 @@ do
     end
 
     GT.ImportGatherMate2 = function(arg)
-        if running then GT.cprint(GT.TR("Import is already running.")); return end
-        local all = (arg or ""):lower():find("all", 1, true) ~= nil
+        local auto = arg == "auto"                -- started by a zone change: current zone only, quiet unless something was added
+        local function say(msg) if not auto then GT.cprint(msg) end end
+        if running then say(GT.TR("Import is already running.")); return end
+        local all = not auto and (arg or ""):lower():find("all", 1, true) ~= nil
         local curMap = C_Map.GetBestMapForUnit("player")
-        if not all and not curMap then GT.cprint(GT.TR("no map here")); return end
+        if not all and not curMap then say(GT.TR("no map here")); return end
         local ace = LibStub and LibStub("AceAddon-3.0", true)
         local GM = ace and ace:GetAddon("GatherMate2", true)
         if not GM then
-            GT.cprint(GT.TR("GatherMate2 is not loaded. Install and enable GatherMate2 (Classic) and GatherMate2_Data first."))
+            say(GT.TR("GatherMate2 is not loaded. Install and enable GatherMate2 (Classic) and GatherMate2_Data first."))
             return
         end
         pcall(function()
@@ -124,7 +126,7 @@ do
                 end
             end
             if not found then
-                GT.cprint(GT.TR("No GatherMate2 data found. Install GatherMate2_Data, then open /gathermate, go to Import and import the herb and mining data."))
+                say(GT.TR("No GatherMate2 data found. Install GatherMate2_Data, then open /gathermate, go to Import and import the herb and mining data."))
                 return
             end
             -- Merge your own earlier spots into the exact imported positions.  The spots to look at are collected
@@ -177,13 +179,13 @@ do
                 local a, k = added[key] or 0, skipped[key] or 0
                 if a + k > 0 then
                     total = total + a
-                    GT.cprint(GT.TRF("%s: %d added, %d already known", nodes[key].label, a, k))
+                    if not auto or a > 0 then GT.cprint(GT.TRF("%s: %d added, %d already known", nodes[key].label, a, k)) end
                 end
             end
             if total == 0 and next(skipped) == nil then
-                GT.cprint(GT.TR(all and "No matching nodes found. Make sure the data is imported in /gathermate."
+                say(GT.TR(all and "No matching nodes found. Make sure the data is imported in /gathermate."
                     or "No matching nodes found for this zone. Make sure the data is imported in /gathermate."))
-            else
+            elseif not auto or total > 0 then
                 GT.cprint(GT.TRF("Import done: %d new spawn points, %d of your old spots merged into exact positions.", total, merged))
                 if dropped > 0 then
                     GT.cprint(GT.TRF("The spot limit (%d) was reached: %d older imported spots you never visited were dropped.",
@@ -192,7 +194,21 @@ do
                 pcall(GT.SyncSpawnPins)
             end
         end)
-        GT.cprint(GT.TR("Import started... (this runs in the background, the game stays usable)"))
+        say(GT.TR("Import started... (this runs in the background, the game stays usable)"))
         Drive(co)
+    end
+
+    -- Automatic mode (Settings > Tools): import the zone you just entered, once per zone and session.
+    local autoDone = {}
+    GT.AutoImportGatherMate2 = function()
+        local c = GT.cfg()
+        if not (c and c.gm2Auto) then return end
+        C_Timer.After(2, function()           -- the map is not always known the very moment the zone changes
+            local mapID = C_Map.GetBestMapForUnit("player")
+            if not mapID or autoDone[mapID] or running then return end
+            if not (LibStub and LibStub("AceAddon-3.0", true) and LibStub("AceAddon-3.0"):GetAddon("GatherMate2", true)) then return end
+            autoDone[mapID] = true
+            GT.ImportGatherMate2("auto")
+        end)
     end
 end

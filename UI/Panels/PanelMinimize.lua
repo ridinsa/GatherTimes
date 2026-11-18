@@ -154,6 +154,14 @@ GT.panelBuilders.Minimize = function(panel, content)
         end,
         "On: the gold tooltip of the minimized bar lists every item. Off: it lists only the items ticked in the Nodes panel. The gold value always counts everything you loot.")
 
+    Check(bar, "Buffs level with the bar",
+        function() return ui.buffAlwaysSameLine ~= false end,
+        function(v)
+            ui.buffAlwaysSameLine = v
+            if GT.BarDock then GT.BarDock.Sync() end
+        end,
+        "On: the buff icons stay on the same line as the player frame and the fps / ping line, even when the line is wide. Off: they drop lower when the line would cover them.")
+
     Heading(bar, "Look")
     Slider(bar, "Bar size: %s", 60, 150, 5,
         function() return math.floor((ui.barScale or 1) * 100 + 0.5) end,
@@ -177,6 +185,20 @@ GT.panelBuilders.Minimize = function(panel, content)
         end,
         function(v) return v .. "%" end,
         "How solid the background of the minimized bar is. Lower it to see the game through the bar. The text stays fully readable.")
+
+    Slider(bar, "Top offset: %s", 0, 80, 2,
+        function() return (ui.barTopOffset or 0) end,
+        function(v)
+            ui.barTopOffset = v
+            if GT.bar then
+                GT.bar:ClearAllPoints()
+                GT.bar:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 0, -v)
+                GT.bar:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", 0, -v)
+                if GT.BarDock then GT.BarDock.Sync() end
+            end
+        end,
+        function(v) return v .. " px" end,
+        "How far the minimized bar sits below the top edge of the screen. Raise it to clear Titan Panel or another bar at the top; the game frames move down with it.")
 
     Heading(bar, "Fade")
     local function FadeOn() return cfg().miniFadeCombat == true or cfg().miniFadeMouse == true end
@@ -332,11 +354,14 @@ GT.panelBuilders.Minimize = function(panel, content)
     -- the XP line options only matter while the XP button is on
     local XPButtonOn = function() return cfg().miniShowXP ~= false end
 
-    -- the button, and what the XP line on the bar shows (UI\MiniXP.lua LineText; all on by default, except gold per hour)
+    -- the button, and what the XP line on the bar shows (GatherTimes_XP\MiniXP.lua LineText; all on by default, except gold per hour)
     Heading(xp, "XP line")
     Opt("Show XP button", "miniShowXP", true,
         "On: the XP button sits right after the dropdown on the minimized bar. Click it to show the hero and pet XP information in one line instead of the gathering timers. Off: the button is hidden and XP mode is off.",
-        function(v) if not v and GT.MiniXP then GT.MiniXP.SetOn(false) end end)    -- hiding it also turns XP mode off
+        function(v)
+            if v then GT.LoadModule("xp") end
+            if not v and GT.MiniXP then GT.MiniXP.SetOn(false) end
+        end)    -- hiding it also turns XP mode off
     Opt("Show hero battles", "miniXPHero", true,
         "On: the XP line shows how many battles you need to reach the next level.", nil, XPButtonOn)
     Opt("Show XP per hour", "miniXPRate", true,
@@ -365,7 +390,7 @@ GT.panelBuilders.Minimize = function(panel, content)
         function() return cfg().miniXPAlmost == true end)
 
     ---------------------------------------------------------------- Goals
-    -- goals (UI\MiniXP.lua): two boxes per line.  Gold (looted this session) and level, then a skill ("mining 300") and
+    -- goals (GatherTimes_XP\MiniXP.lua): two boxes per line.  Gold (looted this session) and level, then a skill ("mining 300") and
     -- the hours to reach them (pace colours).  Fill any of them, Enter sets it, empty or "off" clears it.
     -- One goal = the full line on the bar, two or three = the line divided in equal parts.
     local COL2 = 148
@@ -448,13 +473,29 @@ GT.panelBuilders.Minimize = function(panel, content)
             Touch()
         end,
         "On: the smaller bar below the main bar shows your world latency in ms as W:60 (the connection that carries movement and combat). Green under 300, yellow under 500, and red and blinking at 500 or more.")
-    Check(pings, "Show memory use (mem)",
-        function() return cfg().miniMem == true end,
+
+    Check(pings, "Show layer (L)",
+        function() return cfg().miniLayer ~= false end,
         function(v)
-            cfg().miniMem = v
+            cfg().miniLayer = v
             Touch()
         end,
-        "On: the smaller bar below the main bar shows how much memory GatherTimes uses, in MB, as mem:12.3MB. It updates every 2 seconds. If the game cannot report one addon, it shows the memory of all addons as mem(all).")
+        "On: the fps / ping line shows your layer as L:1/2 - 1 is the layer you are on now, 2 is how many layers are known in this zone. It uses NovaWorldBuffs when that is installed; otherwise it learns layers from the creatures you target or mouse over, so the second number only grows as you meet new layers (L:? = not known yet).")
+    Check(pings, "Show gear durability (D)",
+        function() return cfg().miniDurability ~= false end,
+        function(v)
+            cfg().miniDurability = v
+            Touch()
+        end,
+        "On: the fps / ping line shows the average durability of your equipped gear as D:87%. Green at 50% and above, yellow from 25%, red under 25%.")
+    Check(pings, "Show game time",
+        function() return cfg().miniGameTime == true end,
+        function(v) cfg().miniGameTime = v end,
+        "On: the fps / ping line also shows the game (server) time, e.g. game 14:05.")
+    Check(pings, "Show local time",
+        function() return cfg().miniLocalTime == true end,
+        function(v) cfg().miniLocalTime = v end,
+        "On: the fps / ping line also shows your computer's time, e.g. local 21:05.")
 
     Heading(pings, "Ping sound")
     Check(pings, "Sound when ping is red",

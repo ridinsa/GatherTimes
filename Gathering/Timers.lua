@@ -271,5 +271,55 @@ function GT.RefreshTimers()
 end
 
 -- ============================================================
+-- CLEAR ON ZONE CHANGE  (Timing panel: "Clear timers and alerts when I change zone", off by default)
+-- ============================================================
+-- Removes every running / ready timer (and its map label) and the alert state, so no ready sound or alert can
+-- fire for them afterwards.  Learned respawn data and the spawn spots are not touched.
+function GT.ClearAllTimers()
+    local n = 0
+    for _, key in ipairs(order) do
+        local list = GatherTimesDB[key]
+        for i = #list, 1, -1 do
+            pcall(GT.RemoveTextTimer, list[i])
+            table.remove(list, i)
+            n = n + 1
+        end
+    end
+    for k in pairs(quarantine) do quarantine[k] = nil end
+    if GT.ClearAlerts then pcall(GT.ClearAlerts) end
+    pcall(GT.SyncSpawnPins)
+    return n
+end
+
+-- Called from Events.lua: ZONE_CHANGED_NEW_AREA (the zone changed), PLAYER_UPDATE_RESTING (a town, city or inn is
+-- entered) and PLAYER_ENTERING_WORLD (only remembers where you are, so login and loading screens clear nothing).
+local lastZoneMap, lastResting
+local function ZoneCheck(event, isLogin, isReload)
+    local map = C_Map.GetBestMapForUnit("player")
+    local resting = IsResting and IsResting() and true or false
+    local changed = false
+    if event == "ZONE_CHANGED_NEW_AREA" then
+        changed = lastZoneMap ~= nil and map ~= nil and map ~= lastZoneMap
+    elseif event == "PLAYER_ENTERING_WORLD" then
+        -- a loading screen (boat, zeppelin, portal, instance) is a zone change too; login and /reload only remember
+        changed = not isLogin and not isReload and lastZoneMap ~= nil and map ~= nil and map ~= lastZoneMap
+    elseif event == "PLAYER_UPDATE_RESTING" then
+        changed = resting and lastResting == false
+    end
+    if map then lastZoneMap = map end
+    lastResting = resting
+    if changed and GT.cfg().clearOnZone then
+        local n = GT.ClearAllTimers()
+        if n > 0 then GT.cprint(GT.TRF("Zone changed: %d timer(s) and the alerts were cleared.", n)) end
+    end
+end
+function GT.CheckZoneClear(event, isLogin, isReload)
+    ZoneCheck(event, isLogin, isReload)
+    if event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_ENTERING_WORLD" then
+        C_Timer.After(1, function() pcall(ZoneCheck, "ZONE_CHANGED_NEW_AREA") end)   -- the map id can lag the event
+    end
+end
+
+-- ============================================================
 -- STATS + HEALTH
 -- ============================================================

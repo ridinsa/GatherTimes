@@ -147,11 +147,7 @@ GT.panelBuilders.Settings = function(panel, content)
         function(v) return GT.TRF("%d%% HP", v) end,
         "Set the health percentage that triggers the Hardcore low-health warning.")
 
-    Check(general, -246, "Only show timers and pins of the zone I am in",
-        function() return cfg().zoneOnly end,
-        function(v) cfg().zoneOnly = v; GT.RefreshTimers() end,
-        "Hide timers and map pins for resources outside your current zone. The Timing panel follows this too.")
-    Slider(general, -268, "Ready status lasts: %s", 30, 1800, 30,
+    Slider(general, -246, "Ready status lasts: %s", 30, 1800, 30,
         function() return cfg().readyLinger end,
         function(v) cfg().readyLinger = v; GT.RefreshTimers() end,
         function(v)
@@ -160,19 +156,20 @@ GT.panelBuilders.Settings = function(panel, content)
         end,
         "Choose how long a timer stays marked READY before it returns to idle.")
 
-    -- guild members and friends: a small pop-up on the right and a sound (UI\GuildPopup.lua). One row: on/off and the time.
+    -- guild members and friends: a small pop-up on the right and a sound (GatherTimes_Notifier\GuildPopup.lua). One row: on/off and the time.
     local UpdateSecsState   -- set below, once the time button exists
-    Check(general, -306, "Friend/Guild Notifier",
+    Check(general, -284, "Friend/Guild Notifier",
         function() return cfg().guildOnline == true end,
         function(v)
             cfg().guildOnline = v
+            if v then GT.LoadModule("notifier") end
             if UpdateSecsState then UpdateSecsState() end
         end,
         "On: a small pop-up on the right of the screen when a guild member or a friend comes online (gold, with a sound) or goes offline (red, with a sound). When available, it also shows their level, class, guild and location. It hides by itself after the time on the button next to it. Clicking that button shows a demo.", 122)
-    local secsBtn = Button(general, "", 66, 148, -306)
+    local secsBtn = Button(general, "", 66, 148, -284)
     -- the voice button, next to the time button: off, or the voice that reads "Name is online" out loud (the game's
-    -- text-to-speech, UI\GuildPopup.lua). A female voice comes first when the computer has one.
-    local voiceBtn = Button(general, "", 70, 218, -306)
+    -- text-to-speech, GatherTimes_Notifier\GuildPopup.lua). A female voice comes first when the computer has one.
+    local voiceBtn = Button(general, "", 70, 218, -284)
     voiceBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     AddOptionTip(voiceBtn, "Voice", "Reads the name and \"is online\" or \"is offline\" out loud with the game's text-to-speech. Left click: the next voice (a female voice first, when your computer has one), then off. Right click: the previous one. Each click shows a demo. Works only while the Friend/Guild Notifier is on.")
     local function VoiceLabel()
@@ -192,6 +189,7 @@ GT.panelBuilders.Settings = function(panel, content)
     AddOptionTip(secsBtn, "Show time", "Left click: the next time. Right click: the previous time. Each click shows a demo.")
     -- the time button works only while the Friend/Guild Notifier is on: greyed out and not clickable otherwise
     UpdateSecsState = function()
+        VoiceLabel()
         local on = cfg().guildOnline == true
         secsBtn:SetAlpha(on and 1 or 0.4)
         if on then secsBtn:Enable() else secsBtn:Disable() end
@@ -408,11 +406,11 @@ GT.panelBuilders.Settings = function(panel, content)
         refreshTools()
     end)
 
-    -- share your own spots with friends as text (Gathering\Share.lua; also /gt export, /gt import)
+    -- share your own spots with friends as text (GatherTimes_Share, loaded on demand; also /gt export, /gt import)
     local exp = Button(tools, "Export my spots", 138, 0, -164)
-    exp:SetScript("OnClick", function() GT.ShowExportSpots() end)
+    exp:SetScript("OnClick", function() GT.OpenShare("export") end)
     local shr = Button(tools, "Import spots", 138, 150, -164)
-    shr:SetScript("OnClick", function() GT.ShowImportSpots() end)
+    shr:SetScript("OnClick", function() GT.OpenShare("import") end)
 
     -- Random Name is opened from the main Settings button's right-click action.
     -- Keep Tools focused on its existing maintenance actions.
@@ -432,20 +430,26 @@ GT.panelBuilders.Settings = function(panel, content)
         GT.cprint(GT.TR("Timer data wiped (your settings are kept)."))
     end)
 
+    -- GatherMate2 import: ticked = the zone you enter is imported by itself, unticked = only the Import GatherMate2 button
+    Check(tools, -212, "Import GatherMate2 automatically on zone change",
+        function() return cfg().gm2Auto end,
+        function(v) cfg().gm2Auto = v and true or false; if v then GT.AutoImportGatherMate2() end end,
+        "On: when you enter a zone, its GatherMate2 data is imported by itself (once per zone and session, quietly). Off: only the Import GatherMate2 button imports.")
+
     -- whether a login / reload starts a new session (moved here from General; Reset session is on the Timers panel)
-    Check(tools, -212, "Start a new session at login",
+    Check(tools, -236, "Start a new session at login",
         function() return cfg().newSessionOnLogin end, function(v) cfg().newSessionOnLogin = v end,
         "Off: a reload or new login continues the session you were in. On: every login starts a fresh session. Reset session (Timers panel) always starts a new one.")
 
     -- one block with versions, libraries, addons and the error log, to paste into a bug report (Core\Report.lua)
 
     local logCap = GT.Font(tools, nil, "OVERLAY", "GameFontDisableSmall")
-    logCap:SetPoint("TOPLEFT", 2, -240)
+    logCap:SetPoint("TOPLEFT", 2, -264)
     GT.MakeFitting(logCap, 284)
     logCap:SetText(GT.TR("Error log (click, Ctrl+A, Ctrl+C to copy)"))
 
-    local log = GT:CreateEditBox(tools, 288, 74)
-    log:SetPoint("TOPLEFT", 0, -256)
+    local log = GT:CreateEditBox(tools, 288, 50)
+    log:SetPoint("TOPLEFT", 0, -280)
     log:SetMultiLine(true)
     log:SetJustifyH("LEFT")
     log:SetTextInsets(4, 4, 4, 4)

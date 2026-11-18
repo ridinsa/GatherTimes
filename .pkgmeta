@@ -2,6 +2,15 @@ package-as: GatherTimes
 changelog: CHANGELOG.md
 changelog-markup: markdown
 
+# The load-on-demand modules live in their own folders next to the main addon in the repo.
+# The packager moves each one out to the top level of the zip, so the zip holds six folders.
+move-folders:
+  GatherTimes/GatherTimes_Share: GatherTimes_Share
+  GatherTimes/GatherTimes_Names: GatherTimes_Names
+  GatherTimes/GatherTimes_Notifier: GatherTimes_Notifier
+  GatherTimes/GatherTimes_Eagle: GatherTimes_Eagle
+  GatherTimes/GatherTimes_XP: GatherTimes_XP
+
 # Files that live in the repo but should not ship in the addon zip.
 ignore:
   - README.md

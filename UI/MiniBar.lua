@@ -22,14 +22,16 @@ local BAR_H = 24            -- height of the bar
 local CELL_H, GAP = 20, 4   -- chip height, gap between chips
 local BAG_BTN_H = 18        -- height of the "<" / ">" button
 local ICON_SIZE, ICON_GAP = 16, 4   -- the picked item's icon, before the button
-local DD_W, DD_H = 120, 20   -- item dropdown on the left (same choices as the main window)
-local XP_BTN_W = 30         -- the "XP" button right after the dropdown (UI\MiniXP.lua)
+local DD_W, DD_H = 100, 20   -- item dropdown on the left (same choices as the main window)
+local DD_ROW_H = 14        -- its list rows are shorter than the main window's (18)
+local XP_BTN_W = 30         -- the "XP" button right after the dropdown (GatherTimes_XP\MiniXP.lua)
 local LEAD = 6 + DD_W + 4 + XP_BTN_W + 10   -- where the chips start: padding + dropdown + XP button + a little air
 local PAD = 6               -- left padding
 local BTN_W = 18            -- the red "x" button
 local EDGE_W = 3            -- coloured edge on the left of a chip
 local PROG_H = 2            -- progress bar along the bottom of a chip
 local TEXT_PAD, MID_GAP = 6, 14
+local RIGHT_GAP = 6        -- tighter gap used between the right-hand items (counts strip, ">" button, gold, x)
 local PERF_PAD = 12
 local IN_GAP = 5            -- space between the group name and its status inside a chip (was MID_GAP)
 local MAX_ITEMS = 60        -- chips considered (paged with the "<" ">" buttons when they do not fit on the bar)
@@ -390,39 +392,106 @@ function GT.StopPingSound()
     lastPingHandle = nil
 end
 
--- Memory use of this addon in MB, for the "mem:" part. The game only updates its per-addon numbers when asked
--- (UpdateAddOnMemoryUsage walks every addon), so it is sampled every 2 s, not on every bar refresh. If the client
--- cannot report one addon, the Lua memory of all addons is shown instead and the label says so ("mem(all)").
-local memKB, memAll, memAt = 0, false, -100
-local function MemoryText()
-    local now = GetTime()
-    if now - memAt >= 2 then
-        memAt = now
-        local get = (C_AddOns and C_AddOns.GetAddOnMemoryUsage) or GetAddOnMemoryUsage
-        local ok, kb = false, nil
-        if get then
-            if UpdateAddOnMemoryUsage then pcall(UpdateAddOnMemoryUsage) end
-            ok, kb = pcall(get, "GatherTimes")
-        end
-        if ok and type(kb) == "number" and kb > 0 then
-            memKB, memAll = kb, false
-        else
-            memKB, memAll = collectgarbage("count"), true
-        end
+-- ---------------------------------------------------------------- layer info ("L:1/2")
+-- current layer / layers known.  Two sources:
+--   1. NovaWorldBuffs (NWB), when it is installed: its current layer and the number of layers it knows.
+--   2. Own tracking, always on: the 5th part of a creature's GUID is the zone UID and it differs per layer, so every
+--      creature seen (target, mouseover, nameplates) tells which layer you are on and adds that layer to the list
+--      of layers seen in this zone (numbered in the order they were first seen).  This list only grows as you
+--      meet new layers, so the "available" number is a minimum without NWB.
+-- Nothing is stored; it starts again each session.
+local layerSeen = {}        -- [mapID] = { n = count, idx = { [zoneUID] = number } }
+local layerNow = {}         -- [mapID] = zone UID of the layer you were last seen on
+local function LayerMap()
+    return C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit("player") or nil
+end
+local function NoteLayerGuid(guid)
+    if type(guid) ~= "string" then return end
+    local kind, _, _, _, uid = strsplit("-", guid)
+    if (kind ~= "Creature" and kind ~= "Vehicle") or not uid or uid == "" or uid == "0" then return end
+    local map = LayerMap()
+    if not map then return end
+    local z = layerSeen[map]
+    if not z then z = { n = 0, idx = {} }; layerSeen[map] = z end
+    if not z.idx[uid] then z.n = z.n + 1; z.idx[uid] = z.n end
+    layerNow[map] = uid
+end
+local layerFrame = CreateFrame("Frame")
+layerFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
+layerFrame:RegisterEvent("UPDATE_MOUSEOVER_UNIT")
+layerFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+layerFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+pcall(layerFrame.RegisterEvent, layerFrame, "NAME_PLATE_UNIT_ADDED")     -- not in every client version
+layerFrame:SetScript("OnEvent", function(_, event, unit)
+    local c = GT.cfg and GT.cfg()
+    if not c or c.miniLayer == false then return end
+    if event == "PLAYER_TARGET_CHANGED" then NoteLayerGuid(UnitGUID("target"))
+    elseif event == "UPDATE_MOUSEOVER_UNIT" then NoteLayerGuid(UnitGUID("mouseover"))
+    elseif event == "NAME_PLATE_UNIT_ADDED" then NoteLayerGuid(unit and UnitGUID(unit))
+    else
+        local map = LayerMap()
+        if map then layerNow[map] = nil end            -- a new zone / loading screen: the layer is unknown until a creature is seen
     end
-    return string.format("%s:%.1fMB", memAll and "mem(all)" or "mem", memKB / 1024)
+end)
+
+-- NWB's layer numbers: returns current (or nil) and count (or nil); all reads are protected, NWB's layout may change
+local function NwbLayer()
+    local nwb = _G.NWB
+    if type(nwb) ~= "table" then return nil, nil end
+    local cur = tonumber(nwb.currentLayer)
+    if not cur or cur <= 0 then cur = nil end
+    local count
+    local layers = type(nwb.data) == "table" and nwb.data.layers
+    if type(layers) == "table" then
+        local k = 0
+        for _, v in pairs(layers) do if type(v) == "table" then k = k + 1 end end
+        if k > 0 then count = k end
+    end
+    return cur, count
 end
 
--- "fps:60 | H:45 | W:60 | mem:12.3MB": frame rate, home and world latency in ms, memory use. Each part has its own
--- switch (options miniFps, miniHomePing, miniWorldPing - on by default - and miniMem - off by default) and only the
--- switched-on parts are shown.
+local function LayerText()
+    local cur, total = NwbLayer()
+    local map = LayerMap()
+    local z = map and layerSeen[map]
+    if z then
+        if not cur then
+            local uid = layerNow[map]
+            cur = uid and z.idx[uid] or nil
+        end
+        if not total or z.n > total then total = z.n end
+    end
+    if cur and (not total or cur > total) then total = cur end
+    if not cur and not total then return "L:?" end
+    return string.format("L:|cffffffff%s|r/%s", cur or "?", total or "?")
+end
+
+-- gear durability ("D:87%"): the average of every equipped piece that can wear out.  Green at 50% and above, yellow
+-- from 25%, red under 25%.  Nothing is shown when no equipped piece has durability.
+local function DurabilityText()
+    if not GetInventoryItemDurability then return nil end
+    local sum, n = 0, 0
+    for slot = 1, 19 do
+        local cur, max = GetInventoryItemDurability(slot)
+        if cur and max and max > 0 then sum, n = sum + cur / max, n + 1 end
+    end
+    if n == 0 then return nil end
+    local pct = math.floor(sum / n * 100 + 0.5)
+    local col = pct >= 50 and "|cff00ff00" or (pct >= 25 and "|cffffff00" or "|cffff4040")
+    return string.format("D:%s%d%%|r", col, pct)
+end
+
+-- "fps:60 | H:45 | W:60": frame rate, home and world latency in ms. Each part has its own
+-- switch (options miniFps, miniHomePing, miniWorldPing - on by default) and only the switched-on parts are shown.
 -- Returns the text and whether it should blink (a shown latency is 500 ms or more).
 local function PerfText()
     local c = GT.cfg and GT.cfg()
     if not c then return nil end
     local wantFps, wantHome, wantWorld = c.miniFps ~= false, c.miniHomePing ~= false, c.miniWorldPing ~= false
-    local wantMem = c.miniMem == true
-    if not (wantFps or wantHome or wantWorld or wantMem) then return nil end
+    local wantGame, wantLocal = c.miniGameTime == true, c.miniLocalTime == true
+    local wantLayer = c.miniLayer ~= false
+    local wantDur = c.miniDurability ~= false
+    if not (wantFps or wantHome or wantWorld or wantLayer or wantDur or wantGame or wantLocal) then return nil end
     local home, world = 0, 0
     if wantHome or wantWorld then
         local ok, _, _, h, w = pcall(GetNetStats)
@@ -441,7 +510,22 @@ local function PerfText()
         parts[#parts + 1] = string.format("W:%s%d|r", PingColor(world), world)
         if world >= 500 then alarm = true end
     end
-    if wantMem then parts[#parts + 1] = MemoryText() end
+    if wantLayer then
+        local ok, text = pcall(LayerText)
+        parts[#parts + 1] = ok and text or "L:?"
+    end
+    if wantDur then
+        local ok, text = pcall(DurabilityText)
+        if ok and text then parts[#parts + 1] = text end
+    end
+    if wantGame then
+        local gh, gm = GetGameTime()                       -- the server (game) clock
+        parts[#parts + 1] = string.format("game %02d:%02d", gh or 0, gm or 0)
+    end
+    if wantLocal then
+        local lt = date("*t")                              -- this computer's clock
+        parts[#parts + 1] = string.format("local %02d:%02d", lt.hour, lt.min)
+    end
     return table.concat(parts, " | "), alarm
 end
 
@@ -451,6 +535,8 @@ local function Measure(fs, text)
     pcall(GT.FitText, fs, 10000)
     fs:SetWidth(0)
     fs:SetText(text)
+    -- the sample is not what the chip shows: drop the cached text so the next update writes the real text again
+    fs.gtShownText = nil
     return fs:GetStringWidth() or 0
 end
 
@@ -494,7 +580,7 @@ end
 -- ---------------------------------------------------------------- bags strip
 -- Click the "In bags" text (shown while one item is picked) to open a strip to its LEFT: for every item ticked in
 -- the Nodes panel, its icon and the number in the bags.  Click the text again to close it.  No tooltips here.
-local STRIP_ICON, STRIP_GAP, ITEM_GAP = 14, 3, 8
+local STRIP_ICON, STRIP_GAP, ITEM_GAP = 14, 3, 5
 local stripItems = {}
 
 local function ItemIcon(id)
@@ -586,7 +672,7 @@ local function Layout(f, n, total, bags, gold, iconId, idleHidden)
     if bags and f.bagsOpen then bags = ">" end
 
     -- right side, from the right edge: red "x", gold, bags, then the strip (when open)
-    local right = 3 + BTN_W + 8
+    local right = 3 + BTN_W + 4
     local goldW = gold and Measure(f.gold, GOLD .. gold .. "|r") or 0
     f.gold:SetShown(gold ~= nil)
     if gold then
@@ -603,10 +689,10 @@ local function Layout(f, n, total, bags, gold, iconId, idleHidden)
     local btn = f.bagsBtn
     if bags then
         btn.label:SetText(bags)
-        local bw = math.ceil(Measure(btn.label, bags) + 16)
+        local bw = math.ceil(Measure(btn.label, bags) + 10)
         btn:SetSize(bw, BAG_BTN_H)
         GT.FitText(btn.label, bw - 8)
-        if gold then right = right + MID_GAP end
+        if gold then right = right + RIGHT_GAP end
         btn:ClearAllPoints()
         btn:SetPoint("RIGHT", f, "RIGHT", -right, 0)
         right = right + bw
@@ -632,7 +718,7 @@ local function Layout(f, n, total, bags, gold, iconId, idleHidden)
     -- the strip sits to the left of the bags text
     local stripW = 0
     if bags and f.bagsOpen then stripW = BuildStrip(f) else HideStrip(f) end
-    local stripEdge = right + MID_GAP
+    local stripEdge = right + RIGHT_GAP
     if stripW > 0 then
         PlaceStrip(f, stripW, stripEdge)
         right = stripEdge + stripW
@@ -690,12 +776,12 @@ local function Layout(f, n, total, bags, gold, iconId, idleHidden)
         if GT.Tip.owner == bagChip then GT.Tip:Hide() end
     end
 
-    -- goal progress: a thin strip along the bottom edge, in the gathering view and in XP mode (UI\MiniXP.lua)
+    -- goal progress: a thin strip along the bottom edge, in the gathering view and in XP mode (GatherTimes_XP\MiniXP.lua)
     if GT.MiniXP and GT.MiniXP.UpdateGoalBar then pcall(GT.MiniXP.UpdateGoalBar, f) end
 
     -- the XP button shows whether XP mode is on; XP mode replaces the chips with one line of XP information
     -- the XP button: shown or hidden by "Show XP button" (Minimize settings > XP); hiding it also turns XP mode off
-    local btnOn = (not GT.MiniXP) or GT.MiniXP.ButtonShown()
+    local btnOn = (GT.MiniXP and GT.MiniXP.ButtonShown()) and true or false   -- no XP module (switched off): no button
     if f.xpBtn then f.xpBtn:SetShown(btnOn) end
     if not btnOn and GT.MiniXP then GT.MiniXP.SetOn(false) end
     local xpOn = (btnOn and GT.MiniXP and GT.MiniXP.IsOn()) or false
@@ -729,7 +815,7 @@ local function Layout(f, n, total, bags, gold, iconId, idleHidden)
         local text = recs[i].label
         local fpath, fsize, fflags = chip.label:GetFont()
         local mkey = text .. "|" .. tostring(fpath) .. "|" .. tostring(fsize) .. "|" .. tostring(fflags)
-        if chip.mKey ~= mkey then chip.mKey, chip.mW = mkey, Measure(chip.label, text) end
+        if chip.mKey ~= mkey then chip.mKey, chip.mW = mkey, Measure(chip.label, text); chip.shownLabel = nil end
         if chip.mW > labelW then labelW = chip.mW end
     end
     if n > 0 then
@@ -823,7 +909,7 @@ local function Layout(f, n, total, bags, gold, iconId, idleHidden)
                 chip.label:SetText(r.label)
                 chip.shownLabel = r.label
             end
-            chip.status:SetText(StatusText(r, auto))
+            GT.SetTextIfChanged(chip.status, StatusText(r, auto))
             chip:Show()
         else
             chip.blink = nil
@@ -832,6 +918,13 @@ local function Layout(f, n, total, bags, gold, iconId, idleHidden)
             chip:Hide()
         end
     end
+
+    -- how many chips blink now (read by the per-frame pulse above; counted once a second, not every frame)
+    local blinking = 0
+    for _, chip in ipairs(f.chips) do
+        if chip.blink and chip:IsShown() then blinking = blinking + 1 end
+    end
+    f.blinkCount = blinking
 
     -- the note: nothing learned here, or the groups that did not fit (with the page buttons)
     f.note:ClearAllPoints()
@@ -913,8 +1006,9 @@ function GT:CreateMiniBar()
     f.chips = {}
 
     -- docked: edge to edge along the top of the screen
-    f:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 0, 0)
-    f:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", 0, 0)
+    local topOff = (GatherTimesDB and GatherTimesDB._ui and GatherTimesDB._ui.barTopOffset) or 0   -- Minimize > Bar
+    f:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 0, -topOff)
+    f:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", 0, -topOff)
     f:SetHeight(BAR_H)
 
     -- Second panel: dynamically sized around FPS and ping, with the same height as the main bar.
@@ -933,11 +1027,11 @@ function GT:CreateMiniBar()
     -- item dropdown, before the first group
     f.dropdown = self:CreateDropdown(f, DD_W, DD_H, { GT.TR("All checked") }, function(index)
         GT:PickMainItem(index)
-    end, 12)
+    end, 12, DD_ROW_H)
     f.dropdown:SetPoint("LEFT", f, "LEFT", PAD, 0)
     f.dropdown:HookScript("OnClick", function() GT:RefreshMainDropdown(); GT:SyncBarDropdown() end)
 
-    -- "XP" button, right after the dropdown: turns XP mode on and off (UI\MiniXP.lua).  Picking an item turns it off.
+    -- "XP" button, right after the dropdown: turns XP mode on and off (GatherTimes_XP\MiniXP.lua).  Picking an item turns it off.
     local xpBtn = self:CreateFlatButton(f, "XP", XP_BTN_W, DD_H)
     xpBtn:SetPoint("LEFT", f.dropdown, "RIGHT", 4, 0)
     xpBtn:SetScript("OnClick", function()
@@ -967,7 +1061,7 @@ function GT:CreateMiniBar()
     end)
     f.pagePrev:Hide(); f.pageNext:Hide()
     f.gold = GT.Font(f, nil, "OVERLAY", "GameFontNormalSmall")
-    -- XP mode: all the hero / pet XP information in one line, in place of the chips (UI\MiniXP.lua)
+    -- XP mode: all the hero / pet XP information in one line, in place of the chips (GatherTimes_XP\MiniXP.lua)
     f.xpLine = GT.Font(f, nil, "OVERLAY", "GameFontHighlightSmall")
     f.xpLine:SetJustifyH("LEFT")
     f.xpLine:SetWordWrap(false)
@@ -1045,10 +1139,6 @@ function GT:CreateMiniBar()
     local closeBtn = self:CreateFlatButton(f, "x", BTN_W, BTN_W)
     closeBtn:SetPoint("RIGHT", f, "RIGHT", -3, 0)
     closeBtn:SetScript("OnClick", function() GT:CloseBar() end)
-    closeBtn:HookScript("OnEnter", function(b)
-        GT.ShowButtonTip(b, "Close the bar", "Hides the minimized bar until you open the addon or use /gt min")
-    end)
-    closeBtn:HookScript("OnLeave", function() GT.Tip:Hide() end)
     f.closeBtn = closeBtn
     local function PaintCloseX() closeBtn.label:SetTextColor(1, 0.2, 0.2) end
     PaintCloseX()
@@ -1064,13 +1154,16 @@ function GT:CreateMiniBar()
     -- refresh once a second (the main window is hidden, so its own update loop is not running)
     local acc, tipAcc = 0, 0
     f:SetScript("OnUpdate", function(s, elapsed)
-        -- blink: smooth pulse every frame for the chips whose timer is nearly 0
+        -- blink: smooth pulse every frame for the chips whose timer is nearly 0. The loop runs only while the
+        -- once-a-second refresh has counted a blinking chip (s.blinkCount), so an idle bar does no work here.
         local t = GetTime()
-        for _, chip in ipairs(s.chips) do
-            if chip.blink and chip:IsShown() then
-                local pulse = 0.5 + 0.5 * math.sin(t * (chip.fast and 12 or 6))   -- ~2 Hz, ~4 Hz in the last seconds
-                chip.glow:SetAlpha(0.12 + 0.38 * pulse)
-                chip.status:SetAlpha(0.4 + 0.6 * pulse)
+        if (s.blinkCount or 0) > 0 then
+            for _, chip in ipairs(s.chips) do
+                if chip.blink and chip:IsShown() then
+                    local pulse = 0.5 + 0.5 * math.sin(t * (chip.fast and 12 or 6))   -- ~2 Hz, ~4 Hz in the last seconds
+                    chip.glow:SetAlpha(0.12 + 0.38 * pulse)
+                    chip.status:SetAlpha(0.4 + 0.6 * pulse)
+                end
             end
         end
         -- the fps / latency text blinks while a latency is 500 ms or more

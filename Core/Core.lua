@@ -35,6 +35,8 @@ SlashCmdList["GATHERTIMES"] = function(msg)
     elseif arg == "min" or arg == "minimize" then
         -- /gt min : shrink the window into the info bar, or bring the window back (UI\MiniBar.lua)
         if GT.ToggleMinimized then GT:ToggleMinimized() end
+    elseif arg == "dock" and ((msg or ""):lower():match("^%s*%S+%s*(%S*)") or "") == "debug" then
+        if GT.BarDock then GT.BarDock.Debug() end       -- /gt dock debug: where the game frames are anchored
     elseif arg == "dock" then
         -- /gt dock : the minimized bar pushes the game's top frames down (on) or just covers them (off)
         local ui = GatherTimesDB and GatherTimesDB._ui
@@ -43,9 +45,11 @@ SlashCmdList["GATHERTIMES"] = function(msg)
             GT.cprint(GT.TR(ui.barDock and "Bar dock ON" or "Bar dock OFF"))
             if GT.BarDock then GT.BarDock.Sync() end
         end
+    elseif arg == "module" or arg == "modules" then
+        GT.ModulesSlash((msg or ""):match("^%s*%S+%s*(.*)$") or "")
     elseif arg == "xp" then
-        -- /gt xp : turn XP mode on or off (the bar shows the XP line).  /gt xp reset | session | goal ... | history  (UI\MiniXP.lua)
-        if GT.MiniXP then GT.MiniXP.Slash((msg or ""):match("^%s*%S+%s*(.*)$") or "") end
+        -- /gt xp : turn XP mode on or off (the bar shows the XP line).  /gt xp reset | session | goal ... | history  (GatherTimes_XP\MiniXP.lua)
+        if GT.LoadModule("xp") and GT.MiniXP then GT.MiniXP.Slash((msg or ""):match("^%s*%S+%s*(.*)$") or "") end
     elseif arg == "gfx" then
         -- /gt gfx : list the graphics settings the quality slider uses and their values (Core\\Graphics.lua)
         if GT.Gfx then GT.Gfx.Report() end
@@ -56,13 +60,12 @@ SlashCmdList["GATHERTIMES"] = function(msg)
         local action = (msg or ""):match("^%s*%S+%s*(%S*)") or ""
         if GT.ProfileTimerLoop then GT.ProfileTimerLoop(action) else GT.cprint("Timer-loop profiler is unavailable.") end
     elseif arg == "export" then
-        -- /gt export : a window with your own spots as text to copy and send to a friend (Gathering\Share.lua)
-        if GT.ShowExportSpots then GT.ShowExportSpots() end
+        -- /gt export : a window with your own spots as text to copy and send to a friend (GatherTimes_Share, loaded on demand)
+        GT.OpenShare("export")
     elseif arg == "import" then
         -- /gt import : a window to paste a friend's text into.  /gt import <text> imports it straight away.
         local text = (msg or ""):match("^%s*%S+%s*(.*)$") or ""
-        if text ~= "" and GT.ImportSpotsReport then GT.ImportSpotsReport(text)
-        elseif GT.ShowImportSpots then GT.ShowImportSpots() end
+        if text ~= "" then GT.OpenShare("importtext", text) else GT.OpenShare("import") end
     elseif arg == "report" then
         -- /gt report : the debug report window (Core\Report.lua), also Settings > Tools > Copy debug report
         if GT.ShowDebugReport then GT.ShowDebugReport() end

@@ -73,7 +73,8 @@ local function InitCfg()
     if c.maintAlert == nil then c.maintAlert = true end
     c.maintColorIdx = math.max(1, math.min(7, math.floor(tonumber(c.maintColorIdx) or 1)))   -- 1..7, see GT.MAINT_COLORS
     c.maintColor, c.maintStrength, c.maintAutoPreview = nil, nil, nil                       -- removed settings
-    if c.zoneOnly == nil then c.zoneOnly = false end
+    c.zoneOnly = true   -- always on; the option is no longer shown in Settings
+    if c.clearOnZone == nil then c.clearOnZone = false end   -- Timing panel: clear timers + alerts when the zone changes
     if c.lowHP == nil then c.lowHP = true end
     c.alertRange = GT.Clamp(c.alertRange, 0, 500, 0)
     c.alertMinRange = GT.Clamp(c.alertMinRange, 0, 500, 0)
@@ -85,6 +86,7 @@ local function InitCfg()
     c.fontWorld = c.fontMini          -- one text size for everything on both maps (fontWorld only mirrors it)
     if type(c.font) ~= "string" then c.font = "default" end          -- font style (Locales.lua GT.FONT_CHOICES)
     if type(c.newSessionOnLogin) ~= "boolean" then c.newSessionOnLogin = false end   -- false = resume the last session
+    if type(c.gm2Auto) ~= "boolean" then c.gm2Auto = false end                       -- false = GatherMate2 import only by button (manual)
     c.fontScale = math.max(80, math.min(130, tonumber(c.fontScale) or 100))   -- text size, percent
     c.lowHPPct = GT.Clamp(c.lowHPPct, 10, 80, 35)      -- same range as the Settings slider
     -- performance helpers (Graphics.lua): quality level 0..3 with a backup of the player's own CVars, and the
@@ -115,8 +117,10 @@ local function InitCfg()
     if type(c.miniFps) ~= "boolean" then c.miniFps = perfWas end
     if type(c.miniHomePing) ~= "boolean" then c.miniHomePing = perfWas end
     if type(c.miniWorldPing) ~= "boolean" then c.miniWorldPing = perfWas end
+    if type(c.miniLayer) ~= "boolean" then c.miniLayer = true end                 -- ... and the layer, "L:1/2" (current / known)
+    if type(c.miniDurability) ~= "boolean" then c.miniDurability = true end        -- ... and gear durability, "D:87%"
     c.miniPerf = nil
-    if type(c.miniMem) ~= "boolean" then c.miniMem = false end                     -- minimized bar: memory use of this addon (mem:12.3MB)
+    c.miniMem = nil                                                             -- removed option (memory use on the bar)
     if type(c.bagWarn) ~= "boolean" then c.bagWarn = true end                      -- alert + red chip when the bags are nearly full
     c.bagWarnSlots = GT.Clamp(c.bagWarnSlots, 1, 30, 5)                            -- ... at this many free slots or fewer
     if c.showSpawns == nil then c.showSpawns = false end
@@ -131,9 +135,9 @@ local function InitCfg()
     if c.logTomTom == nil then c.logTomTom = true end
     if c.tomTomAutoNearest == nil then c.tomTomAutoNearest = false end
     c.groupCapOre = math.max(1, math.min(3, tonumber(c.groupCapOre) or 1))
-    if c.routeMaxNodes == nil then c.routeMaxNodes = 50 end
+    c.routeMaxNodes = math.floor(GT.Clamp(c.routeMaxNodes, 10, 100, 50) + 0.5)
     if c.routeOnlyReady == nil then c.routeOnlyReady = true end
-    if c.routeTimeWindow == nil then c.routeTimeWindow = 600 end
+    c.routeTimeWindow = GT.Clamp(c.routeTimeWindow, 60, 1800, 600)
     if c.routeLowStock == nil then c.routeLowStock = false end
     c.routeStockTarget = math.floor(GT.Clamp(c.routeStockTarget, 1, 200, 20) + 0.5)
     if type(c.routeItem) ~= "string" or (c.routeItem ~= "all" and not nodes[c.routeItem]) then c.routeItem = "all" end

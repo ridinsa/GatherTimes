@@ -37,11 +37,22 @@ Transforme la vraie minicarte en une grande carte translucide sur votre écran, 
 - Profil : enregistrer plusieurs apparences, passer de l’une à l’autre ou les supprimer. Les profils sont partagés par tous les personnages ; chacun mémorise le sien.
 - Réinitialiser le profil restaure les valeurs par défaut.]]
 
-T.credits = H .. "GatherTimes 0.24.9" .. E .. [[
+T.credits = H .. "GatherTimes 0.25.0" .. E .. [[
 
 Auteur : miRidinsa
 Site web : https://github.com/ridinsa/
 Licence : GNU GPL v3 ou ultérieure (voir le fichier LICENSE dans le dossier de l’addon).
+
+]] .. H .. "Nouveautés" .. E .. [[
+
+- Nouveau : option Timing « Effacer les timers et alertes quand je change de zone » (désactivée par défaut). Les durées apprises sont conservées.
+- Nouveau : entrer dans une ville efface les points de passage GatherTimes ; les flèches d'itinéraire et du nœud le plus proche restent désactivées.
+- Nouveau : la ligne fps / ping peut afficher le layer, la durabilité et les horloges du jeu et locale (onglet Pings).
+- Nouveau : « Buffs au niveau de la barre » et curseur « Décalage haut » (Minimiser > Barre, pour Titan Panel, etc.).
+- Nouveau : Nom aléatoire, Mini XP, Notifier et carte Aigle se chargent à la demande : `/gt module <nom> on|off`, `/gt modules`.
+- Nouveau : option Outils pour importer les données GatherMate2 au changement de zone ; « Masquer les infos de layer » sur le HUD.
+- Changement : les timers et repères n'affichent que votre zone actuelle (l'option zone seule est supprimée).
+- Changement : moins de CPU et de mémoire ; l'export et l'import de points se chargent à la demande (GatherTimes_Share).
 
 ]] .. H .. "Bibliothèques" .. E .. [[
 

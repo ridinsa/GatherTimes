@@ -654,6 +654,9 @@ local function BuildOptions(f)
     OptKey("Hide Gx and (G) timers while the HUD is off", "hideLabelsIdle",
         "On: the Gx labels and (G) timers on the minimap are hidden while the HUD is off.")
 
+    OptKey("Hide layer info (e.g. Layer 1) while the HUD is on", "hideLayer",
+        "On: the layer label (such as Layer 1) on the minimap is hidden while the HUD or the Eagle map is on, and comes back when they are off.")
+
     OptKey("Compact map", "compact",
         "On: the map is drawn smaller (75%) with no rings, no compass letters and no heading readout. Turn it off to bring them back; your saved values are kept.")
 
@@ -826,13 +829,10 @@ local function BuildEagle(f)
     y = y - ROW_H
     local labels = KeyCheck(f, 0, y, "Hide Gx and (G) timers on the map", "eagleHideLabels")
     Tip(labels, "Hide Gx and (G) timers on the map", "On: the Gx labels and (G) timers are hidden on the Eagle map.")
-    y = y - ROW_H
-    local layer = KeyCheck(f, 0, y, "Hide layer info (e.g. Layer 1) on the map", "eagleHideLayer")
-    Tip(layer, "Hide layer info", "On: hides the layer text, such as Layer 1, on the Eagle map.")
 
     Gate(function() return HUD.db.eagleMap and true or false end, {
         "eagleSize", "eagleAlpha", "eagleZoom", "eagleRotate", "eagleScale",
-        "eagleNearest", "eagleHover", "eagleHideLabels", "eagleHideLayer",
+        "eagleNearest", "eagleHover", "eagleHideLabels",
     })
 end
 

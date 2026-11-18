@@ -37,11 +37,22 @@ Trasforma la minimappa vera e propria in una grande mappa trasparente estesa sul
 - Profili: salva diversi aspetti, passa da uno all'altro o eliminali. I profili sono condivisi da tutti i personaggi; ogni personaggio ricorda il proprio.
 - Reimposta profilo ripristina i valori predefiniti.]]
 
-T.credits = H .. "GatherTimes 0.24.9" .. E .. [[
+T.credits = H .. "GatherTimes 0.25.0" .. E .. [[
 
 Autore: miRidinsa
 Sito web: https://github.com/ridinsa/
 Licenza: GNU GPL v3 o successiva (vedi il file LICENSE nella cartella dell'addon).
+
+]] .. H .. "Novità" .. E .. [[
+
+- Nuovo: opzione Timing «Cancella timer e avvisi quando cambio zona» (disattivata di default). I tempi appresi vengono mantenuti.
+- Nuovo: entrando in una città si cancellano i waypoint di GatherTimes; le frecce di percorso e del nodo più vicino restano spente.
+- Nuovo: la riga fps / ping può mostrare layer, durabilità e gli orari di gioco e locale (scheda Pings).
+- Nuovo: «Buff allineati alla barra» e cursore «Offset superiore» (Minimizza > Barra, per Titan Panel ecc.).
+- Nuovo: Nome casuale, Mini XP, Notifier e mappa Aquila si caricano su richiesta: `/gt module <nome> on|off`, `/gt modules`.
+- Nuovo: opzione Strumenti per importare i dati di GatherMate2 al cambio di zona; «Nascondi info layer» nell'HUD.
+- Modifica: timer e segnaposto mostrano sempre solo la zona attuale (l'opzione solo zona è rimossa).
+- Modifica: meno CPU e memoria; esportazione e importazione dei punti si caricano su richiesta (GatherTimes_Share).
 
 ]] .. H .. "Librerie" .. E .. [[
 

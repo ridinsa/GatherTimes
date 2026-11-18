@@ -110,6 +110,16 @@ local function HideFrame(f, kind)
     if not ok then hidingNow = false end
 end
 
+-- GetChildren() / GetRegions() / GetAnimationGroups() return their objects as a vararg list. Packing that into
+-- { ... } to loop over it builds a new table on every call, and these run every sweep. EachArg walks the values
+-- straight off the stack instead: no table. fn must be a file-level function (a closure made per call would
+-- allocate again), so anything it needs besides the object lives in an upvalue.
+local function EachArg(fn, ...)
+    for i = 1, select("#", ...) do fn((select(i, ...))) end
+end
+
+local function HideAsDeco(f) HideFrame(f, "deco") end
+
 -- Finding the addon minimap buttons means looking through _G. On setups with many addons that is tens of
 -- thousands of keys, and doing it in one go trips the client's "script ran too long" watchdog. So the scan is
 -- time-sliced (about 3 ms per frame) and uses a cheap string prefilter instead of 7 pattern matches per key.
@@ -168,6 +178,13 @@ local function ScanSlice()
     end
 end
 
+local function GetFrameName(c) return c.GetName and c:GetName() end
+
+local function CacheMinimapChild(c)
+    local okn, n = pcall(GetFrameName, c)
+    if okn and n and MatchesAddonName(n) then CacheIfFrame(n) end
+end
+
 local function RefreshAddonFrameCache()
     addonCacheStale = false
     wipe(cachedAddonFrames)
@@ -177,10 +194,7 @@ local function RefreshAddonFrameCache()
     if lib and lib.GetButtonList then
         for _, n in ipairs(lib:GetButtonList()) do CacheIfFrame("LibDBIcon10_" .. n) end
     end
-    for _, c in ipairs({ Minimap:GetChildren() }) do
-        local okn, n = pcall(function() return c.GetName and c:GetName() end)
-        if okn and n and MatchesAddonName(n) then CacheIfFrame(n) end
-    end
+    EachArg(CacheMinimapChild, Minimap:GetChildren())
     if scanning then
         -- a scan is already running but the cache was just wiped: restart it so nothing it already passed is lost
         scanKey, scanRestarts = nil, 0
@@ -189,6 +203,34 @@ local function RefreshAddonFrameCache()
         C_Timer.After(0, ScanSlice)
     end
 end
+
+-- One pass over the Minimap's children / regions looks at each object through these two functions. The size limit
+-- is passed in an upvalue so no closure is created per object (they used to be, one pcall(function() ... end) each).
+local sweepLimit = 0
+
+local function SweepChild(c)
+    local name = c:GetName()
+    if name then
+        local skip = false
+        for _, pat in ipairs(ADDON_EXCLUDE) do
+            if name:find(pat) then skip = true; break end
+        end
+        if not skip and c:GetWidth() >= sweepLimit then HideFrame(c, "addon") end
+    elseif c:GetNumPoints() >= 2 or c:GetWidth() >= sweepLimit then
+        HideFrame(c, "addon")
+    end
+end
+
+local function SweepRegion(r)
+    -- unnamed textures / text, or a named one as wide as the stock minimap (SexyMap names its border textures)
+    if r.IsObjectType and (r:IsObjectType("Texture") or r:IsObjectType("FontString"))
+       and (not r:GetName() or r:GetWidth() >= sweepLimit) then
+        HideFrame(r, "addon")
+    end
+end
+
+local function SweepChildSafe(c) pcall(SweepChild, c) end
+local function SweepRegionSafe(r) pcall(SweepRegion, r) end
 
 function HideAddonFrames()
     if not HUD.db.hideAddons then
@@ -205,37 +247,17 @@ function HideAddonFrames()
         -- Skins/borders/panels that an addon hung on the Minimap. Map pins (HereBeDragons, GatherMate2, TomTom)
         -- are small single-anchor frames, so they never match: anonymous frames need 2+ anchors or to be as
         -- wide as the stock minimap, named frames only the latter.
-        local limit = (HUD.OrigWidth() or HUD.MINIMAP_BASE_SIZE) * 0.9
-        for _, c in ipairs({ Minimap:GetChildren() }) do
-            pcall(function()
-                local name = c:GetName()
-                if name then
-                    local skip = false
-                    for _, pat in ipairs(ADDON_EXCLUDE) do
-                        if name:find(pat) then skip = true; break end
-                    end
-                    if not skip and c:GetWidth() >= limit then HideFrame(c, "addon") end
-                elseif c:GetNumPoints() >= 2 or c:GetWidth() >= limit then
-                    HideFrame(c, "addon")
-                end
-            end)
-        end
-        for _, r in ipairs({ Minimap:GetRegions() }) do
-            pcall(function()
-                -- unnamed textures / text, or a named one as wide as the stock minimap (SexyMap names its border textures)
-                if r.IsObjectType and (r:IsObjectType("Texture") or r:IsObjectType("FontString"))
-                   and (not r:GetName() or r:GetWidth() >= limit) then
-                    HideFrame(r, "addon")
-                end
-            end)
-        end
+        sweepLimit = (HUD.OrigWidth() or HUD.MINIMAP_BASE_SIZE) * 0.9
+        EachArg(SweepChildSafe, Minimap:GetChildren())
+        EachArg(SweepRegionSafe, Minimap:GetRegions())
     end
 end
 
 -- SexyMap and other skins can create or resize their frames and textures after the HUD came up, and the scan above
--- only ran when the HUD turned on. While the HUD is up, run it again twice a second.
--- A new frame or texture on the Minimap shows up in its child / region count and is handled at once (next 0.25 s
--- check); a frame that was only resized is caught by the full pass every 2 s.
+-- only ran when the HUD turned on. While the HUD is up, run it again every so often.
+-- A new frame or texture on the Minimap shows up in its child / region count and is handled at the next 0.5 s
+-- check; a frame that was only resized is caught by the full pass every 4 s. Both intervals are stretched by the
+-- Performance level (Balanced x2, Lowest x3).
 local sweepAcc, sweepFull, sweepCount = 0, 0, -1
 function HUD.SkinSweep(dt)
     if not (HUD.IsActive() and HUD.db and HUD.db.hideAddons and SkinScanEnabled()) then
@@ -243,11 +265,12 @@ function HUD.SkinSweep(dt)
         return
     end
     sweepAcc = sweepAcc + (dt or 0)
-    if sweepAcc < 0.25 * HUD.PerfSlow() then return end
+    local slow = HUD.PerfSlow()
+    if sweepAcc < 0.5 * slow then return end
     sweepFull = sweepFull + sweepAcc
     sweepAcc = 0
     local count = (Minimap:GetNumChildren() or 0) * 1000 + (Minimap:GetNumRegions() or 0)
-    if count == sweepCount and sweepFull < 2 then return end
+    if count == sweepCount and sweepFull < 4 * slow then return end
     sweepCount, sweepFull = count, 0
     HideAddonFrames()
 end
@@ -258,22 +281,22 @@ local function HideDecorations()
     HideAddonFrames()
 end
 
+local CLOCK_FRAMES = {
+    "TimeManagerClockButton", "TimeManagerClockTicker", "TimeManagerClockButtonTicker",
+    "GameTimeFrame", "MinimapClock", "MinimapClockFrame",
+}
+
+local HideTree
+function HideTree(frame)
+    if not frame then return end
+    HideFrame(frame, "deco")
+    if frame.GetRegions then EachArg(HideAsDeco, frame:GetRegions()) end
+    if frame.GetChildren then EachArg(HideTree, frame:GetChildren()) end
+end
+
 function HUD.HideClockFrames()
-    local function HideTree(frame)
-        if not frame then return end
-        HideFrame(frame, "deco")
-        if frame.GetRegions then
-            for _, region in ipairs({ frame:GetRegions() }) do HideFrame(region, "deco") end
-        end
-        if frame.GetChildren then
-            for _, child in ipairs({ frame:GetChildren() }) do HideTree(child) end
-        end
-    end
-    for _, name in ipairs({
-        "TimeManagerClockButton", "TimeManagerClockTicker", "TimeManagerClockButtonTicker",
-        "GameTimeFrame", "MinimapClock", "MinimapClockFrame",
-    }) do
-        HideTree(_G[name])
+    for i = 1, #CLOCK_FRAMES do
+        HideTree(_G[CLOCK_FRAMES[i]])
     end
 end
 
@@ -296,13 +319,15 @@ local function ShowDecorations()
 end
 
 local rehidePending = false
+local function DoRehide()
+    rehidePending = false
+    if HUD.IsActive() then HideDecorations() end
+end
+
 local function ScheduleRehide()
     if rehidePending then return end
     rehidePending = true
-    C_Timer.After(1, function()
-        rehidePending = false
-        if HUD.IsActive() then HideDecorations() end
-    end)
+    C_Timer.After(1, DoRehide)
 end
 
 ---------------------------------------------------------------------------
@@ -316,26 +341,32 @@ end
 
 local trackingShown = {}                -- stock tracking frame -> was it shown before we hid it
 
-local function StockTrackingFrames()
-    local t = {}
-    local function add(f)
-        if type(f) == "table" and type(f.IsShown) == "function" and type(f.Hide) == "function" then
-            t[#t + 1] = f
-        end
+local function AddStockFrame(t, f)
+    if type(f) == "table" and type(f.IsShown) == "function" and type(f.Hide) == "function" then
+        t[#t + 1] = f
     end
-    add(_G.MiniMapTracking)
-    add(_G.MiniMapTrackingButton)           -- child of MiniMapTracking; BasicMinimap re-parents it separately
-    add(_G.MiniMapTrackingFrame)
+end
+
+-- into (optional): a table to refill instead of building a new one. Callers outside this file pass nothing and
+-- get a fresh table they may keep; the periodic callers below hand in their own scratch table.
+local function StockTrackingFrames(into)
+    local t = into or {}
+    if into then wipe(t) end
+    AddStockFrame(t, _G.MiniMapTracking)
+    AddStockFrame(t, _G.MiniMapTrackingButton)      -- child of MiniMapTracking; BasicMinimap re-parents it separately
+    AddStockFrame(t, _G.MiniMapTrackingFrame)
     local cluster = _G.MinimapCluster
     if type(cluster) == "table" and type(cluster.Tracking) == "table" then
-        add(cluster.Tracking)               -- newer client layouts
-        add(cluster.Tracking.Button)
+        AddStockFrame(t, cluster.Tracking)          -- newer client layouts
+        AddStockFrame(t, cluster.Tracking.Button)
     end
     return t
 end
 
+local hideStockScratch, showStockScratch = {}, {}
+
 local function HideStockTracking()
-    for _, f in ipairs(StockTrackingFrames()) do
+    for _, f in ipairs(StockTrackingFrames(hideStockScratch)) do
         if trackingShown[f] == nil then trackingShown[f] = f:IsShown() and true or false end
         managed[f] = "tracking"
         HookShow(f)
@@ -402,12 +433,12 @@ local function IsProtected(fr)
     return fr == _G.UIParent or fr == _G.WorldFrame or fr == _G.Minimap or fr == _G.MinimapCluster
 end
 
+local function StopGroup(g)
+    if g.IsPlaying and g:IsPlaying() and g.Stop then pcall(g.Stop, g) end
+end
+
 local function StopAnims(fr)
-    if fr.GetAnimationGroups then
-        for _, g in ipairs({ fr:GetAnimationGroups() }) do
-            if g.IsPlaying and g:IsPlaying() and g.Stop then pcall(g.Stop, g) end
-        end
-    end
+    if fr.GetAnimationGroups then EachArg(StopGroup, fr:GetAnimationGroups()) end
 end
 
 local function Unfade(fr, onlyIfInvisible)
@@ -418,18 +449,16 @@ local function Unfade(fr, onlyIfInvisible)
     end
 end
 
+local function UnfadeIfInvisible(fr) Unfade(fr, true) end
+
 -- Button, its child frames and its icon/border textures, plus every container above it, are forced
 -- visible on each tick. Nothing here is skipped because it "looks fine": the fade may sit on any of them,
 -- and a hidden parent still reports alpha 1.
 local function ForceStock(f)
     if not f:IsShown() then f:Show() end
     Unfade(f)
-    if f.GetChildren then
-        for _, c in ipairs({ f:GetChildren() }) do Unfade(c, true) end
-    end
-    if f.GetRegions then
-        for _, r in ipairs({ f:GetRegions() }) do Unfade(r, true) end
-    end
+    if f.GetChildren then EachArg(UnfadeIfInvisible, f:GetChildren()) end
+    if f.GetRegions then EachArg(UnfadeIfInvisible, f:GetRegions()) end
     local p = f:GetParent()
     local guard = 0
     while p and not IsProtected(p) and guard < 8 do
@@ -444,7 +473,7 @@ end
 function HUD.ShowStockTracking(light)
     if not StockWanted() or not CanTrack() then return end
     if not light and type(_G.MiniMapTracking_Update) == "function" then pcall(_G.MiniMapTracking_Update) end
-    for _, f in ipairs(StockTrackingFrames()) do
+    for _, f in ipairs(StockTrackingFrames(showStockScratch)) do
         if f.SetAlpha and f.Show then ForceStock(f) end
     end
 end
@@ -453,12 +482,13 @@ end
 -- (a minimap addon fading the stock button), and only every 0.5 s while all is fine.  The frame list is cached
 -- for a few seconds instead of being rebuilt on every tick.
 local watcherAcc, watcherWait = 0, 0.1
-local stockCache, stockCacheAt = nil, 0
+local stockCache, stockCacheAt = {}, nil
 
 local function CachedStockFrames()
     local now = GetTime()
-    if not stockCache or now - stockCacheAt > 5 then
-        stockCache, stockCacheAt = StockTrackingFrames(), now
+    if not stockCacheAt or now - stockCacheAt > 5 then
+        StockTrackingFrames(stockCache)         -- refilled in place, the table itself lives for the whole session
+        stockCacheAt = now
     end
     return stockCache
 end

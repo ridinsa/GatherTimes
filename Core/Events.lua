@@ -43,8 +43,6 @@ pcall(f.RegisterUnitEvent, f, "UNIT_SPELLCAST_INTERRUPTED", "player")
 pcall(f.RegisterEvent, f, "BAG_UPDATE_DELAYED")        -- bag space warning (Gathering\BagSpace.lua)
 pcall(f.RegisterEvent, f, "SKILL_LINES_CHANGED")       -- skill ETA (Gathering\SkillEta.lua); not on every client
 pcall(f.RegisterEvent, f, "CHAT_MSG_SKILL")
-pcall(f.RegisterEvent, f, "GUILD_ROSTER_UPDATE")   -- guild online popup (UI\GuildPopup.lua)
-pcall(f.RegisterEvent, f, "FRIENDLIST_UPDATE")      -- friends online popup (UI\GuildPopup.lua)
 
 -- Everything ADDON_LOADED sets up.  Runs under pcall (see below).
 -- Part 1 is the saved data: if that fails the addon stays off (GT.ready false), because the timers cannot work
@@ -53,8 +51,10 @@ pcall(f.RegisterEvent, f, "FRIENDLIST_UPDATE")      -- friends online popup (UI\
 function GT.Startup()
     if type(GatherTimesDB) ~= "table" then GatherTimesDB = {} end       -- a damaged saved file that is not even a table
     GT.SanitizeDB()
+    pcall(GT.TrimLocales)                       -- the saved language is known now: free the other languages' texts (Locales\Locales.lua)
     -- timers that ran out before this moment (while offline / reloading) get no ready alert, see Timers.lua
     GT.loginServerTime = GetServerTime()
+    GT.LoadWantedModules("early")               -- Mini XP / Notifier / Random Name, only those that are in use (Core\Modules.lua)
 
     -- GatherTimes window settings (kept in a reserved key)
     local ui = GatherTimesDB._ui
@@ -62,6 +62,7 @@ function GT.Startup()
     for k, v in pairs(GT.defaults) do
         if ui[k] == nil then ui[k] = v end
     end
+    if not ui.barDockOn1 then ui.barDockOn1 = true; ui.barDock = true end     -- once: the dock is on by default (it may have been switched off while testing)
     if not GT.SkinExists(ui.skin) then ui.skin = "default" end
     GT.ApplySkin(ui.skin)
     ui.trackSwitch = nil          -- removed feature: drop its old saved value
@@ -73,6 +74,7 @@ function GT.Startup()
     end
     Try("main window", GT.CreateMainFrame, GT)
     if HUD then Try("HUD init", HUD.Init) end        -- GatherTimesDB.hud + the HUD settings window
+    GT.LoadWantedModules("hud")                      -- the Eagle map, once the HUD settings are known
     Try("restyle", GT.RestyleAll)
     for _, fn in ipairs(uiRefresh) do pcall(fn) end
     pcall(GT.ApplyLangFont, GT.main)             -- Apply the selected language's font to everything built so far
@@ -93,6 +95,11 @@ f:SetScript("OnEvent", function(_, event, msg, msg2, ...)
         return
     end
     if not GT.ready then return end            -- not set up (yet, or the start-up failed): ignore every other event
+
+    if event == "PLAYER_ENTERING_WORLD" and GT.CheckZoneClear then pcall(GT.CheckZoneClear, event, msg, msg2) end   -- login / reload: remember the zone; a loading screen: compare it
+    if (event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_ENTERING_WORLD") and GT.AutoImportGatherMate2 then
+        pcall(GT.AutoImportGatherMate2)           -- Settings > Tools: GatherMate2 import "Auto"
+    end
 
     if event == "PLAYER_ENTERING_WORLD" then
         HUDEvent(event, msg, msg2)                -- msg = isInitialLogin, msg2 = isReloadingUi
@@ -133,12 +140,6 @@ f:SetScript("OnEvent", function(_, event, msg, msg2, ...)
             pcall(GT.OnGuildOnlineMessage, msg)
         end
 
-    elseif event == "GUILD_ROSTER_UPDATE" then
-        pcall(GT.RefreshGuildRoster)
-
-    elseif event == "FRIENDLIST_UPDATE" then
-        pcall(GT.RefreshFriendRoster)
-
     elseif event == "CHAT_MSG_LOOT" then
         if type(msg) ~= "string" then return end
         -- the 12th event argument is the GUID of the looter: that tells "my" loot from other players' loot
@@ -169,6 +170,13 @@ f:SetScript("OnEvent", function(_, event, msg, msg2, ...)
         or event == "ZONE_CHANGED_INDOORS" or event == "ZONE_CHANGED_NEW_AREA" or event == "UNIT_AURA"
         or event == "UNIT_SPELLCAST_CHANNEL_START" or event == "UNIT_SPELLCAST_CHANNEL_STOP"
         or event == "UNIT_SPELLCAST_SUCCEEDED" or event == "UNIT_SPELLCAST_INTERRUPTED" then
+        if (event == "PLAYER_UPDATE_RESTING" or event == "ZONE_CHANGED" or event == "ZONE_CHANGED_INDOORS"
+            or event == "ZONE_CHANGED_NEW_AREA") and GT.UI and GT.UI.ClearWaypointsInCity then
+            pcall(GT.UI.ClearWaypointsInCity)          -- entering a town or city: clear the waypoints
+        end
+        if (event == "PLAYER_UPDATE_RESTING" or event == "ZONE_CHANGED_NEW_AREA") and GT.CheckZoneClear then
+            pcall(GT.CheckZoneClear, event)            -- Timing panel option: clear timers + alerts on a zone change
+        end
         HUDEvent(event, msg, msg2, (...))              -- SUCCEEDED is (unit, castGUID, spellID)
 
     elseif event == "UNIT_HEALTH" then
@@ -195,9 +203,20 @@ f:SetScript("OnEvent", function(_, event, msg, msg2, ...)
 end)
 
 local accum = 0
+local hudUpdateFailed = false
 f:SetScript("OnUpdate", function(_, elap)
     -- every frame: the HUD parts throttle themselves (overlay 0.03 s, watcher 0.1 s, skin sweep 0.5 s)
-    if HUD then HUD.OnUpdate(elap) end -- HUD: compass / heading, tracking drag, watcher
+    if HUD then
+        local ok, err = pcall(HUD.OnUpdate, elap)
+        if not ok then
+            if not hudUpdateFailed then
+                pcall(GT.ReportError, "HUD update", err)
+                hudUpdateFailed = true
+            end
+        else
+            hudUpdateFailed = false
+        end
+    end
     accum = accum + elap
     if accum > ((HUD and HUD.PerfTimerStep and HUD.PerfTimerStep()) or 1) then
         accum = 0

@@ -73,6 +73,8 @@ function HUD.Set(key, value, fromUI)
         HUD.EagleCheck()
     elseif key == "eagleHideLabels" or key == "hideLabelsIdle" then
         HUD.UpdateEagleLabels()
+    elseif key == "hideLayer" then
+        if HUD.HideLayerText then pcall(HUD.HideLayerText, true) end
     elseif key == "hudHover" or key == "hudHoverKey" then
         -- applies at once while the normal HUD is up (the Eagle map keeps its own "eagleHover" setting)
         if S.active and S.orig and not S.eagleMode then

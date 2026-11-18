@@ -95,24 +95,20 @@ end
 -- Entry 1 is "All checked"; the choice is saved in _ui.mainItem and drives the table AND the map / minimap
 -- labels (GT.ViewMode / GT.IsShown).
 -- Runs every second, so it compares in place and only builds new lists when the content changed.
-local keysNow, keysShown, countsNow, countsShown = { "all" }, { "all" }, {}, {}
+local keysNow, keysShown = { "all" }, { "all" }
 function GT:RefreshMainDropdown()
     local f, ui = self.main, GatherTimesDB._ui
     if not (f and f.dropdown) then return end
     local present = self:NodesInZone(C_Map.GetBestMapForUnit("player"))
     local n = 1
     keysNow[1] = "all"
-    countsNow[1] = nil
     for _, key in ipairs(self.order) do
         if self.IsEnabled(key) and present[key] then
             n = n + 1
             keysNow[n] = key
-            local def = self.nodes[key]
-            local countId = def.countId or def.id
-            countsNow[n] = GetItemCount and (GetItemCount(countId) or 0) or 0
         end
     end
-    for i = #keysNow, n + 1, -1 do keysNow[i], countsNow[i] = nil, nil end
+    for i = #keysNow, n + 1, -1 do keysNow[i] = nil end
 
     local index = 1
     for i = 1, n do if keysNow[i] == ui.mainItem then index = i end end
@@ -121,21 +117,20 @@ function GT:RefreshMainDropdown()
     local same = (#keysShown == n) and (f._ddIndex == index)
     if same then
         for i = 1, n do
-            if keysShown[i] ~= keysNow[i] or countsShown[i] ~= countsNow[i] then same = false; break end
+            if keysShown[i] ~= keysNow[i] then same = false; break end
         end
     end
     if same then return end
 
-    -- The node list changes rarely; inventory counts are refreshed with the main frame.
-    local names, keys, shownCounts = { { text = GT.TR("All checked") } }, {}, {}
+    -- The node list changes rarely.
+    local names, keys = { { text = GT.TR("All checked") } }, {}
     for i = 1, n do
         keys[i] = keysNow[i]
-        shownCounts[i] = countsNow[i]
         if i > 1 then
-            names[i] = { text = self.nodes[keysNow[i]].label, count = countsNow[i] }
+            names[i] = { text = self.nodes[keysNow[i]].label }
         end
     end
-    keysShown, countsShown = keys, shownCounts
+    keysShown = keys
     self.mainKeys = keys
     f._ddIndex = index
     f.dropdown:SetItems(names)
@@ -314,7 +309,7 @@ function GT:CreateMainFrame()
             b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
             b:SetScript("OnClick", function(_, button)
                 if button == "RightButton" then
-                    if GT.ShowNameDisguiseFrame then
+                    if GT.LoadModule("names") and GT.ShowNameDisguiseFrame then
                         GT:ShowNameDisguiseFrame()
                     else
                         GT.cprint(GT.TR("Random Name settings are not available."))
