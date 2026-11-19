@@ -91,6 +91,48 @@ function GT.ClearQuarantine()
     for k in pairs(quarantine) do quarantine[k] = nil end
 end
 
+-- Central timer state transition. Loot, "taken", estimated-empty and zone-clear logic must all use this
+-- shape so a timer cannot silently gain conflicting flags or stale alert state.
+function GT.UpsertTimer(key, sp, opts)
+    opts = opts or {}
+    if type(key) ~= "string" or type(sp) ~= "table" or type(GatherTimesDB[key]) ~= "table" then
+        return nil
+    end
+    if not GT.IsFiniteNumber(sp.mapID) or not GT.IsFiniteNumber(sp.x) or not GT.IsFiniteNumber(sp.y) then
+        return nil
+    end
+    local now = GT.IsFiniteNumber(opts.time) and opts.time or GetServerTime()
+    local list = GatherTimesDB[key]
+    local node
+    for i = 1, #list do
+        local n = list[i]
+        if n.sid == sp.sid or (n.mapID == sp.mapID
+            and math.sqrt((n.x - sp.x)^2 + (n.y - sp.y)^2) < GT.MERGE_DIST) then
+            node = n
+            break
+        end
+    end
+    if node then
+        node.mapID, node.x, node.y, node.sid = sp.mapID, sp.x, sp.y, sp.sid
+        node.time = now
+        node.realm = GT.RealmName()
+    else
+        node = { mapID = sp.mapID, x = sp.x, y = sp.y, sid = sp.sid,
+            time = now, realm = GT.RealmName() }
+        list[#list + 1] = node
+    end
+    node.qty = opts.qty
+    node.est = opts.est == true or nil
+    node.taken = opts.taken == true or nil
+    if opts.resetAlerts ~= false then
+        node._hasAlerted, node._soundDone = nil, nil
+        node._leaveAlerted = nil
+    end
+    if GT.RemoveTextTimer then pcall(GT.RemoveTextTimer, node) end
+    node._left, node._dist, node._peers, node._primary = nil, nil, nil, nil
+    return node
+end
+
 -- one line of timer text ("Peacebloom 9:55")  -- file level on purpose: a closure created inside
 -- ProcessNode would be new garbage for every node, every second
 local function TimerLine(nodeDef, n, now)
@@ -294,6 +336,7 @@ end
 -- Called from Events.lua: ZONE_CHANGED_NEW_AREA (the zone changed), PLAYER_UPDATE_RESTING (a town, city or inn is
 -- entered) and PLAYER_ENTERING_WORLD (only remembers where you are, so login and loading screens clear nothing).
 local lastZoneMap, lastResting
+local settleUntil = 0          -- resting / zone data is still settling after a login or loading screen: no clearing until then
 local function ZoneCheck(event, isLogin, isReload)
     local map = C_Map.GetBestMapForUnit("player")
     local resting = IsResting and IsResting() and true or false
@@ -304,11 +347,12 @@ local function ZoneCheck(event, isLogin, isReload)
         -- a loading screen (boat, zeppelin, portal, instance) is a zone change too; login and /reload only remember
         changed = not isLogin and not isReload and lastZoneMap ~= nil and map ~= nil and map ~= lastZoneMap
     elseif event == "PLAYER_UPDATE_RESTING" then
-        changed = resting and lastResting == false
+        changed = resting and lastResting == false and GetTime() >= settleUntil
     end
+    if event == "PLAYER_ENTERING_WORLD" then settleUntil = GetTime() + 6 end   -- logging in inside a town is not "entering" it
     if map then lastZoneMap = map end
     lastResting = resting
-    if changed and GT.cfg().clearOnZone then
+    if changed and GT.CharGet("clearOnZone", false) then
         local n = GT.ClearAllTimers()
         if n > 0 then GT.cprint(GT.TRF("Zone changed: %d timer(s) and the alerts were cleared.", n)) end
     end

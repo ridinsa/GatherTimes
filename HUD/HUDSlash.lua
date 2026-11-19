@@ -457,6 +457,8 @@ function HUD.Slash(msg)
             local pos = map and C_Map.GetPlayerMapPosition and C_Map.GetPlayerMapPosition(map, "player")
             Print(string.format("Eagle debug: eagleMap=%s viewActive=%s mapUp=%s", tostring(db.eagleMap),
                 tostring(HUD.EagleEyeActive()), tostring(HUD.EagleMapUp())))
+            Print(string.format("Eagle performance: %s%s", tostring(HUD.PERF_LEVELS and HUD.PERF_LEVELS[HUD.PerfLevel()] or "?"),
+                HUD.LowSpec() and " (Eagle map disabled; node names remain visible)" or ""))
             Print("units (world x,y): " .. unit("player") .. " | " .. unit("pet") .. " | " .. unit("vehicle") .. " | " .. unit("target"))
             Print(string.format("addon position: world %s,%s  zone map %s %s,%s", hx and string.format("%.1f", hx) or "-",
                 hy and string.format("%.1f", hy) or "-", tostring(map), pos and string.format("%.4f", pos.x) or "-",

@@ -69,6 +69,9 @@ SlashCmdList["GATHERTIMES"] = function(msg)
     elseif arg == "report" then
         -- /gt report : the debug report window (Core\Report.lua), also Settings > Tools > Copy debug report
         if GT.ShowDebugReport then GT.ShowDebugReport() end
+    elseif arg == "compete" then
+        -- /gt compete : zones ranked by how often their nodes were already taken.  /gt compete alert | reset  (Gathering\Competition.lua)
+        if GT.CompetitionSlash then GT.CompetitionSlash((msg or ""):match("^%s*%S+%s*(.*)$") or "") end
     elseif arg == "stats" then
         GT.cprint("\n" .. GT.FormatStats())
     elseif arg == "yield" then
@@ -90,6 +93,7 @@ SlashCmdList["GATHERTIMES"] = function(msg)
         if shown == 0 then GT.cprint(GT.TR("no active timers")) end
     else
         GT.cprint(GT.TR("/gt  (window)   /gt list   /gt stats   /gt debug   /gt profile start|report|stop"))
+        GT.cprint(GT.TR("/gt compete  (how heavily each zone is farmed)   /gt compete alert  (warning on / off)   /gt compete reset"))
         GT.cprint(GT.TR("/gt yield  (zone loot totals)   /gt yield current  (current zone only)"))
         GT.cprint(GT.TR("/gt hud  (minimap HUD, /gt hud help)"))
         GT.cprint(GT.TR("/gt xp  (XP mode on the minimized bar)   /gt xp reset   /gt xp session"))

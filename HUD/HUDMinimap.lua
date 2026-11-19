@@ -351,13 +351,13 @@ end
 
 -- The Minimap's mouse state is ours to decide: off for the full-screen HUD, on (clicks passed through) for the Eagle
 -- map. Something else (the game, another addon) can switch it back on when the Eagle map goes away, so it is
--- looked at twice a second and put right.
+-- looked at four times a second and put right.
 local mouseAcc = 0
 function HUD.MouseTick(dt)
     if pendingPropagate ~= nil and not (InCombatLockdown and InCombatLockdown()) then SetPropagate(pendingPropagate) end   -- left over from combat
     if not (S.active and S.orig) then mouseAcc = 0; return end
     mouseAcc = mouseAcc + (dt or 0)
-    if mouseAcc < 0.5 then return end
+    if mouseAcc < 0.25 then return end
     mouseAcc = 0
     local want = HoverWanted()
     if MinimapMouseMatches(want) then return end

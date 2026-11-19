@@ -38,7 +38,15 @@ end
 -- is the feature in use right now (so it must be loaded)?
 local WANT = {
     names = function() return type(GatherTimesHUNDB) == "table" and GatherTimesHUNDB.hideAll == true end,
-    xp = function() local c = GT.cfg and GT.cfg(); return not (c and c.miniShowXP == false) end,   -- off with "Show XP button": not loaded (turning it on loads it, see PanelMinimize.lua)
+    -- off with "Show XP button": not loaded (turning it on loads it, see PanelMinimize.lua) - unless this character has a saved goal:
+    -- the goal strip along the bar is drawn by this module, so it has to be running or the strip is gone until the Goals tab is opened
+    xp = function()
+        local c = GT.cfg and GT.cfg()
+        if not (c and c.miniShowXP == false) then return true end
+        local name = UnitName and UnitName("player")
+        local goals = c and type(c.xpGoal) == "table" and name and c.xpGoal[name .. "-" .. ((GetRealmName and GetRealmName()) or "")]
+        return type(goals) == "table" and next(goals) ~= nil
+    end,
     notifier = function() local c = GT.cfg and GT.cfg(); return c and c.guildOnline == true or false end,
     share = function() return false end,                     -- only when it is opened (see GT.OpenShare)
     eagle = function()
@@ -62,6 +70,18 @@ end
 function GT.ModuleLoaded(key)
     local m = MODULES[key]
     return m and IsLoaded(m.addon) or false
+end
+
+-- Diagnostic lifecycle snapshot for /gt report and Settings.
+function GT.ModuleDiagnostics()
+    local result = {}
+    for _, key in ipairs(ORDER) do
+        local m = MODULES[key]
+        result[#result + 1] = string.format("%s=%s,%s", key,
+            GT.ModuleEnabled(key) and "enabled" or "disabled",
+            GT.ModuleLoaded(key) and "loaded" or "not-loaded")
+    end
+    return table.concat(result, " ")
 end
 
 -- Loads the module's folder now (once).  Returns true when its code is running.

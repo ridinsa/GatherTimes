@@ -51,6 +51,21 @@ pcall(f.RegisterEvent, f, "CHAT_MSG_SKILL")
 function GT.Startup()
     if type(GatherTimesDB) ~= "table" then GatherTimesDB = {} end       -- a damaged saved file that is not even a table
     GT.SanitizeDB()
+    -- Startup self-check: malformed SavedVariables or missing core APIs must fail clearly, not as random Lua errors.
+    local startupProblems = {}
+    if type(GatherTimesDB) ~= "table" then startupProblems[#startupProblems + 1] = "saved variables" end
+    if type(GT.nodes) ~= "table" or type(GT.order) ~= "table" or #GT.order == 0 then
+        startupProblems[#startupProblems + 1] = "node catalog"
+    end
+    if type(GatherTimesDB._cfg) ~= "table" then
+        startupProblems[#startupProblems + 1] = "configuration tables"
+    end
+    if not (C_Map and C_Map.GetBestMapForUnit and C_Map.GetPlayerMapPosition) then
+        startupProblems[#startupProblems + 1] = "C_Map APIs"
+    end
+    if #startupProblems > 0 then
+        error("startup validation failed: " .. table.concat(startupProblems, ", "))
+    end
     pcall(GT.TrimLocales)                       -- the saved language is known now: free the other languages' texts (Locales\Locales.lua)
     -- timers that ran out before this moment (while offline / reloading) get no ready alert, see Timers.lua
     GT.loginServerTime = GetServerTime()

@@ -254,17 +254,21 @@ function GT.MarkEmpty(sp, key, justNow)
     -- there the node may simply not be back yet, and the next loot is a good sample for a longer respawn.)
     if justNow then sp.lootTime = nil end
     if GT.NoteTaken then GT.NoteTaken(key) end
+    if justNow and GT.CompetitionNote then GT.CompetitionNote(sp.mapID, true) end   -- only sure cases: an estimate may just be a late respawn
     if node then
-        node.taken = true                          -- shown as "taken" on the timer (map text, bar chip tooltip)
-        if justNow then node.time = now
-        else node.time = math.floor((node.time + def.timer + now) / 2) end
-        node._hasAlerted, node._soundDone = nil, nil
-        node._leaveAlerted = nil
-        node.est = not justNow
+        local estimatedTime = justNow and now or math.floor((node.time + def.timer + now) / 2)
+        node = GT.UpsertTimer(key, sp, {
+            time = estimatedTime,
+            taken = true,
+            est = not justNow,
+            resetAlerts = true,
+        })
     else
-        table.insert(GatherTimesDB[key], {
-            mapID = sp.mapID, x = sp.x, y = sp.y, sid = sp.sid, est = not justNow, taken = true, realm = GT.RealmName(),
+        GT.UpsertTimer(key, sp, {
             time = justNow and now or (now - math.floor(def.timer / 2)),
+            taken = true,
+            est = not justNow,
+            resetAlerts = true,
         })
     end
     if justNow then

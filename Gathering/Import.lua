@@ -23,6 +23,9 @@ do
     local clock = debugprofilestop or function() return GetTime() * 1000 end
     local sliceStart = 0
     local running = false
+    function GT.ImportRunning()
+        return running
+    end
     local function MaybeYield()
         if clock() - sliceStart > SLICE_MS then coroutine.yield() end
     end
@@ -108,16 +111,18 @@ do
                                     end
                                 end
                                 if mkey then
-                                    local x = math.floor(coord / 1000000) / 10000
-                                    local y = (math.floor(coord / 100) % 10000) / 10000
-                                    if GT.FindSpawn(mkey, zoneID, x, y) then
-                                        skipped[mkey] = (skipped[mkey] or 0) + 1
-                                    else
-                                        local sp = GT.MergeSpawn(mkey, zoneID, x, y)
-                                        sp.hits = 0
-                                        sp.imported = true
-                                        made[#made + 1] = { mkey, sp }
-                                        touched[mkey .. ":" .. zoneID] = true
+                                    if GT.IsFiniteNumber(coord) and coord >= 0 and coord <= 9999999999 then
+                                        local x = math.floor(coord / 1000000) / 10000
+                                        local y = (math.floor(coord / 100) % 10000) / 10000
+                                        if GT.FindSpawn(mkey, zoneID, x, y) then
+                                            skipped[mkey] = (skipped[mkey] or 0) + 1
+                                        else
+                                            local sp = GT.MergeSpawn(mkey, zoneID, x, y)
+                                            sp.hits = 0
+                                            sp.imported = true
+                                            made[#made + 1] = { mkey, sp }
+                                            touched[mkey .. ":" .. zoneID] = true
+                                        end
                                     end
                                 end
                             end

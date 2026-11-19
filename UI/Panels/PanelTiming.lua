@@ -175,8 +175,8 @@ GT.panelBuilders.Timing = function(panel, content)
         "Automatically update a resource's respawn timer from learned data once enough samples are available.")
 
     Check(-270, "Clear timers and alerts when I change zone",
-        function() return cfg().clearOnZone == true end,
-        function(v) cfg().clearOnZone = v end,
+        function() return GT.CharGet("clearOnZone", false) == true end,
+        function(v) GT.CharSet("clearOnZone", v) end,         -- saved per character
         "When you change zone, or enter a town, city or inn, every timer and pending ready sound / alert is cleared. Learned times are kept. Off by default.")
 
     -- learned-times mode: one learned time per item type (default) or per zone

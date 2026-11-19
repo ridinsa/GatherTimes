@@ -402,6 +402,7 @@ GT.panelBuilders.Minimize = function(panel, content)
     goalHint:SetText(GT.TR("Type a goal and press Enter. Leave a box empty to clear it."))
     local goalBoxes = {}
     local function RefreshGoalBoxes()
+        GT.LoadModule("xp", true)           -- the goals live in the XP module: load it (once) so the boxes show the saved goals
         for kind, box in pairs(goalBoxes) do
             if not box:HasFocus() then box:SetText(GT.MiniXP and GT.MiniXP.GoalBoxText(kind) or "") end
         end
@@ -421,7 +422,8 @@ GT.panelBuilders.Minimize = function(panel, content)
         box:SetText(GT.MiniXP and GT.MiniXP.GoalBoxText(kind) or "")
         AddOptionTip(box, caption, tip)
         box:SetScript("OnEnterPressed", function(self)
-            if GT.MiniXP then GT.MiniXP.SetGoalPart(kind, self:GetText()) end
+            -- the XP module is load-on-demand: without loading it first the text was thrown away and the box emptied
+            if GT.LoadModule("xp") and GT.MiniXP then GT.MiniXP.SetGoalPart(kind, self:GetText()) end
             self:ClearFocus()
             RefreshGoalBoxes()
             if GT.bar then GT:UpdateMiniBar() end

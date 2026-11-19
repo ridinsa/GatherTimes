@@ -109,14 +109,21 @@ function GT.BuildDebugReport()
             end
         end
         local running, ready = 0, 0
+        local reportNow = GetServerTime and GetServerTime() or time()
         for key in pairs(GT.nodes) do
             for _, node in ipairs(GatherTimesDB[key] or {}) do
-                if (node._left or 1) > 0 then running = running + 1 else ready = ready + 1 end
+                local def = GT.nodes[key]
+                local left = def and def.timer and (def.timer - (reportNow - (tonumber(node.time) or reportNow))) or 0
+                if left > 0 then running = running + 1 else ready = ready + 1 end
             end
         end
         out[#out + 1] = string.format("Spots: %d (%d imported)   Timers: %d running, %d ready", total, imported, running, ready)
         local q = GT.QuarantinedTimers and GT.QuarantinedTimers()
-        if type(q) == "table" then out[#out + 1] = "Timers set aside after an error: " .. tostring(#q) end
+        if type(q) == "number" then out[#out + 1] = "Timers set aside after an error: " .. tostring(q) end
+        out[#out + 1] = "Spawn index rebuilds: " .. tostring(GT.spawnIndexRebuilds or 0)
+        out[#out + 1] = "Spawn evictions: " .. tostring(GT.spawnEvictions or 0)
+        out[#out + 1] = "GatherMate2 import: " .. tostring(GT.ImportRunning and GT.ImportRunning() and "running" or "idle")
+        out[#out + 1] = "Modules: " .. tostring(GT.ModuleDiagnostics and GT.ModuleDiagnostics() or "?")
         local c = GT.cfg()
         out[#out + 1] = string.format("Settings: detectEmpty=%s groupMode=%s zoneOnly=%s showSpawns=%s tomtom=%s", tostring(c.detectEmpty),
             tostring(c.groupMode), tostring(c.zoneOnly), tostring(c.showSpawns), tostring(c.tomtom))

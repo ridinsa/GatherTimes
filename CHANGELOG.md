@@ -1,5 +1,19 @@
 # GatherTimes
 
+## 0.25.1 (2026-11-19)
+
+- New: competition detector. Per zone and hour it counts nodes found already taken; warns when a zone is heavily farmed and suggests a quieter one. `/gt compete` (list), `/gt compete alert` (on / off), `/gt compete reset`.
+- New: "GT Scan" button on the auction house: one click reads every auction, saves the lowest price per item and realm and shows it in item tooltips with its age. The herb / ore tooltip and session summary use it first. The button sits beside the X button, shows the cooldown ("GT Scan 12:34") and has its caption before it.
+- New: Help panel: how-to steps for GT Scan, the competition detector, goals and farming; `/gt compete` in the command list.
+- New: debug reports include spawn-index rebuilds, evictions, import state and module state; standalone Lua 5.1 regression checks.
+- Change: "Clear timers and alerts when I change zone" is saved per character and off until you tick it.
+- Fix: the yellow goal strip no longer disappears: the XP module also loads at login while a goal is saved (even with "Show XP button" off), and the strip keeps its last progress when it cannot be read for a moment.
+- Fix: Goals boxes did nothing when the XP module was not loaded yet; it now loads when the Goals tab opens or Enter is pressed.
+- Fix: Eagle / Far Sight / Mind Vision detection uses the modern and Classic spell-name APIs; fallback state clears only for remote-view spells; Eagle polling is faster (250 ms).
+- Fix: loot, estimated-empty and "taken" updates share one timer transition path (no duplicate timers).
+- Fix: character settings include realm and Hardcore tag; logging in inside a town or inn no longer clears timers.
+- Fix: auction scans stop cleanly on timeout or cancel and save the cooldown safely; malformed timer, spawn, auction and HUD numbers are rejected.
+
 ## 0.25.0 (2026-11-18)
 
 - New: Timing option "Clear timers and alerts when I change zone" (off by default). Works on zone changes, loading screens (boat, portal, instance) and entering a town or inn. Learned times are kept.

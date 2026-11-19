@@ -24,6 +24,8 @@ Tracks when herbs and ore respawn in the zone you are in, remembers where the no
 3. Gather. A timer starts as soon as you loot a node.
 4. Watch the table in the main window. When a node is ready you get an on-screen alert, a sound, and a chime when you are close.
 
+Next steps: open the auction house and press GT Scan for prices (Panels > Auction scan), set a goal on the bar (Panels > Goals), and check /gt compete for busy zones (Panels > Competition).
+
 ]] .. H .. "The main window" .. E .. [[
 
 - Dropdown (top): show every ticked node, or just one.
@@ -83,6 +85,33 @@ Per node: Now = the respawn time in use. Learned (n) = the range measured from y
 
 The open resource dropdown shows your bag count beside each item; the selected item button hides its count. The Timers panel shows session totals. Show summary opens the same summary; Reset session prints them first, then clears the counts and restarts the session clock. Only recognized gathering loot counts. Reset session also clears the session-only gathered-spot filter.
 
+
+]] .. H .. "Auction scan (GT Scan)" .. E .. [[
+
+How to use:
+1. Open the auction house (Classic-style window). The GT Scan button is beside the X button.
+2. Press GT Scan. Wait for "Reading... %" in the caption before the button. Do not close the auction house meanwhile.
+3. Done: the lowest price of every item is saved for your realm and shows in all item tooltips ("Auction (GatherTimes scan)") with its age. The herb / ore tooltip and the session summary use it first.
+- The game allows one full scan every 15 minutes. The button shows the time left (GT Scan 12:34). Pressing it early only tells you how long to wait.
+- If the server does not answer within 45 seconds the scan stops; try again after the cooldown.
+
+]] .. H .. "Competition detector" .. E .. [[
+
+How to use:
+1. Just gather. Every node you loot and every node you find already taken is counted per zone and hour of your clock.
+2. When you enter a zone that is heavily farmed at this hour (35% or more taken), or 4 of your last 6 nodes were taken, you get a chat line and an on-screen alert. It suggests a quieter zone when your data has one.
+3. Type /gt compete to see all zones with their taken %, quietest and busiest hour.
+- /gt compete alert turns the warning on / off. /gt compete reset clears the data.
+- It needs about 8 samples per zone and hour before it judges. Estimated "looks empty" spots are not counted.
+
+]] .. H .. "Goals (on the minimized bar)" .. E .. [[
+
+How to use:
+1. Right-click the - button > Goals. Fill a box (Gold, Level, Skill, or By (h)) and press Enter. Leave a box empty to clear it.
+2. The coloured strip along the minimized bar fills as you progress (yellow for gold). It turns green when the goal is reached.
+- The strip stays visible even with Show XP button off and keeps its last progress if the value cannot be read for a moment.
+- A reached goal is removed at your next login.
+
 ]] .. H .. "Random Name" .. E .. [[
 
 Right-click the Settings button in the main window to open it (right-click again closes it). It disguises your own name on your screen, for streaming or screenshots. Other players still see your real name.
@@ -138,6 +167,14 @@ Settings > Tools > Export my spots (or /gt export) shows your own spots as one l
 - TomTom: lets the arrow and route waypoints show up.
 - A Broker display (Titan Panel, ChocolateBar, Bazooka...): shows a GatherTimes button with the ready count. Left-click opens the window, right-click turns the HUD on / off.
 
+
+]] .. H .. "Farm smarter (how to use)" .. E .. [[
+
+- Before a session: press GT Scan at the auction house so tooltips and the session summary show real prices.
+- Pick a zone: /gt compete shows which zones are busy and the quietest hours.
+- During a session: set a Gold or Skill goal in Minimize settings > Goals and watch the strip on the bar.
+- After a session: Timers panel > Show summary, or /gt stats and /gt yield.
+
 ]] .. H .. "Something is wrong?" .. E .. [[
 
 - No pins: install HereBeDragons. Settings > Tools shows what was found.
@@ -186,6 +223,7 @@ TOPICS[#TOPICS + 1] = { "cmds", "Cmds", H .. "Slash commands" .. E .. [[
 /gt stats - session totals in chat
 /gt yield - persistent zone and item yields (top 10 zones)
 /gt yield current - yield totals for the current zone
+/gt compete - zones ranked by how often nodes were already taken; /gt compete alert (warning on / off), /gt compete reset
 /gt debug - loot detection messages on / off
 /gt profile start | stop | report - profile the timer loop
 /gt hud - minimap HUD (see below)
@@ -238,7 +276,7 @@ TOPICS[#TOPICS + 1] = { "cmds", "Cmds", H .. "Slash commands" .. E .. [[
 /gthud reset - reset the current profile
 /gthud help - show command help]] }
 
-TOPICS[#TOPICS + 1] = { "credits", "Credits", H .. "GatherTimes 0.25.0" .. E .. [[
+TOPICS[#TOPICS + 1] = { "credits", "Credits", H .. "GatherTimes 0.25.1" .. E .. [[
 
 Author: miRidinsa
 Website: https://github.com/ridinsa/
@@ -246,14 +284,12 @@ License: GNU GPL v3 or later (see the LICENSE file in the addon folder).
 
 ]] .. H .. "What's new" .. E .. [[
 
-- New: Timing option "Clear timers and alerts when I change zone" (off by default). Learned times are kept.
-- New: entering a town or city clears GatherTimes waypoints; route and nearest-node arrows stay off there.
-- New: the fps / ping line can show layer, durability and the game and local clocks (Pings tab).
-- New: "Buffs level with the bar" and "Top offset" slider (Minimize > Bar, for Titan Panel etc.).
-- New: Random Name, Mini XP, Notifier and Eagle map load on demand: `/gt module <name> on|off`, `/gt modules`.
-- New: Tools option to import GatherMate2 data on zone change; "Hide layer info" on the HUD.
-- Change: timers and pins always show only your current zone (the zone-only option is removed).
-- Change: less CPU and memory; spot export and import load on demand (GatherTimes_Share).
+- New: competition detector: warns when a zone is heavily farmed and suggests a quieter one (`/gt compete`).
+- New: "GT Scan" on the auction house reads every auction and shows the lowest price in item tooltips; the button sits by the X and shows the cooldown.
+- New: debug reports show more detail (spawn index, imports, modules).
+- Change: "Clear timers and alerts when I change zone" is saved per character and off until you tick it.
+- Fix: the goal strip on the minimized bar no longer disappears; Goals boxes work before the XP module loads.
+- Fix: Eagle / Far Sight / Mind Vision detection, duplicate timers, realm / Hardcore settings and auction scan timeouts.
 
 ]] .. H .. "Libraries" .. E .. [[
 

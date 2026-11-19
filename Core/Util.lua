@@ -138,16 +138,23 @@ end
 -- Map positions are fractions 0..1; 5 decimals is ~0.05 yd on a big zone map, far finer than anything the addon
 -- compares (merge 0.006, snap 0.015).  Saved as full floats they cost ~10 extra characters each.
 function GT.Round5(v)
-    if type(v) ~= "number" then return v end
+    if not GT.IsFiniteNumber(v) then return nil end
     return math.floor(v * 100000 + 0.5) / 100000
 end
 
 -- Number clamp for saved settings: a missing, non-numeric or NaN value becomes def, then lo..hi is enforced.
 function GT.Clamp(v, lo, hi, def)
     v = tonumber(v)
-    if not v or v ~= v then v = def end
+    if not GT.IsFiniteNumber(v) then v = def end
     if not v then return lo end
     return math.max(lo, math.min(hi, v))
+end
+
+-- Use this for every SavedVariables or API value that is converted to a number.
+-- Lua number comparisons cannot catch every malformed input; inf and NaN must be rejected.
+function GT.IsFiniteNumber(v)
+    v = tonumber(v)
+    return type(v) == "number" and v == v and v ~= math.huge and v ~= -math.huge
 end
 
 -- Respawn time of one item type, in seconds.  Hand-edited, learned or damaged values stay inside this range.

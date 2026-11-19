@@ -28,16 +28,29 @@ local VIEW_SPELLS = {
 local VIEW_CLASSES = { HUNTER = true, SHAMAN = true, PRIEST = true, WARLOCK = true }
 local viewClass                                     -- nil = not looked up yet; true when the class has a remote view
 local viewNames                                     -- localised names of VIEW_SPELLS (filled once the client knows them)
-local seenActive = false                            -- a channel / aura check has found a remote view: it works here
 local castUntil = 0                                 -- fallback: a cast of a view spell succeeded (see HUD.EagleCast)
 local lastT, lastR                                  -- EagleEyeActive is answered once per frame
 
 local function SpellName(id)
-    if not GetSpellInfo then return nil end
-    local ok, n = pcall(GetSpellInfo, id)
-    if not ok then return nil end
-    if type(n) == "table" then return n.name end
-    return n
+    if C_Spell and C_Spell.GetSpellName then
+        local ok, n = pcall(C_Spell.GetSpellName, id)
+        if ok and type(n) == "string" then return n end
+    end
+    if C_Spell and C_Spell.GetSpellInfo then
+        local ok, info = pcall(C_Spell.GetSpellInfo, id)
+        if ok then
+            if type(info) == "table" then return info.name end
+            if type(info) == "string" then return info end
+        end
+    end
+    if GetSpellInfo then
+        local ok, n = pcall(GetSpellInfo, id)
+        if ok then
+            if type(n) == "table" then return n.name end
+            if type(n) == "string" then return n end
+        end
+    end
+    return nil
 end
 
 local function ViewClass()
@@ -86,11 +99,11 @@ local function ViewActive(now)
     if not ViewClass() then return false end
     if UnitChannelInfo then
         local ok, cname, _, _, _, _, _, _, cid = pcall(UnitChannelInfo, "player")
-        if ok and cname and IsViewSpell(cid, cname) then seenActive = true; return true end
+        if ok and cname and IsViewSpell(cid, cname) then return true end
     end
-    if ViewAura() then seenActive = true; return true end
-    -- Last resort, only on a client where neither check has ever found a remote view: trust the cast for up to 60 s
-    return (not seenActive) and castUntil > now
+    if ViewAura() then return true end
+    -- The cast is an independent fallback: channel/aura APIs may be unavailable or may lag an event.
+    return castUntil > now
 end
 
 function HUD.EagleEyeActive()
@@ -105,10 +118,15 @@ end
 function HUD.EagleInvalidate() lastT = nil end
 function HUD.EagleCast(spellID)
     lastT = nil
-    if spellID and VIEW_SPELLS[spellID] then castUntil = GetTime() + 60 end
+    if spellID and (VIEW_SPELLS[spellID] or IsViewSpell(spellID)) then castUntil = GetTime() + 60 end
 end
-function HUD.EagleCastIsView(id) return VIEW_SPELLS[id] and true or false end
-function HUD.EagleCastEnd() lastT = nil; castUntil = 0 end
+function HUD.EagleCastIsView(id)
+    return (VIEW_SPELLS[id] or IsViewSpell(id)) and true or false
+end
+function HUD.EagleCastEnd(spellID, force)
+    lastT = nil
+    if force or (spellID and (VIEW_SPELLS[spellID] or IsViewSpell(spellID))) then castUntil = 0 end
+end
 
 -- Legacy mode (eagleMap off): while Eagle Eye is on the HUD is switched OFF and it is switched on again when
 -- Eagle Eye ends. A HUD the player turns on/off by hand during Eagle Eye cancels the automatic switch-back.
@@ -180,6 +198,11 @@ end
 function HUD.EaglePreview(state)
     if state == nil then state = not S.eaglePreview end
     S.eaglePreview = state and true or false
+    if HUD.LowSpec and HUD.LowSpec() then
+        S.eaglePreview = false
+        if HUD.Print then HUD.Print(GT.TR("Eagle map preview is unavailable in Lowest performance mode.")) end
+        return false
+    end
     if S.eaglePreview and not (S.active and HUD.db and HUD.db.eagleMap) then
         S.eaglePreview = false
         return false
@@ -211,7 +234,7 @@ end
 function HUD.EagleTick(dt)
     if not (S.eagleSuspended or S.eagleMode) then eagleAcc = 0; return end
     eagleAcc = eagleAcc + (dt or 0)
-    if eagleAcc < 0.5 then return end
+    if eagleAcc < 0.25 then return end
     eagleAcc = 0
     HUD.EagleCheck()
 end

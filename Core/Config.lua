@@ -11,6 +11,27 @@ local STASH_MAX_AGE = 6 * 3600   -- parked timers older than this are long expir
 
 function GT.cfg() return GatherTimesDB._cfg end
 
+-- Per-character options, saved in GatherTimesDB._char["Name-Realm"].  A character that never set the option gets the default.
+local function CharKey()
+    local name = UnitName and UnitName("player")
+    if not name then return nil end
+    return name .. "-" .. (GT.RealmName and GT.RealmName() or ((GetRealmName and GetRealmName()) or ""))
+end
+function GT.CharGet(key, default)
+    local k = CharKey()
+    local all = GatherTimesDB and GatherTimesDB._char
+    local t = k and type(all) == "table" and all[k]
+    if type(t) == "table" and t[key] ~= nil then return t[key] end
+    return default
+end
+function GT.CharSet(key, value)
+    local k = CharKey()
+    if not (k and GatherTimesDB) then return end
+    if type(GatherTimesDB._char) ~= "table" then GatherTimesDB._char = {} end
+    if type(GatherTimesDB._char[k]) ~= "table" then GatherTimesDB._char[k] = {} end
+    GatherTimesDB._char[k][key] = value
+end
+
 local function InitCfg()
     local db = GatherTimesDB
     if type(db._cfg) ~= "table" then db._cfg = {} end
@@ -97,7 +118,7 @@ local function InitCfg()
     if type(c.fxHaze) ~= "boolean" then c.fxHaze = nil end
     c.fxWeather = tonumber(c.fxWeather) and GT.Clamp(c.fxWeather, 0, 3, 3) or nil
     c.fxZoom = tonumber(c.fxZoom) and GT.Clamp(c.fxZoom, 10, 40, 10) or nil
-    c.sessions = (tonumber(c.sessions) or 0)
+    c.sessions = GT.IsFiniteNumber(c.sessions) and math.floor(tonumber(c.sessions)) or 0
     if c.includeUnchecked == nil then c.includeUnchecked = false end
     if type(c.miniSummaryAll) ~= "boolean" then c.miniSummaryAll = true end     -- minimized bar tooltip: all items / checked items only
     if type(c.miniSortUrgency) ~= "boolean" then c.miniSortUrgency = true end     -- minimized bar chips: soonest-ready first
@@ -317,6 +338,10 @@ function GT.SanitizeDB()
                 or type(n.mapID) ~= "number" or type(n.x) ~= "number"
                 or type(n.y) ~= "number" or type(n.time) ~= "number" then
                 table.remove(list, i)
+            elseif not GT.IsFiniteNumber(n.mapID) or not GT.IsFiniteNumber(n.x)
+                or not GT.IsFiniteNumber(n.y) or not GT.IsFiniteNumber(n.time)
+                or n.x < 0 or n.x > 1 or n.y < 0 or n.y > 1 then
+                table.remove(list, i)
             else
                 n.x, n.y = GT.Round5(n.x), GT.Round5(n.y)        -- smaller saved file
                 -- _hasAlerted / _leaveAlerted are SAVED ON PURPOSE (see Events.lua, PLAYER_LOGOUT): after a quick relog
@@ -349,6 +374,10 @@ function GT.SanitizeDB()
             if type(sp) ~= "table" or type(sp.sid) ~= "number" or type(sp.mapID) ~= "number"
                 or type(sp.x) ~= "number" or type(sp.y) ~= "number" or spawnBySid[sp.sid] then
                 table.remove(list, i)
+            elseif not GT.IsFiniteNumber(sp.sid) or not GT.IsFiniteNumber(sp.mapID)
+                or not GT.IsFiniteNumber(sp.x) or not GT.IsFiniteNumber(sp.y)
+                or sp.x < 0 or sp.x > 1 or sp.y < 0 or sp.y > 1 then
+                table.remove(list, i)
             else
                 -- sp.nexts (spot -> how often you went there next) is created by RegisterLoot when first needed;
                 -- an empty or damaged one is dropped here, which also cleans files saved by older versions
@@ -366,6 +395,31 @@ function GT.SanitizeDB()
     end
     db._spawnNext = math.max(tonumber(db._spawnNext) or 1, maxSid + 1)
     GT.CleanSavedKeys(db)
+    -- Auction prices are cache data, not code. Reject damaged realms, timestamps and item ids.
+    if type(db.ahPrices) ~= "table" then
+        db.ahPrices = nil
+    else
+        for realm, scan in pairs(db.ahPrices) do
+            if type(realm) ~= "string" or type(scan) ~= "table" then
+                db.ahPrices[realm] = nil
+            else
+                if not GT.IsFiniteNumber(scan.t) then scan.t = nil end
+                if not GT.IsFiniteNumber(scan.lastFullScan) then scan.lastFullScan = nil end
+                if type(scan.p) ~= "table" then
+                    scan.p = {}
+                else
+                    for id, price in pairs(scan.p) do
+                        if not GT.IsFiniteNumber(id) or not GT.IsFiniteNumber(price)
+                            or id <= 0 or price <= 0 then
+                            scan.p[id] = nil
+                        else
+                            scan.p[id] = math.floor(price)
+                        end
+                    end
+                end
+            end
+        end
+    end
     GT.PruneSpotRefs(db)
     local realm = GT.RealmName()
     GT.MigrateRealm(db, realm, GetServerTime and GetServerTime() or 0)

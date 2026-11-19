@@ -17,7 +17,7 @@
 ## Notes-zhCN: 草药和矿石的刷新计时、刷新点位、采集路线，以及全屏小地图 HUD (/gt, /gt hud)。
 ## Notes-zhTW: 草藥與礦石的重生計時、刷新點位、採集路線，以及全螢幕小地圖 HUD (/gt, /gt hud)。
 ## Author: miRidinsa
-## Version: 0.25.0
+## Version: 0.25.1
 ## X-License: GPL-3.0-or-later
 ## X-Website: https://github.com/ridinsa/GatherTimes
 ## SavedVariables: GatherTimesDB, GatherTimesHUNDB
@@ -97,6 +97,7 @@ Core\Util.lua
 Core\Data.lua
 Gathering\Skills.lua
 Gathering\ItemInfo.lua
+Gathering\AuctionScan.lua
 Core\Config.lua
 Core\Graphics.lua
 Gathering\Alerts.lua
@@ -111,6 +112,7 @@ Navigation\TomTom.lua
 Gathering\Timers.lua
 Gathering\Stats.lua
 Gathering\SkillEta.lua
+Gathering\Competition.lua
 Gathering\BagSpace.lua
 Gathering\Loot.lua
 Gathering\Import.lua

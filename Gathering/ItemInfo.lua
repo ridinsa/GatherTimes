@@ -79,6 +79,8 @@ end
 
 -- the first auction price found: copper and the name of the price addon, or nil (used by the session summary)
 function GT.ItemAuctionPrice(id)
+    local scan = GT.ScanPrice and GT.ScanPrice(id)           -- own full scan (AuctionScan.lua) first
+    if scan then return scan, "GatherTimes scan" end
     local t = AuctionPrices(id)
     if t[1] then return t[1][2], t[1][1] end
 end
@@ -185,9 +187,10 @@ local function Fill(tt, key, append)
         tt:AddLine(" ")
         tt:AddDoubleLine(GT.TR("Vendor price"), sellPrice and (Money(sellPrice) or GT.TR("none")) or GT.TR("loading..."), 0.7, 0.7, 0.7, 1, 1, 1)
     end
+    local scanShown = GT.AddScanPrice and GT.AddScanPrice(tt, id)
     local ah = AuctionPrices(id)
     if #ah == 0 then
-        if not append then tt:AddDoubleLine(GT.TR("Auction price"), GT.TR("no price addon"), 0.7, 0.7, 0.7, 0.5, 0.5, 0.5) end
+        if not append and not scanShown then tt:AddDoubleLine(GT.TR("Auction price"), GT.TR("no price addon"), 0.7, 0.7, 0.7, 0.5, 0.5, 0.5) end
     else
         for _, p in ipairs(ah) do tt:AddDoubleLine(GT.TR("Auction") .. " (" .. p[1] .. ")", Money(p[2]), 0.7, 0.7, 0.7, 1, 1, 1) end
     end

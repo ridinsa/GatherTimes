@@ -157,8 +157,16 @@ local function Debug(msg)
     if HUD.root and HUD.root.debug then Print("|cff888888" .. tostring(msg) .. "|r") end
 end
 
-local function Clamp(v, lo, hi) return math.max(lo, math.min(hi, v)) end
-local function Round(v) return math.floor(v + 0.5) end
+local function Clamp(v, lo, hi)
+    v = tonumber(v)
+    if type(v) ~= "number" or v ~= v or v == math.huge or v == -math.huge then return lo end
+    return math.max(lo, math.min(hi, v))
+end
+local function Round(v)
+    v = tonumber(v)
+    if type(v) ~= "number" or v ~= v or v == math.huge or v == -math.huge then return 0 end
+    return math.floor(v + 0.5)
+end
 HUD.Clamp, HUD.Round = Clamp, Round
 
 local function CopyAny(v)

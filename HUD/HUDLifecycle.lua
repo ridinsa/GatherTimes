@@ -65,13 +65,15 @@ function HUD.OnEvent(event, arg1, arg2, arg3)
         if event == "UNIT_SPELLCAST_SUCCEEDED" then
             if not (arg3 and HUD.EagleClass() and HUD.EagleCastIsView(arg3)) then return end   -- any other spell: nothing to do
             HUD.EagleCast(arg3)
+        elseif event == "UNIT_SPELLCAST_CHANNEL_STOP" then
+            HUD.EagleCastEnd(arg3, true)
         elseif event ~= "UNIT_SPELLCAST_CHANNEL_START" then
-            HUD.EagleCastEnd()
+            HUD.EagleCastEnd(arg3)
         else
             HUD.EagleInvalidate()                       -- drop the per-frame answer
         end
         HUD.EagleCheck()
-        C_Timer.After(0.2, HUD.EagleCheck)              -- channel info can lag the event by a moment
+        C_Timer.After(0.1, HUD.EagleCheck)              -- channel info can lag the event by a moment
 
     elseif event == "PLAYER_MOUNT_DISPLAY_CHANGED" or event == "UNIT_AURA" then
         if event == "UNIT_AURA" and HUD.EagleClass() then HUD.EagleInvalidate(); HUD.EagleCheck() end   -- other classes have no remote view
@@ -146,8 +148,8 @@ function HUD.OnUpdate(dt)
     local step = slowAcc
     slowAcc = 0
     Guard("layer", HUD.HideLayerText)                       -- layer label hidden while the HUD is up, restored after
-    if HUD.EagleLoaded then Guard("eagle", HUD.EagleTick, step) end   -- switch the HUD back on after Eagle Eye (0.5 s)
-    Guard("mouse", HUD.MouseTick, step)                     -- keeps the Minimap's mouse state right (0.5 s)
+    if HUD.EagleLoaded then Guard("eagle", HUD.EagleTick, step) end   -- switch the HUD back on after Eagle Eye (0.25 s)
+    Guard("mouse", HUD.MouseTick, step)                     -- keeps the Minimap's mouse state right (0.25 s)
     Guard("units", HUD.UnitHoverUpdate, step)               -- visible unit markers / tooltips when hovering the HUD map
     Guard("watcher", HUD.WatcherTick, step)                 -- keeps the stock tracking button right (0.1 s)
     Guard("perf", HUD.PerfWatch, step)                      -- one-time low-FPS hint (30 s average)

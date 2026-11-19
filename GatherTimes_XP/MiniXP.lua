@@ -779,10 +779,22 @@ end
 -- tight and red when it is behind; reached goals are green.
 function XP.UpdateGoalBar(f)
     local bars = {}
+    local last = f.goalLast or {}
+    f.goalLast = last
+    local seen = {}
     for _, g in ipairs(GetGoals()) do
         local frac, done, eta = GoalState(g)
-        if frac then bars[#bars + 1] = { frac = frac, done = done, kind = g.kind, pace = Pace(done, eta) } end
+        seen[g.kind] = true
+        if frac then
+            last[g.kind] = { frac = frac, done = done, kind = g.kind, pace = Pace(done, eta) }
+            bars[#bars + 1] = last[g.kind]
+        elseif last[g.kind] then
+            bars[#bars + 1] = last[g.kind]       -- progress not readable for a moment (loading screen, hidden XP numbers): keep the strip as it was
+        else
+            bars[#bars + 1] = { frac = 0, done = false, kind = g.kind }   -- never hide a saved goal: show it empty until it can be read
+        end
     end
+    for kind in pairs(last) do if not seen[kind] then last[kind] = nil end end   -- the goal was cleared
     f.goalLines = f.goalLines or {}
     local n = #bars
     local gap = (n > 1) and 2 or 0                          -- a small gap between the parts
@@ -1189,3 +1201,6 @@ function XP.Slash(rest)
         if GT.bar then GT:UpdateMiniBar() end
     end
 end
+
+-- the module can be loaded after the bar was built (login with "Show XP button" off, or the Goals tab): draw the goal strip now
+if GT.bar and GT.UpdateMiniBar then C_Timer.After(0, function() pcall(GT.UpdateMiniBar, GT) end) end

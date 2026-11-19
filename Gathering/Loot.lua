@@ -121,6 +121,7 @@ local function AddNode(key, source, qty)
     end
     local nowT = GetServerTime()
     local prevLoot = sp.lootTime
+    if GT.CompetitionNote then GT.CompetitionNote(mapID, false) end
     local ex, ey, grp, gidx = sp.x, sp.y, nil, nil
     if GT.cfg().groupMode then
         local res = GT.ComputeGroups(key, mapID)
@@ -146,8 +147,17 @@ local function AddNode(key, source, qty)
     pcall(GT.RecordInterval, key, prevLoot, nowT, mapID)
     if GT.dwell and GT.dwell.sp == sp then GT.dwell = nil end
     sp.lastQty = qty                                  -- items the last loot at this spot gave
-    local entry = { mapID = mapID, x = ex, y = ey, time = GetServerTime(), sid = sp.sid, qty = qty, realm = GT.RealmName() }
-    table.insert(list, entry)
+    local entry = GT.UpsertTimer(key, sp, {
+        time = nowT,
+        qty = qty,
+        est = false,
+        taken = false,
+        resetAlerts = true,
+    })
+    if not entry then
+        entry = { mapID = mapID, x = ex, y = ey, time = nowT, sid = sp.sid, qty = qty, realm = GT.RealmName() }
+        table.insert(list, entry)
+    end
     GT.lastLootRec = { key = key, sp = sp, node = entry, t = GetTime() }
     local gathered = GT.sessionGatheredSpots[key]
     if not gathered then gathered = {}; GT.sessionGatheredSpots[key] = gathered end
