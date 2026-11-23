@@ -143,11 +143,16 @@ local function ArrowFrame()
     return customArrow
 end
 
-local function ShowCustomArrow(scale)
+-- while mouse-look is on the arrow is drawn at this size factor (Nav > Move > Mouse-look arrow size; 125% = 1.25)
+local function LookArrowFactor()
+    return (tonumber(GT.CharGet("gtmoveArrowPct", 125)) or 125) / 100
+end
+
+local function ShowCustomArrow(scale, looking)
     local a = ArrowFrame()
     local db = HUD.Cfg()
     local blipScale = (db and db.blipScale) or HUD.DEFAULTS.blipScale
-    local size = ARROW_BASE * scale / (100 * blipScale)
+    local size = ARROW_BASE * scale / (100 * blipScale) * (looking and LookArrowFactor() or 1)
     a:SetSize(size, size)
     a:ClearAllPoints()
     a:SetPoint("CENTER", Minimap, "CENTER")
@@ -158,10 +163,20 @@ local function HideCustomArrow()
     if customArrow then customArrow:Hide() end
 end
 
+-- While GTMove mouse-look is on (and the HUD is up) the player arrow is drawn in this colour; off, it is the normal
+-- colour and the game's arrow. The addon's own arrow is used for it (even at 100% size), because the game's arrow
+-- cannot be tinted. The colour comes from GTMove's own state, not the game's IsMouselooking(), which steering sets too.
+local LOOK_ARROW_COLOR = { 1, 0, 1 }      -- bright magenta: stands out against the minimap's green / brown
+
+local function MouseLookOn()
+    return GT.GTMove and GT.GTMove.IsLooking and GT.GTMove.IsLooking() and true or false
+end
+
 -- show: the arrow setting; scale: "Arrow size" (nil = the game's arrow, as before)
 local function ApplyArrow(show, scale)
     if not Minimap.SetPlayerTexture then return end
-    local custom = show and scale ~= nil and scale ~= 100
+    local looking = show and S.active and MouseLookOn()
+    local custom = show and ((scale ~= nil and scale ~= 100) or looking)
     local stockShow = show and not custom
     if stockShow and arrowHidden then
         SetArrow(lastArrow or STOCK_ARROW)
@@ -170,8 +185,38 @@ local function ApplyArrow(show, scale)
         SetArrow(BLANK_TEXTURE)
         arrowHidden = true
     end
-    if custom then ShowCustomArrow(scale) else HideCustomArrow() end
+    if custom then
+        ShowCustomArrow(scale or 100, looking)
+        local c = looking and LOOK_ARROW_COLOR or { 1, 1, 1 }
+        ArrowFrame().tex:SetVertexColor(c[1], c[2], c[3], 1)
+    else
+        HideCustomArrow()
+    end
 end
+
+-- called by the Nav > Move slider so a new arrow size shows at once
+function HUD.RefreshArrow()
+    if not (S.active and HUD.db) then return end
+    local db = HUD.Cfg()
+    ApplyArrow(db.arrow, db.arrowScale)
+end
+
+-- GTMove has no event for mouse-look, so its state is checked a few times a second. The arrow is redrawn only on a change.
+local lookShown = false
+local lookWatch = CreateFrame("Frame")
+local lookElapsed = 0
+lookWatch:SetScript("OnUpdate", function(_, elapsed)
+    lookElapsed = lookElapsed + (elapsed or 0)
+    if lookElapsed < 0.1 then return end
+    lookElapsed = 0
+    local on = MouseLookOn()
+    if on == lookShown then return end
+    lookShown = on
+    if S.active and HUD.db then
+        local db = HUD.Cfg()
+        ApplyArrow(db.arrow, db.arrowScale)
+    end
+end)
 
 -- While the Eagle map takes the mouse for the hover tooltips, the minimap's click handler (it pings the map and opens
 -- the tracking menu) is swapped for a no-op, so a click only reaches the world underneath. Put back afterwards.

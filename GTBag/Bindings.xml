@@ -1,0 +1,5 @@
+<Bindings>
+    <Binding name="GTBAG_PRIVACY" header="GTBAG" category="ADDONS">
+        GTBagTogglePrivacy()
+    </Binding>
+</Bindings>

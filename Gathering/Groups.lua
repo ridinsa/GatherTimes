@@ -169,12 +169,6 @@ function GT.RaiseGroupCapacity(key, mapID, idx, n)
     end
 end
 
-function GT.RegroupMap(key, mapID)
-    local c = GT.cfg()
-    if c.groupStore then c.groupStore[key .. ":" .. mapID] = nil end
-    GT.groupRebuild = GT.groupRebuild + 1
-end
-
 function GT.SpawnOfNode(key, node)
     local sp = node.sid and spawnBySid[node.sid]
     if sp then return sp end

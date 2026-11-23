@@ -3,7 +3,7 @@
 -- client build, which libraries and helper addons were found, the other addons that are loaded, a few numbers
 -- about the saved data, the HUD state and the error log.  It holds no character name, no realm name and no
 -- positions, so it is safe to paste into a bug report.
-local addonName, GT = ...
+local _, GT = ...
 
 -- Addons that touch the minimap, which is where a HUD / pin conflict usually comes from.  Listed with their state
 -- even when they are not installed, so a report that says "not installed" rules them out.

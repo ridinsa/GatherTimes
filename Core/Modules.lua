@@ -4,6 +4,7 @@
 --   GatherTimes_Notifier  Friend / Guild Notifier
 --   GatherTimes_Eagle     the Eagle map (remote views)
 --   GatherTimes_Share     spot export / import (opened from Settings or /gt export | import)
+--   GatherTimes_GTMove    GTMove mouse-look toggle / mouse-look while a movement key is held (/gtmove, key bindings)
 -- A module that is not wanted is never read from disk and never runs: its files are only executed by LoadAddOn.
 -- Wanted at login = not switched off here AND the feature is in use (see WANT).  A switched-off module cannot be
 -- loaded at all.  Switch: /gt module <names|xp|notifier|eagle> on|off   (saved account-wide in GatherTimesDB._ui.modules).
@@ -16,8 +17,9 @@ local MODULES = {
     notifier = { addon = "GatherTimes_Notifier", label = "Friend/Guild Notifier",   stage = "early" },
     eagle    = { addon = "GatherTimes_Eagle",    label = "Eagle map",               stage = "hud"   },
     share    = { addon = "GatherTimes_Share",    label = "Spot sharing",            stage = "late"  },
+    gtmove   = { addon = "GatherTimes_GTMove",   label = "GTMove mouse-look",       stage = "early" },
 }
-local ORDER = { "names", "xp", "notifier", "eagle", "share" }
+local ORDER = { "names", "xp", "notifier", "eagle", "share", "gtmove" }
 local REMOTE_VIEW = { HUNTER = true, SHAMAN = true, PRIEST = true, WARLOCK = true }
 
 local function Switches(create)
@@ -32,7 +34,7 @@ end
 
 function GT.ModuleEnabled(key)
     local s = Switches()
-    return not (s and s[key] == false)
+    return not s or s[key] ~= false
 end
 
 -- is the feature in use right now (so it must be loaded)?
@@ -42,16 +44,28 @@ local WANT = {
     -- the goal strip along the bar is drawn by this module, so it has to be running or the strip is gone until the Goals tab is opened
     xp = function()
         local c = GT.cfg and GT.cfg()
-        if not (c and c.miniShowXP == false) then return true end
+        if not c or c.miniShowXP ~= false then return true end
         local name = UnitName and UnitName("player")
         local goals = c and type(c.xpGoal) == "table" and name and c.xpGoal[name .. "-" .. ((GetRealmName and GetRealmName()) or "")]
         return type(goals) == "table" and next(goals) ~= nil
     end,
     notifier = function() local c = GT.cfg and GT.cfg(); return c and c.guildOnline == true or false end,
     share = function() return false end,                     -- only when it is opened (see GT.OpenShare)
+    -- GTMove loads on the first bound key press or /gtmove (see Core\GTMove.lua); it also loads at login once a GTMove key is
+    -- bound, so its Options > AddOns page (sensitivity slider) is there without a first use
+    gtmove = function()
+        if GT.CharGet("gtmoveMount", false) == true
+           or (GT.CharGet("gtmoveRemember", false) == true and GT.CharGet("gtmoveWasOn", false) == true) then return true end
+        if not GetBindingKey then return false end
+        for _, action in ipairs({ "GTMOVE_TOGGLE", "GTMOVE_FORWARD", "GTMOVE_BACKWARD", "GTMOVE_TURNLEFT", "GTMOVE_TURNRIGHT",
+                                  "GTMOVE_STRAFELEFT", "GTMOVE_STRAFERIGHT", "GTMOVE_JUMP", "GTMOVE_SENSUP", "GTMOVE_SENSDOWN" }) do
+            if GetBindingKey(action) then return true end
+        end
+        return false
+    end,
     eagle = function()
         local db = GT.HUD and GT.HUD.db
-        if not (db and db.eagleMap ~= false) then return false end
+        if not db or db.eagleMap == false then return false end
         local _, class = UnitClass("player")
         return REMOTE_VIEW[class or ""] and true or false
     end,
@@ -76,7 +90,6 @@ end
 function GT.ModuleDiagnostics()
     local result = {}
     for _, key in ipairs(ORDER) do
-        local m = MODULES[key]
         result[#result + 1] = string.format("%s=%s,%s", key,
             GT.ModuleEnabled(key) and "enabled" or "disabled",
             GT.ModuleLoaded(key) and "loaded" or "not-loaded")

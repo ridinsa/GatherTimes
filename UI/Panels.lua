@@ -39,8 +39,8 @@ function GT:CreatePanel(name)
 end
 
 function GT:HidePanels()
-    for name, p in pairs(self.panels) do p:Hide() end
-    for name, b in pairs(self.buttonFrames or {}) do self:SetButtonActive(b, false) end
+    for _, p in pairs(self.panels) do p:Hide() end
+    for _, b in pairs(self.buttonFrames or {}) do self:SetButtonActive(b, false) end
 end
 
 -- Show one panel, close all the others

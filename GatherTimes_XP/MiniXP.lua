@@ -34,7 +34,7 @@ end
 -- an option that is on unless the player turned it off
 local function Opt(key)
     local c = GT.cfg and GT.cfg()
-    return not (c and c[key] == false)
+    return not c or c[key] ~= false
 end
 
 -- gold per hour (copper) as text ("12.5" / "130"), nil without a value
@@ -902,7 +902,7 @@ function XP.ShowTip(owner)
     do
         local c = GT.cfg and GT.cfg()
         local idle = (GetTime() - st.sessionStart) - ActiveElapsed()
-        if not (c and c.miniXPIdle == false) and idle >= 60 then
+        if (not c or c.miniXPIdle ~= false) and idle >= 60 then
             tip:AddLine(string.format("%s: %s", GT.TR("Idle time not counted"), FormatDuration(idle)), 0.6, 0.6, 0.6)
         end
     end
@@ -972,7 +972,7 @@ function XP.IsOn() return on end
 -- "Show XP button" (Minimize settings > XP): the button after the dropdown is shown unless this is off
 function XP.ButtonShown()
     local c = GT.cfg and GT.cfg()
-    return not (c and c.miniShowXP == false)
+    return not c or c.miniShowXP ~= false
 end
 function XP.SetOn(v) on = v and true or false end
 

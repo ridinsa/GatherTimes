@@ -1,0 +1,11 @@
+## Interface: 11509, 20506, 40402, 50503, 50504, 16001, 120105
+## Title: GatherTimes - GTMove
+## Notes: Toggle mouse-look, or switch it on while a movement key is held (/gtmove). Loaded on demand by GatherTimes (do not enable it on its own).
+## Author: miRidinsa
+## Version: 0.25.3
+## X-License: GPL-3.0-or-later
+## Dependencies: GatherTimes
+## LoadOnDemand: 1
+
+GTMove.lua
+GTMoveSettings.lua

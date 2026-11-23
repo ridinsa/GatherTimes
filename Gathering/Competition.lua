@@ -101,7 +101,7 @@ end
 
 local function Enabled()
     local c = GT.cfg and GT.cfg()
-    return not (c and c.competeAlert == false)
+    return not c or c.competeAlert ~= false
 end
 
 -- zone entry: judge from the history of this zone at this hour

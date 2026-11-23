@@ -59,6 +59,28 @@ function GT.FindNearestImported(key, mapID, x, y, maxD)
     return best
 end
 
+-- Spawn-spot limits, per node type.  At WARN_AT the person is told once per session; above MAX_SPAWNS imported
+-- spots nobody has looted at are dropped first; above HARD_MAX the least used spot is dropped so the saved file
+-- cannot grow without end (see MergeSpawn).
+local HARD_MAX = math.floor(MAX_SPAWNS * 1.5)
+local WARN_AT = math.floor(MAX_SPAWNS * 0.9)
+GT.HARD_MAX_SPAWNS = HARD_MAX
+local warnedStage = {}      -- [key] = last stage shown this session: near < full < hard
+local STAGE_RANK = { near = 1, full = 2, hard = 3 }
+local function WarnSpawnLimit(key, stage, n)
+    if (warnedStage[key] and STAGE_RANK[warnedStage[key]] or 0) >= STAGE_RANK[stage] then return end
+    warnedStage[key] = stage
+    local def = nodes[key]
+    local label = def and def.label or key
+    if stage == "near" then
+        GT.cprint(GT.TRF("%s spawn spots: %d of %d saved. Imported spots nobody looted at are dropped first; the spots you learned are kept.", label, n, MAX_SPAWNS))
+    elseif stage == "full" then
+        GT.cprint(GT.TRF("%s spawn spots are over %d. Imported spots nobody looted at are being dropped; the spots you learned are kept.", label, MAX_SPAWNS))
+    else
+        GT.cprint(GT.TRF("%s spawn spots reached the hard limit of %d: the least visited spots are now being removed.", label, HARD_MAX))
+    end
+end
+
 function GT.MergeSpawn(key, mapID, x, y)
     local list = GT.spawns[key]
     local best, bd
@@ -90,15 +112,33 @@ function GT.MergeSpawn(key, mapID, x, y)
         m[#m + 1] = sp
         idx0.n, idx0.nxt = #list, id + 1
     end
+    if #list >= WARN_AT then WarnSpawnLimit(key, #list > MAX_SPAWNS and "full" or "near", #list) end
     if #list > MAX_SPAWNS then
-        -- Over the limit: only imported spots nobody has looted at yet may go (oldest first).  A spot you
-        -- learned, or an imported one you gathered at, is never evicted; if nothing can go, the list just grows.
+        -- Over the soft limit: only imported spots nobody has looted at yet may go (oldest first).  A spot you
+        -- learned, or an imported one you gathered at, is kept.
         local oi, ot
         for i = 1, #list do
             local c = list[i]
             if c ~= sp and c.imported and (c.hits or 0) == 0 and not c.lootTime and (not ot or (c.last or 0) < ot) then
                 oi, ot = i, (c.last or 0)
             end
+        end
+        -- Hard limit: the saved data may not grow without end.  Past HARD_MAX the least used spot goes (fewest
+        -- visits, then the one seen longest ago), but never the new spot and never one that has a running timer.
+        if not oi and #list > HARD_MAX then
+            local busy = {}
+            for _, t in ipairs(GatherTimesDB[key] or {}) do
+                if type(t) == "table" and t.sid then busy[t.sid] = true end
+            end
+            local oh
+            for i = 1, #list do
+                local c = list[i]
+                if c ~= sp and not busy[c.sid] then
+                    local h, l = c.hits or 0, c.last or 0
+                    if not oi or h < oh or (h == oh and l < ot) then oi, oh, ot = i, h, l end
+                end
+            end
+            if oi then WarnSpawnLimit(key, "hard", #list) end
         end
         if oi then
             local old = table.remove(list, oi)

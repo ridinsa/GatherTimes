@@ -9,19 +9,19 @@ local _, GT = ...
 GT.locales = GT.locales or {}
 GT.LANGS = {                      -- { code, name shown in the Settings > Display dropdown }
     { "enUS", "English (default)" },
-    { "deDE", "Deutsch" },
-    { "frFR", "Français" },
-    { "itIT", "Italiano" },
-    { "koKR", "한국어" },
-    { "jaJP", "日本語" },
-    { "ruRU", "Русский" },
-    { "zhCN", "简体中文" },
-    { "zhTW", "繁體中文" },
-    { "ptBR", "Português (Brasil)" },
-    { "esMX", "Español (Latinoamérica)" },
-    { "esES", "Español (España)" },
+    { "deDE", "German" },
+    { "frFR", "French" },
+    { "itIT", "Italian" },
+    { "koKR", "Korean" },
+    { "jaJP", "Japanese" },
+    { "ruRU", "Russian" },
+    { "zhCN", "Chinese (Simplified)" },
+    { "zhTW", "Chinese (Traditional)" },
+    { "ptBR", "Portuguese (Brazil)" },
+    { "esMX", "Spanish (Latin America)" },
+    { "esES", "Spanish (Spain)" },
     { "idID", "Bahasa Indonesia" },
-    { "suID", "Basa Sunda" },
+    { "suID", "Sundanese" },
 }
 
 -- true when code is one of the languages in GT.LANGS

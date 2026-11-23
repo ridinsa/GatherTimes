@@ -1,0 +1,39 @@
+## Interface: 11509, 20506, 40402, 50503, 50504, 16001, 120105
+## Title: GTBag - Bag window
+## Notes: The bag window itself (icon grid, search, category view, bank, guild bank, mail, every character). Loaded on demand by the GTBag folder; do not enable it on its own.
+## Author: miRidinsa
+## Version: 0.25.3
+## X-License: GPL-3.0-or-later
+## Dependencies: GTBag
+## LoadOnDemand: 1
+## SavedVariables: GTBagDB
+## OptionalDeps: GatherTimes, Pawn
+
+Core.lua
+Pins.lua
+Collapse.lua
+Data.lua
+Items.lua
+Query.lua
+NewItems.lua
+PhysicalSort.lua
+LayoutStyles.lua
+PanelState.lua
+PanelSlots.lua
+PanelSort.lua
+PanelOrder.lua
+PanelMenus.lua
+PanelRows.lua
+PanelLayout.lua
+Panel.lua
+UI.lua
+Find.lua
+MailWatch.lua
+Transfer.lua
+Editor.lua
+Junk.lua
+Backup.lua
+Settings.lua
+BagAddons.lua
+Hooks.lua
+AutoSort.lua

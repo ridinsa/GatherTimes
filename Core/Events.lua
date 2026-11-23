@@ -11,6 +11,20 @@ local function HUDEvent(event, a, b, c)
     if not ok then GT.ReportError("HUD " .. event, err) end
 end
 
+-- Runs fn under pcall.  The first failure of each named step is reported once; while it keeps failing it stays
+-- quiet (no error every second / every loot event), and a later success re-arms the report.
+local guardFailed = {}
+local function Guard(name, fn, ...)
+    local ok, err = pcall(fn, ...)
+    if ok then
+        guardFailed[name] = nil
+    elseif not guardFailed[name] then
+        guardFailed[name] = true
+        pcall(GT.ReportError, name, err)
+    end
+    return ok
+end
+
 function GT.ClearFrames(node)
     pcall(GT.RemoveTextTimer, node)
     node._miniFrame = nil
@@ -104,7 +118,6 @@ f:SetScript("OnEvent", function(_, event, msg, msg2, ...)
         local ok, err = pcall(GT.Startup)
         GT.ready = ok and true or false
         if not ok then
-            GT.startupError = tostring(err)
             pcall(GT.ReportError, "start-up (GatherTimes is switched off)", err)
         end
         return
@@ -161,7 +174,7 @@ f:SetScript("OnEvent", function(_, event, msg, msg2, ...)
         -- in any client language (the old test was the English word "You" at the start of the line)
         local itemName, itemID, qty = GT.ParseLootChat(msg, (select(10, ...)))
         if not itemName and not itemID then return end
-        GT.HandleItem(itemName, itemID, "chat", qty)
+        Guard("loot (chat)", GT.HandleItem, itemName, itemID, "chat", qty)
 
     elseif event == "UNIT_SPELLCAST_SENT" then
         -- (unit, target, castGUID, spellID): the spell id is the 2nd of the remaining arguments
@@ -176,7 +189,7 @@ f:SetScript("OnEvent", function(_, event, msg, msg2, ...)
             local link = GetLootSlotLink(slot)
             if link then
                 local qty = GetLootSlotInfo and select(3, GetLootSlotInfo(slot))
-                GT.HandleItem(link:match("%[(.-)%]"), tonumber(link:match("item:(%d+)")), "loot", tonumber(qty))
+                Guard("loot (window)", GT.HandleItem, link:match("%[(.-)%]"), tonumber(link:match("item:(%d+)")), "loot", tonumber(qty))
             end
         end
 
@@ -195,7 +208,7 @@ f:SetScript("OnEvent", function(_, event, msg, msg2, ...)
         HUDEvent(event, msg, msg2, (...))              -- SUCCEEDED is (unit, castGUID, spellID)
 
     elseif event == "UNIT_HEALTH" then
-        if msg == "player" then GT.CheckHealth() end
+        if msg == "player" then Guard("health check", GT.CheckHealth) end
 
     elseif event == "BAG_UPDATE_DELAYED" then
         if GT.CheckBags then pcall(GT.CheckBags) end
@@ -235,6 +248,6 @@ f:SetScript("OnUpdate", function(_, elap)
     accum = accum + elap
     if accum > ((HUD and HUD.PerfTimerStep and HUD.PerfTimerStep()) or 1) then
         accum = 0
-        if GT.ready then GT.RefreshTimers() end
+        if GT.ready then Guard("timer refresh", GT.RefreshTimers) end
     end
 end)

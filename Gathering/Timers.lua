@@ -87,10 +87,6 @@ function GT.QuarantinedTimers()
     return n
 end
 
-function GT.ClearQuarantine()
-    for k in pairs(quarantine) do quarantine[k] = nil end
-end
-
 -- Central timer state transition. Loot, "taken", estimated-empty and zone-clear logic must all use this
 -- shape so a timer cannot silently gain conflicting flags or stale alert state.
 function GT.UpsertTimer(key, sp, opts)
@@ -203,8 +199,8 @@ local function ProcessNode(nodeKey, nodeDef, list, i, now, curMap)
     else
         node._hasAlerted, node._soundDone = nil, nil
     end
-    local hideSibling = c.groupMode and node._primary == false
-    if visible and not hideSibling then
+    local showLabel = not c.groupMode or node._primary ~= false      -- a group-mode sibling has no label of its own
+    if visible and showLabel then
         if not node._miniFrame then GT.CreateTextTimer(node, nodeKey) end
         local txt = TimerLine(nodeDef, node, now)
         if c.groupMode and node._peers then

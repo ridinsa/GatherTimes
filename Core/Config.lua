@@ -2,7 +2,6 @@
 local _, GT = ...
 local COLORS = GT.COLORS
 local DEFAULT_COLOR = GT.DEFAULT_COLOR
-local SOUNDS = GT.SOUNDS
 local nodes = GT.nodes
 local spawnBySid = GT.spawnBySid
 

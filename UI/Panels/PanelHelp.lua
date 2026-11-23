@@ -276,7 +276,7 @@ TOPICS[#TOPICS + 1] = { "cmds", "Cmds", H .. "Slash commands" .. E .. [[
 /gthud reset - reset the current profile
 /gthud help - show command help]] }
 
-TOPICS[#TOPICS + 1] = { "credits", "Credits", H .. "GatherTimes 0.25.1" .. E .. [[
+TOPICS[#TOPICS + 1] = { "credits", "Credits", H .. "GatherTimes 0.25.3" .. E .. [[
 
 Author: miRidinsa
 Website: https://github.com/ridinsa/
@@ -284,12 +284,14 @@ License: GNU GPL v3 or later (see the LICENSE file in the addon folder).
 
 ]] .. H .. "What's new" .. E .. [[
 
-- New: competition detector: warns when a zone is heavily farmed and suggests a quieter one (`/gt compete`).
-- New: "GT Scan" on the auction house reads every auction and shows the lowest price in item tooltips; the button sits by the X and shows the cooldown.
-- New: debug reports show more detail (spawn index, imports, modules).
-- Change: "Clear timers and alerts when I change zone" is saved per character and off until you tick it.
-- Fix: the goal strip on the minimized bar no longer disappears; Goals boxes work before the XP module loads.
-- Fix: Eagle / Far Sight / Mind Vision detection, duplicate timers, realm / Hardcore settings and auction scan timeouts.
+- New: GTMove turns mouse-look on when you mount and off when you dismount, and can remember it across logins and reloads (Nav > Move).
+- New: mouse-look sensitivity up / down keys (Key Bindings > AddOns > GTMove).
+- New: the player arrow turns magenta and grows during mouse-look; the size is set in Nav > Move.
+- New: mouse-look notices show on screen; a right-click or Esc in chat ends mouse-look.
+- New: the cursor moves to the screen centre when mouse-look turns off after being on.
+- New: the GTBag privacy switch also hides session gold and turns on the name disguise in GatherTimes_Names.
+- Change: Nav > Move options are saved per character.
+- Fix: the arrow colour follows GTMove's own mouse-look, not the game's.
 
 ]] .. H .. "Libraries" .. E .. [[
 

@@ -11,7 +11,6 @@ GT.frameHeight = 400
 GT.buttons = { "Timers", "Nodes", "Nav", "Timing", "Settings" }
 
 -- Dropdown in the Nodes panel: filter by node type. filterKinds[i] is what the entry means (nil = everything)
-GT.dropdownItems = { "All", "Herbs", "Ore" }
 GT.filterKinds   = { nil, "herb", "ore" }
 
 -- Window settings, saved in GatherTimesDB._ui
@@ -41,7 +40,7 @@ SlashCmdList["GATHERTIMES"] = function(msg)
         -- /gt dock : the minimized bar pushes the game's top frames down (on) or just covers them (off)
         local ui = GatherTimesDB and GatherTimesDB._ui
         if ui then
-            ui.barDock = not (ui.barDock ~= false)
+            ui.barDock = (ui.barDock == false)
             GT.cprint(GT.TR(ui.barDock and "Bar dock ON" or "Bar dock OFF"))
             if GT.BarDock then GT.BarDock.Sync() end
         end

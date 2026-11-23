@@ -875,16 +875,16 @@ api.SetMaxRandomLevel = SetMaxRandomLevel
 local knownPlayerNames
 local function KnownPlayerNames()
     if knownPlayerNames then return knownPlayerNames end
-    local api = _G.Syndicator and _G.Syndicator.API
-    if not (api and type(api.GetAllCharacters) == "function" and type(api.GetCharacter) == "function") then
+    local syndicatorAPI = _G.Syndicator and _G.Syndicator.API
+    if not (syndicatorAPI and type(syndicatorAPI.GetAllCharacters) == "function" and type(syndicatorAPI.GetCharacter) == "function") then
         return realPlayer and realPlayer ~= "" and { realPlayer } or {}
     end
-    local ok, characters = pcall(api.GetAllCharacters)
+    local ok, characters = pcall(syndicatorAPI.GetAllCharacters)
     if not ok or type(characters) ~= "table" then return realPlayer and realPlayer ~= "" and { realPlayer } or {} end
     knownPlayerNames = {}
     if realPlayer and realPlayer ~= "" then knownPlayerNames[#knownPlayerNames + 1] = realPlayer end
     for _, fullName in ipairs(characters) do
-        local got, info = pcall(api.GetCharacter, fullName)
+        local got, info = pcall(syndicatorAPI.GetCharacter, fullName)
         local details = got and type(info) == "table" and info.details
         local name = type(details) == "table" and details.character
         if type(name) ~= "string" or name == "" then
@@ -912,8 +912,7 @@ local bagTexts = setmetatable({}, { __mode = "k" })
 local bagOriginal = setmetatable({}, { __mode = "k" })   -- the real text of a blanked title, to give back
 local bagStrings = setmetatable({}, { __mode = "k" })   -- the few texts that ever held a character name; re-checked while a bag window is shown
 local bagForced = setmetatable({}, { __mode = "k" })   -- title texts that are always blanked while Random Name is on
-local bagMixinWrapped, bagFindPending, bagWindowCount, bagOpenHooked = false, false, 0, false
-local bagSearchTicks = 0
+local bagMixinWrapped, bagWindowCount, bagOpenHooked = false, 0, false
 local ScanBagObject, FindBagWindows, BagTitleText
 
 local function IsBagWindowName(name)
@@ -1118,7 +1117,6 @@ end
 local function BagNamesChanged()
     if standalone then return end
     if BagActive() then
-        bagSearchTicks = 0
         for frame in pairs(bagWindows) do FixBagWindow(frame) end
         if bagWindowCount < 2 then StartBagSearch() end
     else

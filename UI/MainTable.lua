@@ -236,7 +236,7 @@ function GT:CreateMainTable(parent)
     inv:SetJustifyH("LEFT")
 
     function box:Update()
-        local items, now, only, summary = BuildItems()
+        local items, _, only, summary = BuildItems()
         local shown = math.min(#items, VISIBLE)
         list:SetHeight(ROW_H * math.max(1, shown))      -- the bar is as long as the visible rows
         list:SetItems(items)

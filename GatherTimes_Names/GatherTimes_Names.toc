@@ -2,7 +2,7 @@
 ## Title: GatherTimes - Random Name
 ## Notes: Disguises your character and pet names on screen (Random Name window). Loaded on demand by GatherTimes (do not enable it on its own).
 ## Author: miRidinsa
-## Version: 0.25.1
+## Version: 0.25.3
 ## X-License: GPL-3.0-or-later
 ## Dependencies: GatherTimes
 ## LoadOnDemand: 1

@@ -122,13 +122,12 @@ local function AddNode(key, source, qty)
     local nowT = GetServerTime()
     local prevLoot = sp.lootTime
     if GT.CompetitionNote then GT.CompetitionNote(mapID, false) end
-    local ex, ey, grp, gidx = sp.x, sp.y, nil, nil
+    local ex, ey, grp = sp.x, sp.y
     if GT.cfg().groupMode then
         local res = GT.ComputeGroups(key, mapID)
         local gi = res.of[sp]
         if gi then
             grp = res.groups[gi]
-            gidx = gi
             -- Timers of this group that were looted so recently that this loot cannot be their respawn: more than
             -- one node is up at once, so the group tracks more timers.  Done BEFORE the sample is measured, so
             -- the first loot that shows it is not measured against the wrong node.

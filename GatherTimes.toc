@@ -17,7 +17,7 @@
 ## Notes-zhCN: 草药和矿石的刷新计时、刷新点位、采集路线，以及全屏小地图 HUD (/gt, /gt hud)。
 ## Notes-zhTW: 草藥與礦石的重生計時、刷新點位、採集路線，以及全螢幕小地圖 HUD (/gt, /gt hud)。
 ## Author: miRidinsa
-## Version: 0.25.1
+## Version: 0.25.3
 ## X-License: GPL-3.0-or-later
 ## X-Website: https://github.com/ridinsa/GatherTimes
 ## SavedVariables: GatherTimesDB, GatherTimesHUNDB
@@ -137,7 +137,9 @@ HUD\HUDTracking.lua
 HUD\HUDSlash.lua
 HUD\HUDConfig.lua
 
+Core\GTMove.lua
 Core\Events.lua
+Core\Privacy.lua
 
-# Random Name, Mini XP, the Notifier and the Eagle map are load-on-demand folders (GatherTimes_Names / _XP / _Notifier / _Eagle),
+# Random Name, Mini XP, the Notifier, the Eagle map, spot sharing and GTMove are load-on-demand folders (GatherTimes_Names / _XP / _Notifier / _Eagle / _Share / _GTMove),
 # loaded by Core\Modules.lua only when they are in use.

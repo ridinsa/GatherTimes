@@ -252,7 +252,7 @@ function GT.FormatStats(checkedOnly)
     end
     local other = OtherLoot()
     if #other > 0 then
-        local otherCount, otherValue, shownValue = 0, 0, 0
+        local otherCount, otherValue = 0, 0
         for _, it in ipairs(other) do
             otherCount = otherCount + it.n
             if it.value then otherValue = otherValue + it.value else unpriced = unpriced + 1 end
@@ -337,7 +337,11 @@ end
 
 -- withIcon = true: the gold coin icon instead of the letter g (the minimized bar); plain "g" stays for text boxes
 function GT.SessionGoldText(withIcon)
-    -- gold only: silver and copper are not shown
+    -- gold only: silver and copper are not shown; while GTBag privacy is on the amount is hidden
+    if GT.PrivacyOn and GT.PrivacyOn() then
+        if withIcon then return "*****|TInterface\\MoneyFrame\\UI-GoldIcon:0:0:2:0|t" end
+        return "*****"
+    end
     local g = math.floor(SessionCopper() / 10000)
     if withIcon then return g .. "|TInterface\\MoneyFrame\\UI-GoldIcon:0:0:2:0|t" end
     return string.format("%dg", g)

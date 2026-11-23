@@ -272,7 +272,7 @@ do
                 if list then
                     for i = 1, #list do
                         local node = list[i]
-                        if node.mapID == mapID and not (c.groupMode and node._primary == false) then
+                        if node.mapID == mapID and (not c.groupMode or node._primary ~= false) then
                             local left = def.timer - (now - node.time)
                             if left > -readyLinger then
                                 local distance = GT.GetDistance(node)

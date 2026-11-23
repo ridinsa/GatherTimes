@@ -209,7 +209,7 @@ local function ShowChipTip(owner, refresh)
     tip:SetOwner(owner, "ANCHOR_BOTTOM")
     tip:AddLine(title, 1, 0.82, 0)
     if shape == 0 then tip:AddLine(GT.TR("No timer running"), 0.6, 0.6, 0.6) end
-    for i, t in ipairs(list) do
+    for _, t in ipairs(list) do
         local text
         if t.left <= 0 then text = GT.TR("Ready")
         else text = (t.est and "~" or "") .. GT.FormatMmss(t.left) end
@@ -483,7 +483,7 @@ end
 
 -- "fps:60 | H:45 | W:60": frame rate, home and world latency in ms. Each part has its own
 -- switch (options miniFps, miniHomePing, miniWorldPing - on by default) and only the switched-on parts are shown.
--- Returns the text and whether it should blink (a shown latency is 500 ms or more).
+-- Returns the text (nil: nothing to show) and whether it should blink (a shown latency is 500 ms or more).
 local function PerfText()
     local c = GT.cfg and GT.cfg()
     if not c then return nil end
@@ -526,7 +526,7 @@ local function PerfText()
         local lt = date("*t")                              -- this computer's clock
         parts[#parts + 1] = string.format("local %02d:%02d", lt.hour, lt.min)
     end
-    return table.concat(parts, " | "), alarm
+    return #parts > 0 and table.concat(parts, " | ") or nil, alarm
 end
 
 local function Measure(fs, text)
@@ -739,17 +739,19 @@ local function Layout(f, n, total, bags, gold, iconId, idleHidden)
             GT.PlayPingSound(PingSoundPath())
         end
     end
-    if perfText then
+    if perf and perfText then
         perf:ClearAllPoints()
-        perf:SetPoint("CENTER", f.secondary, "CENTER")
         local w = math.ceil(Measure(perf, perfText))
         perf:SetText(perfText)
         perf:SetWidth(w)
+        perf:SetPoint("CENTER", f.secondary, "CENTER")
+        perf:SetShown(true)
         f.secondary:SetWidth(w + PERF_PAD)
+        local resized = f.secondary:GetHeight() ~= BAR_H
+        f.secondary:SetHeight(BAR_H)
         local wasHidden = not f.secondary:IsShown()
         f.secondary:Show()
-        perf:Show()
-        if wasHidden and GT.BarDock then GT.BarDock.Sync() end
+        if (wasHidden or resized) and GT.BarDock then GT.BarDock.Sync() end
     elseif perf then
         perf:Hide()
         if f.secondary:IsShown() then

@@ -372,7 +372,7 @@ function GT:CreateMainFrame()
 
     -- optional: fade the whole window while the character is moving
     local acc, zacc = 0, 0
-    f:SetScript("OnUpdate", function(self, elapsed)
+    f:SetScript("OnUpdate", function(frame, elapsed)
         zacc = zacc + elapsed
         if zacc >= 1 then
             zacc = 0
@@ -382,15 +382,15 @@ function GT:CreateMainFrame()
         if acc < 0.1 then return end
         acc = 0
         local faded = ui.fadeMoving and GetUnitSpeed("player") > 0
-        if faded and MouseOverWindow(self) then faded = false end     -- hovering = fully visible
+        if faded and MouseOverWindow(frame) then faded = false end     -- hovering = fully visible
         local a = faded and (ui.moveAlpha or 0.35) or 1
-        if self._alpha ~= a then self._alpha = a; self:SetAlpha(a) end
+        if frame._alpha ~= a then frame._alpha = a; frame:SetAlpha(a) end
     end)
     -- shown again by anything (minimap button, /gt, the + on the bar): the window is back, so the bar goes
-    f:SetScript("OnShow", function(self)
+    f:SetScript("OnShow", function(frame)
         UpdateZone()
         -- short fade-in each time the window is opened; ends at the window's current alpha (moving-fade aware)
-        UIFrameFadeIn(self, 0.2, 0, self._alpha or 1)
+        UIFrameFadeIn(frame, 0.2, 0, frame._alpha or 1)
         if ui.minimized then
             ui.minimized = false
             if GT.bar and not GT:AlwaysShowBar() then GT.bar:Hide() end

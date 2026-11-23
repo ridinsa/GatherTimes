@@ -5,7 +5,7 @@ local nodes = GT.nodes
 local order = GT.order
 
 do
-    local wp, wpKey, aimWp
+    local wp, wpKey
     local function Have()
         return GT.cfg().tomtom and TomTom and TomTom.AddWaypoint and TomTom.RemoveWaypoint
     end
@@ -27,7 +27,6 @@ do
         Remove(wp)
         wp, wpKey = nil, nil
     end
-    function UI.TomTomActive() return wp ~= nil end
     local suppressKey                       -- route target the user dismissed (stays hidden until the target changes)
     local function TargetKey(t) return string.format("%s:%d:%.4f:%.4f", t.key, t.mapID, t.x, t.y) end
     function UI.DismissRouteWaypoint()
@@ -53,28 +52,7 @@ do
         wp = Add(t.mapID, t.x, t.y, nodes[t.key].label .. " - " .. status)
         wpKey = key
     end
-    function UI.AimWaypointOn() return aimWp ~= nil end
-    function UI.ClearAimWaypoint()
-        Remove(aimWp)
-        aimWp = nil
-    end
-    function UI.SetAimWaypoint()
-        if not Have() then GT.cprint(GT.TR("TomTom is not installed, or the TomTom option is off.")); return end
-        local a = UI.aimTarget
-        if not a then GT.cprint(GT.TR("No group to aim at here.")); return end
-        Remove(aimWp)
-        aimWp = Add(a.mapID, a.x, a.y, a.title)
-        if aimWp then GT.cprint(GT.TR("TomTom waypoint set:") .. " " .. a.title)
-        else GT.cprint(GT.TR("TomTom did not accept the waypoint.")) end
-    end
     function UI.TomTomAvailable() return Have() and true or false end
-    function UI.ClearAllTomTomWaypoints()
-        Remove(wp)
-        wp, wpKey = nil, nil
-        Remove(aimWp)
-        aimWp = nil
-        UI.StopTomTomAutoNearest()
-    end
 
     local nearestWp, nearestWpKey, nearestTimer
     local function ScheduleNearest()
@@ -126,7 +104,6 @@ do
         local now = InCity()
         if now and not wasCity then
             Remove(wp); wp, wpKey = nil, nil
-            Remove(aimWp); aimWp = nil
             Remove(nearestWp); nearestWp, nearestWpKey = nil, nil
             if TomTom and TomTom.RemoveWaypoint then
                 if GT.listWp then pcall(TomTom.RemoveWaypoint, TomTom, GT.listWp) end

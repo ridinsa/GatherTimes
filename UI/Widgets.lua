@@ -19,7 +19,7 @@ function GT:CreateScrollList(parent, w, h, rowH, createRow, updateRow)
         local r = createRow(list, i)
         r:SetHeight(rowH)
         r:SetPoint("TOPLEFT", list, "TOPLEFT", 0, -(i - 1) * rowH)
-        r:SetPoint("TOPRIGHT", list, "TOPRIGHT", -8, -(i - 1) * rowH)
+        r:SetPoint("TOPRIGHT", list, "TOPRIGHT", -10, -(i - 1) * rowH)
         r:Hide()
         list.rows[i] = r
     end
@@ -27,7 +27,7 @@ function GT:CreateScrollList(parent, w, h, rowH, createRow, updateRow)
     -- thin flat scrollbar
     local bar = CreateFrame("Slider", nil, list)
     bar:SetOrientation("VERTICAL")
-    bar:SetWidth(5)
+    bar:SetWidth(8)
     bar:SetPoint("TOPRIGHT", list, "TOPRIGHT", 0, 0)
     bar:SetPoint("BOTTOMRIGHT", list, "BOTTOMRIGHT", 0, 0)
     bar:SetValueStep(1)
@@ -40,7 +40,7 @@ function GT:CreateScrollList(parent, w, h, rowH, createRow, updateRow)
     track:SetVertexColor(0.12, 0.12, 0.12, 1)
     bar:SetThumbTexture(FLAT)
     local thumb = bar:GetThumbTexture()
-    thumb:SetSize(5, 28)
+    thumb:SetSize(8, 28)
     thumb:SetVertexColor(0.35, 0.35, 0.35, 1)
     bar:Hide()
     list.bar = bar
@@ -76,6 +76,8 @@ function GT:CreateScrollList(parent, w, h, rowH, createRow, updateRow)
         bar:SetValue(self.offset)
         self.syncing = false
         bar:SetShown(self.maxOffset > 0)
+        local thumbH = math.max(12, math.floor(h * math.min(1, self.numRows / math.max(1, #self.items))))
+        thumb:SetHeight(thumbH)
         self:Update()
     end
 
@@ -235,17 +237,17 @@ end
 -- for 3 seconds, the second click runs fn().
 function GT:SetConfirmClick(btn, text, fn)
     local armed = false
-    btn:SetScript("OnClick", function(self)
+    btn:SetScript("OnClick", function(button)
         if armed then
             armed = false
-            self.label:SetText(GT.TR(text))
+            button.label:SetText(GT.TR(text))
             fn()
             return
         end
         armed = true
-        self.label:SetText(GT.TR("Click again!"))
+        button.label:SetText(GT.TR("Click again!"))
         C_Timer.After(3, function()
-            if armed then armed = false; self.label:SetText(GT.TR(text)) end
+            if armed then armed = false; button.label:SetText(GT.TR(text)) end
         end)
     end)
 end

@@ -1,4 +1,4 @@
--- PanelNav.lua : the "Nav" panel  (sub-tabs: Route / Markers / Arrow)
+-- PanelNav.lua : the "Nav" panel  (sub-tabs: Route / Markers / Arrow / Move)
 local _, GT = ...
 GT.panelBuilders = GT.panelBuilders or {}
 -- NOTE: GT.UI is created by Util.lua, which loads AFTER this file, so it is read lazily (GT.UI.x)
@@ -69,7 +69,7 @@ GT.panelBuilders.Nav = function(panel, content)
     end
 
     local function AddSub(id, text, x, description)
-        local b = GT:CreateFlatButton(content, text, 94, 20)
+        local b = GT:CreateFlatButton(content, text, 70, 20)
         b:SetPoint("TOPLEFT", x, 0)
         b:SetScript("OnClick", function() ShowSub(id) end)
         AddTip(b, text, description, "ANCHOR_TOP")
@@ -82,8 +82,9 @@ GT.panelBuilders.Nav = function(panel, content)
         return f
     end
     local route   = AddSub("route",   "Route",   0, "Plan and manage an optimized gathering route.")
-    local markers = AddSub("markers", "Markers", 96, "Control spawn pins and group labels on the map and minimap.")
-    local arrow   = AddSub("arrow",   "Arrow",   192, "Configure the direction arrow and TomTom waypoint options.")
+    local markers = AddSub("markers", "Markers", 72, "Control spawn pins and group labels on the map and minimap.")
+    local arrow   = AddSub("arrow",   "Arrow",   144, "Configure the direction arrow and TomTom waypoint options.")
+    local move    = AddSub("move",    "Move",    216, "GTMove: mouse-look toggle and mouse-look while a movement key is held.")
 
     local function Check(parent, y, text, get, set, description)
         local cb = GT:CreateCheckLabel(parent, text, get, set)
@@ -91,6 +92,18 @@ GT.panelBuilders.Nav = function(panel, content)
         AddTip(cb, text, description)
         return cb
     end
+    -- per-character slider: the value is saved for this character (GT.CharGet / GT.CharSet)
+    local CHAR_DEFAULTS = { gtmoveNoteTop = 160, gtmoveNoteSecs = 3, gtmoveArrowPct = 125 }
+    local function CharSlider(parent, y, label, lo, hi, step, key, description, after)
+        local s = GT:CreateSlider(parent, 288, label, lo, hi, step,
+            function() return GT.CharGet(key, CHAR_DEFAULTS[key] or lo) end,
+            function(v) GT.CharSet(key, v); if after then after() end end)
+        s:SetPoint("TOPLEFT", 0, y)
+        AddTip(s.slider, label:gsub(": %%s.*$", ""), description)
+        GT.uiRefresh[#GT.uiRefresh + 1] = function() s:Refresh() end
+        return s
+    end
+
     local function Slider(parent, y, label, lo, hi, step, key, description, after)
         local s = GT:CreateSlider(parent, 288, label, lo, hi, step,
             function() return cfg()[key] end,
@@ -213,6 +226,97 @@ GT.panelBuilders.Nav = function(panel, content)
     Button(arrow, "Waypoint to nearest", 138, 150, -118, WaypointToNearest,
         "Set a TomTom waypoint or direction arrow to the nearest enabled node within range.")
     Note(arrow, -148, "Needs TomTom. Points to the nearest enabled node in range and follows the active route.")
+
+    ------------------------------------------------------------------ Move
+    -- GTMove (the GatherTimes_GTMove module).  Switching it off keeps the movement keys working as normal keys.
+    local gtmoveCheck = Check(move, -4, "GTMove: mouse-look keys",
+        function() return GT.ModuleEnabled("gtmove") end,
+        function(v)
+            if not v and GT.GTMove and GT.GTMove.Stop then GT.GTMove.Stop() end      -- end a running mouse-look first
+            GT.SetModuleEnabled("gtmove", v)
+        end,
+        "Turn GTMove on or off. Off: its key bindings and /gtmove do nothing and the module is not loaded.")
+    GT.uiRefresh[#GT.uiRefresh + 1] = function() gtmoveCheck:SetChecked(GT.ModuleEnabled("gtmove")) end
+    local mountCheck = Check(move, -26, "Turn on when mounted",
+        function() return GT.CharGet("gtmoveMount", false) == true end, function(v) GT.CharSet("gtmoveMount", v) end,
+        "Turn mouse-look on when you mount and off when you dismount. It only ends mouse-look that this option turned on.")
+    GT.uiRefresh[#GT.uiRefresh + 1] = function() mountCheck:SetChecked(GT.CharGet("gtmoveMount", false) == true) end
+    local rememberCheck = Check(move, -48, "Remember mouse-look on login",
+        function() return GT.CharGet("gtmoveRemember", false) == true end, function(v) GT.CharSet("gtmoveRemember", v) end,
+        "Turn mouse-look back on after logging in or reloading, if it was on the last time you turned it on or off.")
+    GT.uiRefresh[#GT.uiRefresh + 1] = function() rememberCheck:SetChecked(GT.CharGet("gtmoveRemember", false) == true) end
+
+    -- toggle key: click, press the key (Esc cancels); right-click removes it
+    local keyLabel = GT.Font(move, nil, "OVERLAY", "GameFontHighlightSmall")
+    keyLabel:SetPoint("TOPLEFT", 2, -84)
+    keyLabel:SetText(GT.TR("Toggle key:"))
+    local keyButton = GT:CreateFlatButton(move, "", 150, 20)
+    keyButton:SetPoint("TOPLEFT", 90, -80)
+    keyButton:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    local MODIFIER_KEYS = { LSHIFT = true, RSHIFT = true, LCTRL = true, RCTRL = true, LALT = true, RALT = true, LMETA = true, RMETA = true }
+    local listening = false
+    local function KeyText()
+        local k = GetBindingKey and GetBindingKey("GTMOVE_TOGGLE")
+        return k and GetBindingText(k) or GT.TR("Not bound")
+    end
+    local function RefreshKey()
+        keyButton.label:SetText(listening and GT.TR("Press a key...") or KeyText())
+    end
+    local function StopListening()
+        listening = false
+        keyButton:EnableKeyboard(false)
+        RefreshKey()
+    end
+    local function SaveBindingsNow()
+        if SaveBindings and GetCurrentBindingSet then SaveBindings(GetCurrentBindingSet()) end
+    end
+    local function Unbind()
+        for _, k in ipairs({ GetBindingKey("GTMOVE_TOGGLE") }) do SetBinding(k) end
+    end
+    keyButton:SetScript("OnClick", function(_, mouseButton)
+        if InCombatLockdown() then GT.cprint(GT.TR("Key bindings cannot be changed in combat.")); return end
+        if listening then StopListening(); return end
+        if mouseButton == "RightButton" then
+            Unbind(); SaveBindingsNow(); RefreshKey()
+            return
+        end
+        listening = true
+        keyButton:EnableKeyboard(true)
+        RefreshKey()
+    end)
+    keyButton:SetScript("OnKeyDown", function(_, key)
+        if not listening then return end
+        if MODIFIER_KEYS[key] then return end                       -- wait for the real key
+        keyButton:SetPropagateKeyboardInput(false)
+        if key == "ESCAPE" then StopListening(); return end
+        if InCombatLockdown() then StopListening(); return end
+        local combo = (IsAltKeyDown() and "ALT-" or "") .. (IsControlKeyDown() and "CTRL-" or "")
+            .. (IsShiftKeyDown() and "SHIFT-" or "") .. key
+        Unbind()
+        if SetBinding(combo, "GTMOVE_TOGGLE") then
+            SaveBindingsNow()
+            GT.cprint(GT.TRF("GTMove toggle key: %s", GetBindingText(combo)))
+            if GT.ModuleEnabled("gtmove") and not GT.ModuleLoaded("gtmove") then GT.LoadModule("gtmove", true) end
+        end
+        StopListening()
+    end)
+    keyButton:SetScript("OnHide", function() if listening then StopListening() end end)
+    AddTip(keyButton, "Toggle key", "Click, then press the key (with Shift / Ctrl / Alt if you like) that switches mouse-look on and off. Esc cancels, right-click removes the key.", "ANCHOR_TOP")
+    local keyEvents = CreateFrame("Frame")
+    keyEvents:RegisterEvent("UPDATE_BINDINGS")
+    keyEvents:SetScript("OnEvent", RefreshKey)
+    GT.uiRefresh[#GT.uiRefresh + 1] = RefreshKey
+    RefreshKey()
+    Note(move, -112, "Mouse-look on a key: press it to switch mouse-look on, press it again (or Esc / chat) to stop.")
+    CharSlider(move, -168, "Notice position: %s px from top", 40, 400, 10, "gtmoveNoteTop",
+        "How far below the top of the screen the on-screen mouse-look notice sits.")
+    CharSlider(move, -202, "Notice time: %s sec", 1, 10, 1, "gtmoveNoteSecs",
+        "How long the on-screen mouse-look notice stays up.")
+    Note(move, -140, "The movement keys that hold mouse-look while pressed are in Key Bindings > AddOns > GTMove. Or type /gtmove.")
+    CharSlider(move, -236, "Mouse-look arrow size: %s%%", 100, 200, 5, "gtmoveArrowPct",
+        "How big the player arrow is drawn while mouse-look is on. 100% is the normal size.",
+        function() if GT.HUD and GT.HUD.RefreshArrow then GT.HUD.RefreshArrow() end end)
+    Note(move, -270, "Sensitivity up / down keys: Key Bindings > AddOns > GTMove.")
 
     ------------------------------------------------------------- show/update
     panel:SetScript("OnShow", function() ShowSub(active) end)

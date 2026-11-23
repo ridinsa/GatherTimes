@@ -8,11 +8,11 @@
 local _, GT = ...
 
 local FLAT = "Interface\\Buttons\\WHITE8X8"
-local ROW_H = 18
+local DEFAULT_ROW_H = 18
 
 function GT:CreateDropdown(parent, w, h, items, onSelect, maxRows, rowH)
     maxRows = maxRows or 10
-    local ROW_H = rowH or ROW_H
+    local ROW_H = rowH or DEFAULT_ROW_H
     local dd = self:CreateFlatButton(parent, "", w, h)
     dd.items = items
 
@@ -66,20 +66,20 @@ function GT:CreateDropdown(parent, w, h, items, onSelect, maxRows, rowH)
         row.count:SetPoint("RIGHT", -8, 0)
         row.count:SetWidth(34)
         row.count:SetJustifyH("RIGHT")
-        row:SetScript("OnEnter", function(self)
+        row:SetScript("OnEnter", function(rowFrame)
             hl:SetVertexColor(unpack(GT.colors.hover))
             hl:Show()
-            local item = self.item
+            local item = rowFrame.item
             if item and item.tooltip then
-                GT.Tip:SetOwner(self, "ANCHOR_RIGHT")
+                GT.Tip:SetOwner(rowFrame, "ANCHOR_RIGHT")
                 GT.Tip:AddLine(item.text)
                 GT.Tip:AddLine(GT.TR(item.tooltip), 0.85, 0.85, 0.85, true)
                 GT.Tip:Show()
             end
         end)
         row:SetScript("OnLeave", function() hl:Hide(); GT.Tip:Hide() end)
-        row:SetScript("OnClick", function(self)
-            local it = self.item
+        row:SetScript("OnClick", function(rowFrame)
+            local it = rowFrame.item
             if not it then return end
             dd:SetSelected(it.index)
             list:Hide()
@@ -88,6 +88,13 @@ function GT:CreateDropdown(parent, w, h, items, onSelect, maxRows, rowH)
         return row
     end
     local function updateRow(row, it)
+        if it.font then
+            local _, size, flags = row.text:GetFont()
+            pcall(row.text.SetFont, row.text, it.font, size or 12, flags)
+            row.text.fitFont = it.font
+        else
+            row.text.fitFont = nil
+        end
         row.text:SetText(it.text)
         row.text:ClearAllPoints()
         row.text:SetPoint("LEFT", 7, 0)
@@ -123,7 +130,7 @@ function GT:CreateDropdown(parent, w, h, items, onSelect, maxRows, rowH)
         local data = {}
         for i, item in ipairs(newItems) do
             if type(item) == "table" then
-                data[i] = { index = i, text = item.text, count = item.count, tooltip = item.tooltip }
+                data[i] = { index = i, text = item.text, count = item.count, tooltip = item.tooltip, font = item.font }
             else
                 data[i] = { index = i, text = item }
             end
@@ -135,6 +142,14 @@ function GT:CreateDropdown(parent, w, h, items, onSelect, maxRows, rowH)
     function dd:SetSelected(index)
         self.selected = index
         local item = self.items[index]
+        local font = type(item) == "table" and item.font or nil
+        if font then
+            local _, size, flags = self.label:GetFont()
+            pcall(self.label.SetFont, self.label, font, size or 12, flags)
+            self.label.fitFont = font
+        else
+            self.label.fitFont = nil
+        end
         self.label:SetText(type(item) == "table" and (item.text or "") or item or "")
         self.label:SetPoint("RIGHT", -18, 0)
         GT.MakeFitting(self.label, w - 26)

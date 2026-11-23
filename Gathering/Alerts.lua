@@ -10,14 +10,6 @@ local _, GT = ...
 local FLAT = "Interface\\Buttons\\WHITE8X8"
 local function FONT() return GT.FontFile("Fonts\\FRIZQT__.TTF") end   -- use a script-capable font when needed
 
--- order = order of the Settings dropdown
-GT.ALERT_STYLES = {
-    { id = "text",   name = "Text" },
-    { id = "banner", name = "Banner" },
-    { id = "toast",  name = "Toast stack" },
-    { id = "flash",  name = "Screen flash" },
-}
-
 -- icon of a node's item (herb / ore) for the banner and toast styles
 function GT.NodeIcon(key)
     local def = GT.nodes and GT.nodes[key]
@@ -263,22 +255,6 @@ function GT.ShowScreenAlert(text, r, g, b, icon, sub)
             styleError = true
             if GT.ReportError then GT.ReportError("alert style", err) end
         end
-    end
-end
-
--- Settings > Display > Preview: shows a sample alert in the picked style (the samples rotate)
-local previewN = 0
-function GT.PreviewScreenAlert()
-    previewN = previewN % 3 + 1
-    local key = GT.nodes.dreamfoil and "dreamfoil" or GT.order[1]
-    local def, col = GT.nodes[key], GT.Col(key)
-    if previewN == 1 then
-        GT.ShowScreenAlert(def.label .. " " .. GT.TR("READY"), col[1], col[2], col[3], GT.NodeIcon(key), GT.TRF("%d yd", 42))
-    elseif previewN == 2 then
-        GT.ShowScreenAlert(GT.TRF("Leave now: %s G2 ready in 1:30", def.label), col[1], col[2], col[3],
-            GT.NodeIcon(key), GT.TRF("%d yd", 80))
-    else
-        GT.ShowScreenAlert(GT.TRF("LOW HEALTH %d%%", 30), 1, 0.2, 0.2)
     end
 end
 

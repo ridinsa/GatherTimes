@@ -12,4 +12,84 @@
     <Binding name="GATHERTIMES_EAGLE_SIZE">
         if GatherTimesAddon and GatherTimesAddon.HUD then GatherTimesAddon.HUD.EagleNextSize() end
     </Binding>
+    <!-- GTMove (load on demand: GatherTimesAddon.GTMove is a stand-in that loads GatherTimes_GTMove on the first key press) -->
+    <Binding name="GTMOVE_TOGGLE" header="GTMOVE" category="ADDONS">
+        if GatherTimesAddon and GatherTimesAddon.GTMove then GatherTimesAddon.GTMove.Toggle() end
+    </Binding>
+    <Binding name="GTMOVE_SENSUP">
+        if GatherTimesAddon and GatherTimesAddon.GTMove then GatherTimesAddon.GTMove.Sensitivity(1) end
+    </Binding>
+    <Binding name="GTMOVE_SENSDOWN">
+        if GatherTimesAddon and GatherTimesAddon.GTMove then GatherTimesAddon.GTMove.Sensitivity(-1) end
+    </Binding>
+    <Binding name="GTMOVE_FORWARD" runOnUp="true">
+        local move = GatherTimesAddon and GatherTimesAddon.GTMove
+        if keystate == "down" then
+            if move then move.MoveStart("forward") end
+            MoveForwardStart()
+        else
+            MoveForwardStop()
+            if move then move.MoveStop("forward") end
+        end
+    </Binding>
+    <Binding name="GTMOVE_BACKWARD" runOnUp="true">
+        local move = GatherTimesAddon and GatherTimesAddon.GTMove
+        if keystate == "down" then
+            if move then move.MoveStart("backward") end
+            MoveBackwardStart()
+        else
+            MoveBackwardStop()
+            if move then move.MoveStop("backward") end
+        end
+    </Binding>
+    <Binding name="GTMOVE_TURNLEFT" runOnUp="true">
+        local move = GatherTimesAddon and GatherTimesAddon.GTMove
+        if keystate == "down" then
+            if move then move.MoveStart("turnleft") end
+            TurnLeftStart()
+        else
+            TurnLeftStop()
+            if move then move.MoveStop("turnleft") end
+        end
+    </Binding>
+    <Binding name="GTMOVE_TURNRIGHT" runOnUp="true">
+        local move = GatherTimesAddon and GatherTimesAddon.GTMove
+        if keystate == "down" then
+            if move then move.MoveStart("turnright") end
+            TurnRightStart()
+        else
+            TurnRightStop()
+            if move then move.MoveStop("turnright") end
+        end
+    </Binding>
+    <Binding name="GTMOVE_STRAFELEFT" runOnUp="true">
+        local move = GatherTimesAddon and GatherTimesAddon.GTMove
+        if keystate == "down" then
+            if move then move.MoveStart("strafeleft") end
+            StrafeLeftStart()
+        else
+            StrafeLeftStop()
+            if move then move.MoveStop("strafeleft") end
+        end
+    </Binding>
+    <Binding name="GTMOVE_STRAFERIGHT" runOnUp="true">
+        local move = GatherTimesAddon and GatherTimesAddon.GTMove
+        if keystate == "down" then
+            if move then move.MoveStart("straferight") end
+            StrafeRightStart()
+        else
+            StrafeRightStop()
+            if move then move.MoveStop("straferight") end
+        end
+    </Binding>
+    <Binding name="GTMOVE_JUMP" runOnUp="true">
+        local move = GatherTimesAddon and GatherTimesAddon.GTMove
+        if keystate == "down" then
+            if move then move.MoveStart("jump") end
+            JumpOrAscendStart()
+        else
+            JumpOrAscendStop()
+            if move then move.MoveStop("jump") end
+        end
+    </Binding>
 </Bindings>

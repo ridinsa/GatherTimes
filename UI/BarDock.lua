@@ -124,13 +124,13 @@ function Dock.Sync(off)
     pending = false
     local ui = GatherTimesDB and GatherTimesDB._ui
     local bar = GT.bar
-    local want = not off and bar and bar:IsShown() and not (ui and ui.barDock == false)
+    local want = not off and bar and bar:IsShown() and (not ui or ui.barDock ~= false)
     local secondaryHeight = bar and bar.secondary and bar.secondary:IsShown()
         and (bar.secondary:GetHeight() or 0) * bar.secondary:GetEffectiveScale() or 0
     local topOffPx = want and ((ui and ui.barTopOffset) or 0) * (UIParent:GetEffectiveScale() or 1) or 0   -- the bar's top offset
     local barPx = want and (bar:GetHeight() or 0) * bar:GetEffectiveScale() + topOffPx or 0
     local px = want and (barPx + secondaryHeight) or 0
-    local sameLine = want and secondaryHeight > 0 and not (ui and ui.barDockSameLine == false)
+    local sameLine = want and secondaryHeight > 0 and (not ui or ui.barDockSameLine ~= false)
 
     if want and not Dock.hookedManager and type(_G.UIParent_ManageFramePositions) == "function" then
         Dock.hookedManager = true
@@ -150,7 +150,7 @@ function Dock.Sync(off)
                     -- the Buff frame sits at the top right and its icons are narrow, so it only needs a small gap from the panel
                     -- the Buff frame stays level with the bar by default (its icons sit at its right edge, so a wide
                     -- fps / ping line does not really cover them). Minimize > Bar can turn that off.
-                    local buffsAlways = not (ui and ui.buffAlwaysSameLine == false)
+                    local buffsAlways = not ui or ui.buffAlwaysSameLine ~= false
                     local level = (name == "BuffFrame" and buffsAlways) or ClearOfPanel(frame, bar.secondary)
                     if sameLine and SAME_LINE[name] and level then framePx = barPx end
                     local sh = Shifted(frame, base, framePx)
@@ -187,7 +187,7 @@ end
 function Dock.Debug()
     local bar = GT.bar
     GT.cprint(string.format("dock: bar shown=%s  secondary shown=%s  barDock=%s  in combat=%s", tostring(bar and bar:IsShown()),
-        tostring(bar and bar.secondary and bar.secondary:IsShown()), tostring(not (GatherTimesDB._ui.barDock == false)), tostring(InCombatLockdown())))
+        tostring(bar and bar.secondary and bar.secondary:IsShown()), tostring(GatherTimesDB._ui.barDock ~= false), tostring(InCombatLockdown())))
     for _, name in ipairs(NAMES) do
         local f = _G[name]
         if type(f) == "table" and f.GetNumPoints then

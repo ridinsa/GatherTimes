@@ -297,7 +297,7 @@ GT.panelBuilders.Settings = function(panel, content)
     langLabel:SetText(GT.TR("Language:"))
     local langNames, langIndex = {}, 1
     for i, l in ipairs(GT.LANGS) do
-        langNames[i] = l[2]
+        langNames[i] = { text = l[2], font = "Fonts\\FRIZQT__.TTF" }
         if l[1] == (cfg().lang or "enUS") then langIndex = i end
     end
     -- changing the language reloads the UI, so it asks first (Cancel puts the old language back in the list)

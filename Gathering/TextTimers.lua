@@ -61,7 +61,6 @@ end
 
 function GT.CreateTextTimer(node, nodeKey)
     if node._miniFrame then return end
-    local c = GT.cfg()
     local mf = GetMiniFrame()
     mf.nodeKey = nodeKey
     mf.label:SetText("")

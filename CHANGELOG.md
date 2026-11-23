@@ -1,5 +1,21 @@
 # GatherTimes
 
+## 0.25.3 (2026-11-23)
+
+- Fix: mouse-look no longer turns on by itself after a reload or relog. It starts off unless "Remember mouse-look on login" is ticked.
+
+## 0.25.2 (2026-11-22)
+
+- New: works with the GTBag privacy switch: while privacy is on, session gold is hidden on the bar and window, and GatherTimes_Names' name disguise is on (the previous setting comes back when privacy is off).
+- New: GTBag is packed in this bundle with GatherTimes, one download. It works with GatherTimes: shared fade setting, GatherTimes skin theme, and auction scan prices in GTBag tooltips.
+- New: GTMove (the former MouseMove addon) is a load-on-demand module with mouse-look keys, `/gtmove`, sensitivity keys and a Nav > Move page. Bind its keys again; old MouseMove bindings are not carried over.
+- New: GTMove turns mouse-look on when you mount and off when you dismount, and can remember it across logins and reloads. Both are per character and off by default. Mouse-look starts off after login or reload unless remembered, and logging in while mounted does not turn it on.
+- New: mouse-look notices show on screen instead of in chat, with position and time set in Nav > Move. A right-click or Esc in chat ends mouse-look.
+- New: while mouse-look is on the player arrow turns magenta and grows (size slider 100% to 200%). When it turns off after being on, the cursor moves to the screen centre.
+- New: mouse-look sensitivity up / down keys (Key Bindings > AddOns > GTMove).
+- Change: Nav > Move options are saved per character; the module on / off and key bindings stay account-wide. The yellow "MOUSE-LOOK ON" line is removed.
+- Fix: the arrow colour follows GTMove's own mouse-look, so steering with the turn keys no longer changes it.
+
 ## 0.25.1 (2026-11-19)
 
 - New: competition detector. Per zone and hour it counts nodes found already taken; warns when a zone is heavily farmed and suggests a quieter one. `/gt compete` (list), `/gt compete alert` (on / off), `/gt compete reset`.
