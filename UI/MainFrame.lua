@@ -213,7 +213,9 @@ function GT:CreateMainFrame()
     -- HUD button: full width, directly above the 5 bottom buttons (same 22 px height, same 6 px padding
     -- and 4 px gap). Left-click toggles the minimap HUD, right-click opens / closes the HUD settings panel.
     -- Its text is green while the HUD is on and grey while it is off.
-    local hud = self:CreateFlatButton(f, "Minimap HUD On/Off", 288, 22)
+    -- the same row also holds a small GTMouse button on the right (the HUD button gives it the room)
+    local GTMOUSE_W, ROW_GAP = 56, 4
+    local hud = self:CreateFlatButton(f, "Minimap HUD On/Off", 288 - GTMOUSE_W - ROW_GAP, 22)
     hud:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 6, 6 + 22 + 4)
     hud:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     hud:SetScript("OnClick", function(_, button)
@@ -228,6 +230,22 @@ function GT:CreateMainFrame()
     end)
     hud:HookScript("OnLeave", function() GT.Tip:Hide() end)
     f.hudButton = hud
+
+    -- opens the GTMouse settings window (the GTMouse addon); /gtm does the same
+    local gtmouse = self:CreateFlatButton(f, "GTMouse", GTMOUSE_W, 22)
+    gtmouse:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -6, 6 + 22 + 4)
+    gtmouse:SetScript("OnClick", function()
+        local mouse = _G.GTMouse
+        if mouse and mouse.ToggleOptions then
+            mouse.ToggleOptions()
+        else
+            GT.cprint(GT.TR("GTMouse is not installed or not loaded. Install the GTMouse addon to use its settings."))
+        end
+    end)
+    gtmouse:HookScript("OnEnter", function(s)
+        GT.ShowButtonTip(s, "GTMouse", "Open the GTMouse settings: mouse-look, sensitivity and cursor aids.")
+    end)
+    gtmouse:HookScript("OnLeave", function() GT.Tip:Hide() end)
     function GT.RefreshHudButton()
         local on = GT.HUD and GT.HUD.IsActive() or false
         if on then
@@ -249,7 +267,7 @@ function GT:CreateMainFrame()
 
     -- session gold, right aligned on the same row (gold only)
     local gold = GT.Font(f, nil, "OVERLAY", "GameFontNormalSmall")
-    gold:SetPoint("BOTTOMRIGHT", hud, "TOPRIGHT", -2, 4)
+    gold:SetPoint("BOTTOMRIGHT", gtmouse, "TOPRIGHT", -2, 4)     -- right edge lines up with the GTMouse button
     gold:SetJustifyH("RIGHT")
     gold:SetWordWrap(false)
     gold:SetTextColor(1, 0.82, 0)

@@ -107,6 +107,7 @@ local function InitCfg()
     if type(c.font) ~= "string" then c.font = "default" end          -- font style (Locales.lua GT.FONT_CHOICES)
     if type(c.newSessionOnLogin) ~= "boolean" then c.newSessionOnLogin = false end   -- false = resume the last session
     if type(c.gm2Auto) ~= "boolean" then c.gm2Auto = false end                       -- false = GatherMate2 import only by button (manual)
+    if type(c.whisperSound) ~= "string" then c.whisperSound = "Xbox.ogg" end         -- sound for a received whisper: "Off", "Game default" or a Media file (Modules.lua)
     c.fontScale = math.max(80, math.min(130, tonumber(c.fontScale) or 100))   -- text size, percent
     c.lowHPPct = GT.Clamp(c.lowHPPct, 10, 80, 35)      -- same range as the Settings slider
     -- performance helpers (Graphics.lua): quality level 0..3 with a backup of the player's own CVars, and the
@@ -144,12 +145,13 @@ local function InitCfg()
     if type(c.bagWarn) ~= "boolean" then c.bagWarn = true end                      -- alert + red chip when the bags are nearly full
     c.bagWarnSlots = GT.Clamp(c.bagWarnSlots, 1, 30, 5)                            -- ... at this many free slots or fewer
     if c.showSpawns == nil then c.showSpawns = false end
+    if c.smartClusters == nil then c.smartClusters = true end
     -- speed is a divisor ("Leave now" = distance / speed, route costs): 0 or less would make every alert fire at once
     c.speed = GT.Clamp(c.speed, 1, 40, 11)                 -- yards per second
     c.routeRange = GT.Clamp(c.routeRange, 10, 1000, 500)   -- yards (the slider goes 10..500)
     if c.showGroups == nil then c.showGroups = true end
-    c.groupSize = tonumber(c.groupSize) or 5
-    c.groupSizeOre = tonumber(c.groupSizeOre) or c.groupSize
+    c.groupSize = math.max(2, math.min(50, math.floor(GT.Clamp(c.groupSize, 2, 50, 5) + 0.5)))
+    c.groupSizeOre = math.max(2, math.min(50, math.floor(GT.Clamp(c.groupSizeOre or c.groupSize, 2, 50, c.groupSize) + 0.5)))
     if c.nodeShowAll == nil then c.nodeShowAll = false end
     if c.tomtom == nil then c.tomtom = true end
     if c.logTomTom == nil then c.logTomTom = true end
@@ -168,7 +170,7 @@ local function InitCfg()
     if c.showGroupPins == nil then c.showGroupPins = true end
     if c.showMiniPins == nil then c.showMiniPins = true end
     c.readyLinger = math.max(30, math.min(1800, tonumber(c.readyLinger) or GT.READY_LINGER or 120))  -- seconds a node stays READY before it goes Idle
-    c.pinSize = tonumber(c.pinSize) or 16
+    c.pinSize = GT.Clamp(c.pinSize, 8, 64, 16)
     for key, def in pairs(nodes) do
         local t = tonumber(c.timers[key])
         if t and t > 0 then
@@ -250,7 +252,11 @@ function GT.MigrateRealm(db, realm, now)
                 else
                     for i = #rl, 1, -1 do
                         local n = rl[i]
-                        if type(n) ~= "table" or type(n.time) ~= "number" or (now > 0 and n.time < now - STASH_MAX_AGE) then
+                        if type(n) ~= "table"
+                            or not GT.IsFiniteNumber(n.mapID) or not GT.IsFiniteNumber(n.x)
+                            or not GT.IsFiniteNumber(n.y) or not GT.IsFiniteNumber(n.time)
+                            or n.x < 0 or n.x > 1 or n.y < 0 or n.y > 1
+                            or (now > 0 and n.time < now - STASH_MAX_AGE) then
                             table.remove(rl, i)
                         end
                     end
@@ -328,6 +334,20 @@ function GT.SanitizeDB()
     -- Unknown top-level keys are LEFT ALONE (they may belong to a newer version or another module: deleting
     -- them made a downgrade wipe data).  Only the keys this version knows are checked below.
     InitCfg()
+    if type(db._session) ~= "table" then
+        db._session = nil
+    else
+        for key, session in pairs(db._session) do
+            if type(key) ~= "string" or type(session) ~= "table" then
+                db._session[key] = nil
+            else
+                if type(session.counts) ~= "table" then session.counts = nil end
+                if type(session.other) ~= "table" then session.other = nil end
+                if not GT.IsFiniteNumber(session.elapsed) then session.elapsed = nil
+                else session.elapsed = math.max(0, math.min(365 * 86400, tonumber(session.elapsed))) end
+            end
+        end
+    end
     for k in pairs(nodes) do
         if type(db[k]) ~= "table" then db[k] = {} end
         local list = db[k]
@@ -349,6 +369,15 @@ function GT.SanitizeDB()
                 if n._leaveAlerted ~= true then n._leaveAlerted = nil end
                 if n._soundDone ~= true then n._soundDone = nil end
                 if n.taken ~= true then n.taken = nil end              -- found empty: someone else took it (Learn.lua MarkEmpty)
+                if n.est ~= true then n.est = nil end
+                if not GT.IsFiniteNumber(n.sid) or n.sid ~= math.floor(n.sid) or n.sid <= 0 then
+                    n.sid = nil
+                end
+                if not GT.IsFiniteNumber(n.qty) or n.qty ~= math.floor(n.qty) or n.qty < 1 then
+                    n.qty = nil
+                else
+                    n.qty = math.floor(math.min(1000000, n.qty))
+                end
             end
         end
     end
@@ -361,7 +390,10 @@ function GT.SanitizeDB()
     for k, list in pairs(GT.spawns) do
         if not nodes[k] and type(list) == "table" then
             for _, sp in ipairs(list) do
-                if type(sp) == "table" and type(sp.sid) == "number" and sp.sid > maxSid then maxSid = sp.sid end
+                if type(sp) == "table" and GT.IsFiniteNumber(sp.sid)
+                    and sp.sid == math.floor(sp.sid) and sp.sid > 0 and sp.sid > maxSid then
+                    maxSid = sp.sid
+                end
             end
         end
     end
@@ -382,10 +414,14 @@ function GT.SanitizeDB()
                 -- an empty or damaged one is dropped here, which also cleans files saved by older versions
                 if type(sp.nexts) ~= "table" or next(sp.nexts) == nil then sp.nexts = nil end
                 sp.x, sp.y = GT.Round5(sp.x), GT.Round5(sp.y)        -- smaller saved file
-                sp.hits = tonumber(sp.hits) or 1
-                sp.last = tonumber(sp.last) or 0
-                sp.misses = tonumber(sp.misses) or 0
-                sp.lootTime = tonumber(sp.lootTime)
+                sp.hits = GT.IsFiniteNumber(sp.hits)
+                    and math.max(1, math.min(1000000000, math.floor(tonumber(sp.hits)))) or 1
+                sp.last = GT.IsFiniteNumber(sp.last)
+                    and math.max(0, math.min(1000000000, math.floor(tonumber(sp.last)))) or 0
+                sp.misses = GT.IsFiniteNumber(sp.misses)
+                    and math.max(0, math.min(1000000000, math.floor(tonumber(sp.misses)))) or 0
+                sp.lootTime = GT.IsFiniteNumber(sp.lootTime)
+                    and math.max(0, math.min(1000000000, math.floor(tonumber(sp.lootTime)))) or nil
                 sp.note = GT.SanitizeSpotNote(sp.note)
                 spawnBySid[sp.sid] = sp
                 if sp.sid > maxSid then maxSid = sp.sid end
@@ -419,9 +455,11 @@ function GT.SanitizeDB()
             end
         end
     end
-    GT.PruneSpotRefs(db)
     local realm = GT.RealmName()
     GT.MigrateRealm(db, realm, GetServerTime and GetServerTime() or 0)
+    -- MigrateRealm can restore parked timers, so prune references after migration, not before.
+    GT.PruneSpotRefs(db)
+    if GT.MigrateHardcoreCharacterKeys then GT.MigrateHardcoreCharacterKeys(db) end
     GT.realmAtLoad = realm
     if GT.SanitizeZoneYield then GT.SanitizeZoneYield(db) end
 end
@@ -435,6 +473,8 @@ function GT.RecheckRealm()
     local realm = GT.RealmName()
     if not realm or realm == GT.realmAtLoad then return false end
     GT.MigrateRealm(GatherTimesDB, realm, GetServerTime and GetServerTime() or 0)
+    GT.PruneSpotRefs(GatherTimesDB)
+    if GT.MigrateHardcoreCharacterKeys then GT.MigrateHardcoreCharacterKeys(GatherTimesDB) end
     GT.realmAtLoad = realm
     return true
 end

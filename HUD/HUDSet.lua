@@ -8,7 +8,7 @@ local OVERLAY_KEYS = { ring = true, ring2 = true, ringUnit = true, ringYd = true
                        ringColor = true, ringColor2 = true,
                        ringThickness = true,
                        ringSegments = true, ringStyle = true, ringDensity = true, dirs = true, heading = true,
-                       priorityReadout = true, routeReadout = true }
+                       priorityReadout = true, routeReadout = true, ringCombatRed = true }
 local MAP_KEYS     = { size = true, blipScale = true, alpha = true, zoom = true,
                        rotate = true, arrow = true, mountFade = true }
 -- settings of the Eagle Eye map: they only change what is on screen while that map is up
@@ -76,8 +76,8 @@ function HUD.Set(key, value, fromUI)
     elseif key == "hideLayer" then
         if HUD.HideLayerText then pcall(HUD.HideLayerText, true) end
     elseif key == "hudHover" or key == "hudHoverKey" then
-        -- applies at once while the normal HUD is up (the Eagle map keeps its own "eagleHover" setting)
-        if S.active and S.orig and not S.eagleMode then
+        -- Applies at once in both modes: the Eagle map uses eagleHover plus this hover-key choice.
+        if S.active and S.orig then
             S.applying = true
             pcall(HUD.I.SetMinimapMouse, HUD.I.HoverWanted())
             S.applying = false

@@ -288,6 +288,7 @@ function P.ShowMenu(anchor, entries, openRight)
 end
 
 function P.CharMenu(anchor)
+    if ns.MergeHardcoreTwins then pcall(ns.MergeHardcoreTwins) end      -- one character saved under two keys: show it once
     local entries, me, cur = {}, ns.MyKey(), ns.ViewKey()
     local keys, totalMoney, unknownMoney = ns.CharKeys(), 0, 0
     local moneyByKey = {}

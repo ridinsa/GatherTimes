@@ -37,7 +37,7 @@ T.hud = H .. "ミニマップ HUD" .. E .. [[
 - プロフィール：複数の外観を保存、切替、削除できます。プロフィールは全キャラクターで共有され、設定はキャラクターごとに記憶されます。
 - 「プロフィールをリセット」で既定値に戻します。]]
 
-T.credits = H .. "GatherTimes 0.25.3" .. E .. [[
+T.credits = H .. "GatherTimes 0.26.0" .. E .. [[
 
 作者：miRidinsa
 ウェブサイト：https://github.com/ridinsa/
@@ -45,8 +45,11 @@ T.credits = H .. "GatherTimes 0.25.3" .. E .. [[
 
 ]] .. H .. "ライブラリ" .. E .. [[
 
-- Nevcairiel 作 HereBeDragons-2.0 および HereBeDragons-Pins-2.0：ミニマップとワールドマップのピン位置。
-- LibStub および CallbackHandler-1.0 (WoW Ace ライブラリ)：ライブラリの読み込みとコールバック。
+- Change: mouse-look is removed; use the separate GTMouse addon. A GTMouse button beside the Minimap HUD button opens its settings.
+- Change: hover key is now Auto (default), Ctrl, Shift or Always.
+- Fix: HUD map tooltips no longer blink or vanish quickly, and the +/- zoom buttons stay hidden while the HUD is on.
+- Fix: the HUD Rings tab fits its window.
+- Fix: the HUD no longer fights GTMouse over the player arrow.
 
 ]] .. H .. "ランダム名" .. E .. [[
 

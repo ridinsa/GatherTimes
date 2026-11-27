@@ -37,7 +37,7 @@ T.hud = H .. "小地图 HUD" .. E .. [[
 - 配置档：保存多种外观、切换或删除。所有角色共享配置档；每个角色分别记住自己的选择。
 - 重置配置档会恢复默认设置。]]
 
-T.credits = H .. "GatherTimes 0.25.3" .. E .. [[
+T.credits = H .. "GatherTimes 0.26.0" .. E .. [[
 
 作者：miRidinsa
 网站：https://github.com/ridinsa/
@@ -45,8 +45,11 @@ T.credits = H .. "GatherTimes 0.25.3" .. E .. [[
 
 ]] .. H .. "库" .. E .. [[
 
-- Nevcairiel 编写的 HereBeDragons-2.0 和 HereBeDragons-Pins-2.0：用于小地图和世界地图上的标记位置。
-- LibStub 和 CallbackHandler-1.0（WoW Ace 库）：用于加载库和处理回调。
+- Change: mouse-look is removed; use the separate GTMouse addon. A GTMouse button beside the Minimap HUD button opens its settings.
+- Change: hover key is now Auto (default), Ctrl, Shift or Always.
+- Fix: HUD map tooltips no longer blink or vanish quickly, and the +/- zoom buttons stay hidden while the HUD is on.
+- Fix: the HUD Rings tab fits its window.
+- Fix: the HUD no longer fights GTMouse over the player arrow.
 
 ]] .. H .. "随机名称" .. E .. [[
 

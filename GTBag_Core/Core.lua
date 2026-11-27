@@ -36,6 +36,19 @@ local validBadgePriorities = {
     ["boe,ilvl,pawn"] = true, ["ilvl,pawn,boe"] = true, ["ilvl,boe,pawn"] = true,
 }
 
+function ns.IsHardcore()
+    local ok, hc = pcall(function()
+        return C_GameRules and C_GameRules.IsHardcoreActive and C_GameRules.IsHardcoreActive()
+    end)
+    return ok and hc == true
+end
+function ns.CharacterKey(name, realm)
+    name, realm = tostring(name or ""), tostring(realm or "")
+    if name == "" or realm == "" then return nil end
+    if ns.IsHardcore() then realm = realm .. "-Hardcore" end
+    return name .. "-" .. realm
+end
+
 -- options saved per character instead of for the whole account: GTBagDB.charOpts["Name-Realm"][key]
 local perCharacter = { hideInCombat = true, reopenAfterCombat = true }
 local function CharOpts(create)
@@ -564,8 +577,8 @@ local function SortMetadata(info)
     return info.sortClass, info.sortSubclass, info.expansion
 end
 
--- "priority" sort tiers: 1 Hearthstone, 2 mounts, 3 Chronoboon Displacer, 4 potions, 5 buffs (elixirs, flasks, scrolls...),
--- 6 food and drink, 7 gear (weapons + armor), 8 everything else
+-- "priority" sort tiers: 1 Hearthstone, 2 mounts, 3 Chronoboon Displacer, 4 buffs (elixirs, flasks, scrolls...),
+-- 5 food and drink, 6 potions, 7 gear (weapons + armor), 8 everything else. Poor-quality (junk) items sort last under every rule.
 local HEARTHSTONE_ID = 6948
 local CHRONOBOON_ID = 184937
 local TIER_OTHER = 8
@@ -657,9 +670,9 @@ local function ComputeTier(info)
     if classID == 15 and (subID == 5 or IsMount(info)) then return 2 end -- Miscellaneous > Mount
     if IsChronoboon(info) then return 3 end                                -- Chronoboon Displacer
     if classID == 0 then
-        if subID == 1 or IsPotionByName(info) then return 4 end            -- Potion
-        if subID == 2 or subID == 3 or subID == 4 or IsBuffByName(info) then return 5 end -- Elixir, Flask, Scroll, buff
-        if subID == 5 or IsFood(info) then return 6 end                     -- Food & Drink
+        if subID == 2 or subID == 3 or subID == 4 or IsBuffByName(info) then return 4 end -- Elixir, Flask, Scroll, buff
+        if subID == 5 or IsFood(info) then return 5 end                     -- Food & Drink
+        if subID == 1 or IsPotionByName(info) then return 6 end            -- Potion
     end
     if classID == 2 or classID == 4 then return 7 end                       -- Weapon / Armor
     return TIER_OTHER
@@ -838,7 +851,8 @@ function ns.GeneralSlots()
     for _, bag in ipairs(ns.BAGS) do
         local n = ns.GetNumSlots(bag)
         if type(n) == "number" and n > 0 then
-            local ok, f, family = pcall(ns.GetNumFree, bag)
+            local ok, f, bagType = pcall(ns.GetNumFree, bag)
+            local family = bagType
             if ok and (tonumber(family) or 0) == 0 then
                 total = total + n
                 if type(f) == "number" then free = free + f end
@@ -1108,6 +1122,15 @@ end
 
 local function ScrambleRegion(fs)
     local cur = fs:GetText()
+    if fs.gtPair and ns.Privacy() and cur and cur:find(fs.gtPair.scr, 1, true) then
+        local oldScr, real = fs.gtPair.scr, fs.gtPair.real
+        local newScr = ns.Scramble(real)
+        blizzApplying = true
+        fs:SetText(PlainReplace(cur, oldScr, newScr))
+        blizzApplying = false
+        fs.gtPair.scr = newScr
+        return
+    end
     local new, real = ScrambledText(cur, fs.gtUnit)
     if not new or new == cur then return end
     fs.gtPair = { real = real, scr = ns.Scramble(real) }

@@ -169,6 +169,11 @@ function HUD.EagleCheck()
             S.eagleMode = want
             S.eagleSizeStep = 1                         -- the "next size" key starts from the saved size each time
             if S.active then HUD.Refresh(true) end      -- same Minimap, new size / mask / zoom / rotation, in one pass
+            if S.active and S.orig and HUD.I and HUD.I.SetMinimapMouse then
+                S.applying = true
+                pcall(HUD.I.SetMinimapMouse, HUD.I.HoverWanted())
+                S.applying = false
+            end
             HUD.UpdateEagleLabels()
         end
         return

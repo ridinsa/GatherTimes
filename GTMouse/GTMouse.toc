@@ -1,0 +1,11 @@
+## Interface: 11509, 20506, 40402, 50503, 50504, 16001, 120105
+## Title: GTMouse
+## Notes: Mouse-look toggle with one key binding and a resizable red player arrow on FarmHud or the GatherTimes HUD. Type /gtmouse or /gtm to open the menu.
+## Author: miRidinsa
+## Version: 0.26.0
+## X-License: GPL-3.0-or-later
+## SavedVariablesPerCharacter: GTMouseDB
+
+GTMouse.lua
+GTMouseOptions.lua
+GTMouseSettings.lua

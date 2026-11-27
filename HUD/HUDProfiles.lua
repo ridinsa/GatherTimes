@@ -13,7 +13,8 @@ local DB_VERSION     = 1                -- GatherTimesDB.hud layout version
 ---------------------------------------------------------------------------
 
 local function CharKey()
-    return (UnitName("player") or "?") .. "-" .. (GetRealmName() or "?")
+    local realm = GT.RealmName and GT.RealmName() or (GetRealmName and GetRealmName()) or "?"
+    return (UnitName("player") or "?") .. "-" .. realm
 end
 
 local function FillDefaults(p)
@@ -82,7 +83,11 @@ local function InitDB()
     if type(root.perfSuggested) ~= "boolean" then root.perfSuggested = false end
 
     if type(root.profiles.Default) ~= "table" then root.profiles.Default = {} end
+    -- 0.25.5: "Ring 1 red in combat" is on by default; switch it on once in profiles saved while it was off
+    local migrateRed = not root.ringCombatRedOn
+    root.ringCombatRedOn = true
     for name, p in pairs(root.profiles) do
+        if type(p) == "table" and migrateRed then p.ringCombatRed = true end
         if type(p) == "table" then FillDefaults(p) else root.profiles[name] = nil end   -- damaged entry
     end
 

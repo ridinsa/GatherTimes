@@ -183,7 +183,7 @@ SlashCmdList["GTBAG"] = function(msg)
         ns.SetOpt("ilvl", arg ~= "off"); ns.Relayout()
         Say("item level " .. (ns.Opt("ilvl") and "on" or "off"))
     elseif cmd == "tiers" then
-        -- debug: how the priority sort classifies each item in your bags (1 Hearthstone, 2 mount, 3 Chronoboon Displacer, 4 potion, 5 buff, 6 food, 7 gear, 8 other)
+        -- debug: how the priority sort classifies each item in your bags (1 Hearthstone, 2 mount, 3 Chronoboon Displacer, 4 buff, 5 food, 6 potion, 7 gear, 8 other)
         for _, bag in ipairs(ns.BAGS) do
             local n = ns.GetNumSlots(bag)
             if type(n) == "number" then

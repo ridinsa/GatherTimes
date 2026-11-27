@@ -1,0 +1,10 @@
+## Interface: 11509, 20506, 40402, 50503, 50504, 16001, 120105
+## Title: GatherTimes - Whisper sound
+## Notes: Plays a sound when you receive a whisper. Loaded on demand by GatherTimes (do not enable it on its own).
+## Author: miRidinsa
+## Version: 0.26.0
+## X-License: GPL-3.0-or-later
+## Dependencies: GatherTimes
+## LoadOnDemand: 1
+
+Whisper.lua

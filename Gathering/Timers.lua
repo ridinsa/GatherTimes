@@ -87,6 +87,22 @@ function GT.QuarantinedTimers()
     return n
 end
 
+function GT.QuarantinedTimerDetails()
+    local now = GetServerTime()
+    local out = {}
+    for node, q in pairs(quarantine) do
+        if type(node) == "table" then
+            out[#out + 1] = string.format("%s sid=%s failures=%d retry=%ds",
+                tostring(node.realm or "?"),
+                tostring(node.sid or "?"),
+                q.fails or 0,
+                math.max(0, (q.retryAt or now) - now))
+        end
+    end
+    table.sort(out)
+    return out
+end
+
 -- Central timer state transition. Loot, "taken", estimated-empty and zone-clear logic must all use this
 -- shape so a timer cannot silently gain conflicting flags or stale alert state.
 function GT.UpsertTimer(key, sp, opts)

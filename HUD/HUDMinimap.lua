@@ -143,16 +143,11 @@ local function ArrowFrame()
     return customArrow
 end
 
--- while mouse-look is on the arrow is drawn at this size factor (Nav > Move > Mouse-look arrow size; 125% = 1.25)
-local function LookArrowFactor()
-    return (tonumber(GT.CharGet("gtmoveArrowPct", 125)) or 125) / 100
-end
-
-local function ShowCustomArrow(scale, looking)
+local function ShowCustomArrow(scale)
     local a = ArrowFrame()
     local db = HUD.Cfg()
     local blipScale = (db and db.blipScale) or HUD.DEFAULTS.blipScale
-    local size = ARROW_BASE * scale / (100 * blipScale) * (looking and LookArrowFactor() or 1)
+    local size = ARROW_BASE * scale / (100 * blipScale)
     a:SetSize(size, size)
     a:ClearAllPoints()
     a:SetPoint("CENTER", Minimap, "CENTER")
@@ -163,20 +158,10 @@ local function HideCustomArrow()
     if customArrow then customArrow:Hide() end
 end
 
--- While GTMove mouse-look is on (and the HUD is up) the player arrow is drawn in this colour; off, it is the normal
--- colour and the game's arrow. The addon's own arrow is used for it (even at 100% size), because the game's arrow
--- cannot be tinted. The colour comes from GTMove's own state, not the game's IsMouselooking(), which steering sets too.
-local LOOK_ARROW_COLOR = { 1, 0, 1 }      -- bright magenta: stands out against the minimap's green / brown
-
-local function MouseLookOn()
-    return GT.GTMove and GT.GTMove.IsLooking and GT.GTMove.IsLooking() and true or false
-end
-
 -- show: the arrow setting; scale: "Arrow size" (nil = the game's arrow, as before)
 local function ApplyArrow(show, scale)
     if not Minimap.SetPlayerTexture then return end
-    local looking = show and S.active and MouseLookOn()
-    local custom = show and ((scale ~= nil and scale ~= 100) or looking)
+    local custom = show and scale ~= nil and scale ~= 100
     local stockShow = show and not custom
     if stockShow and arrowHidden then
         SetArrow(lastArrow or STOCK_ARROW)
@@ -186,37 +171,12 @@ local function ApplyArrow(show, scale)
         arrowHidden = true
     end
     if custom then
-        ShowCustomArrow(scale or 100, looking)
-        local c = looking and LOOK_ARROW_COLOR or { 1, 1, 1 }
-        ArrowFrame().tex:SetVertexColor(c[1], c[2], c[3], 1)
+        ShowCustomArrow(scale)
+        ArrowFrame().tex:SetVertexColor(1, 1, 1, 1)
     else
         HideCustomArrow()
     end
 end
-
--- called by the Nav > Move slider so a new arrow size shows at once
-function HUD.RefreshArrow()
-    if not (S.active and HUD.db) then return end
-    local db = HUD.Cfg()
-    ApplyArrow(db.arrow, db.arrowScale)
-end
-
--- GTMove has no event for mouse-look, so its state is checked a few times a second. The arrow is redrawn only on a change.
-local lookShown = false
-local lookWatch = CreateFrame("Frame")
-local lookElapsed = 0
-lookWatch:SetScript("OnUpdate", function(_, elapsed)
-    lookElapsed = lookElapsed + (elapsed or 0)
-    if lookElapsed < 0.1 then return end
-    lookElapsed = 0
-    local on = MouseLookOn()
-    if on == lookShown then return end
-    lookShown = on
-    if S.active and HUD.db then
-        local db = HUD.Cfg()
-        ApplyArrow(db.arrow, db.arrowScale)
-    end
-end)
 
 -- While the Eagle map takes the mouse for the hover tooltips, the minimap's click handler (it pings the map and opens
 -- the tracking menu) is swapped for a no-op, so a click only reaches the world underneath. Put back afterwards.
@@ -268,17 +228,17 @@ local function MinimapMouseMatches(hover)
 end
 -- Does the map want the mouse (hover tooltips only, never clicks) right now?  The Eagle map follows "eagleHover"
 -- (HUD.Cfg().hoverTips); the normal HUD follows "hudHover" (on by default), only while the hover key is held.
-local HOVER_KEYS = { alt = "IsAltKeyDown", ctrl = "IsControlKeyDown", shift = "IsShiftKeyDown" }
--- Auto mode is the default (hoverkey alt / auto); ctrl / shift / always remain as advanced /gthud hoverkey choices
+local HOVER_KEYS = { ctrl = "IsControlKeyDown", shift = "IsShiftKeyDown" }
+-- Auto is the default hover mode; ctrl / shift / always remain as /gthud hoverkey choices. "alt" is what older versions
+-- saved for auto, so it still means auto.
 local function AutoHover(db)
-    local k = db.hudHoverKey or "alt"
-    if k == "auto" then return true end
-    return k == "alt"
+    local k = db.hudHoverKey or "auto"
+    return k == "auto" or k == "alt"
 end
 local function HoverKeyHeld(db)
     if S.hoverLatched then return true end               -- switched on by the toggle key (HUD.ToggleHover)
     if AutoHover(db) then return S.autoWorld ~= true end   -- map takes the mouse unless a mob/player is under it
-    local fn = HOVER_KEYS[db.hudHoverKey or "alt"]
+    local fn = HOVER_KEYS[db.hudHoverKey or "auto"]
     if not fn then return true end                       -- "always"
     local f = _G[fn]
     return f and f() and true or false
@@ -402,7 +362,7 @@ function HUD.MouseTick(dt)
     if pendingPropagate ~= nil and not (InCombatLockdown and InCombatLockdown()) then SetPropagate(pendingPropagate) end   -- left over from combat
     if not (S.active and S.orig) then mouseAcc = 0; return end
     mouseAcc = mouseAcc + (dt or 0)
-    if mouseAcc < 0.25 then return end
+    if mouseAcc < 0.10 then return end
     mouseAcc = 0
     local want = HoverWanted()
     if MinimapMouseMatches(want) then return end
@@ -439,15 +399,17 @@ do
     end
 end
 
--- Experimental "auto" hover (/gthud hoverkey auto): the map holds the mouse so herb/ore blip tooltips work; when the cursor
+-- Auto hover (the default, /gthud hoverkey auto): the map holds the mouse so herb/ore blip tooltips work; when the cursor
 -- rests on the map without a blip tooltip it hands the mouse to the world for a moment, and stays there while a unit is
 -- under the cursor (mob / NPC / player tooltip), otherwise it swaps back to probing the blips.
 do
-    local DWELL, acc, since = 0.15, 0, 0
+    local DWELL, acc, since = 0.3, 0, 0     -- how long the cursor must rest with nothing under it before the world gets the mouse
+    local lastX, lastY = 0, 0
+    local MOVE_PX = 3                     -- the cursor counts as moving after this many pixels
     local auto = CreateFrame("Frame")
     auto:SetScript("OnUpdate", function(_, dt)
         acc = acc + dt
-        if acc < 0.05 then return end
+        if acc < 0.03 then return end
         local step = acc; acc = 0
         local db = HUD.db
         if not (db and S.active and S.orig and AutoHover(db)) or S.hoverLatched then
@@ -461,13 +423,31 @@ do
             if want then S.autoWorld = false; QueueMouseFix() end
             return
         end
+        local cx, cy = GetCursorPosition()
+        local moved = math.abs(cx - lastX) + math.abs(cy - lastY) >= MOVE_PX
+        if moved then lastX, lastY = cx, cy end
         since = since + step
         local flip = false
         if S.autoWorld then
-            if UnitExists("mouseover") then since = 0 elseif since >= DWELL then flip = true end
+            -- The world has the mouse. It stays there while the cursor rests: handing the mouse back and forth every
+            -- fraction of a second (map -> world -> map ...) made the minimap enter / leave events fire over and over,
+            -- which blinked the tooltip and the +/- zoom buttons. It goes back to the map only when the cursor moves,
+            -- to probe the blips under it. Not while the world has something under the cursor: a unit, an object (a
+            -- herb / ore node) whose tooltip the game shows with UIParent as owner, or the HUD's own unit tooltip
+            -- (owned by a unit marker on the map); handing the mouse back would hide that tooltip.
+            local wt = GameTooltip and GameTooltip:IsShown() and GameTooltip:GetOwner()
+            local ownUnitTip = wt and wt ~= UIParent and wt.GetParent and wt:GetParent() == Minimap
+            if UnitExists("mouseover") or (wt and wt == UIParent) or ownUnitTip then
+                since = 0
+            elseif moved then
+                flip = true
+            end
         else
-            local o = GameTooltip and GameTooltip:IsShown() and GameTooltip:GetOwner()
-            if o and (o == Minimap or (o.GetParent and o:GetParent() == Minimap)) then since = 0
+            -- The map has the mouse (probing for blip tooltips). A blip tooltip, or the HUD's own unit tooltip, keeps it.
+            -- A moving cursor keeps probing; once it rests with nothing under it, the world gets the mouse.
+            -- Any tooltip that is showing keeps it, whoever owns it: the game's blip tooltips do not always use the Minimap
+            -- as owner, and the time the game needs to show one after the cursor lands on a blip is covered by DWELL.
+            if moved or (GameTooltip and GameTooltip:IsShown()) then since = 0
             elseif since >= DWELL then flip = true end
         end
         if flip then

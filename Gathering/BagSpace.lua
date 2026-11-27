@@ -6,6 +6,36 @@ local _, GT = ...
 -- Quivers, ammo pouches, soul bags and the like cannot hold what a gatherer picks up, so their slots do not count.
 local USABLE_TYPE = { [0] = true, [32] = true, [1024] = true }
 
+local function BagFamily(bag, returnedType)
+    if bag == 0 then return 0 end
+    if type(returnedType) == "number" then return returnedType end
+
+    local itemID
+    if ContainerIDToInventoryID and GetInventoryItemID then
+        itemID = GetInventoryItemID("player", ContainerIDToInventoryID(bag))
+    end
+    if not itemID then return nil end
+
+    if C_Item and C_Item.GetItemFamily then
+        local ok, family = pcall(C_Item.GetItemFamily, itemID)
+        if ok and type(family) == "number" then return family end
+    end
+    if GetItemFamily then
+        local ok, family = pcall(GetItemFamily, itemID)
+        if ok and type(family) == "number" then return family end
+    end
+    return nil
+end
+
+local function UsableFamily(family)
+    if family == nil then return false end
+    if USABLE_TYPE[family] then return true end
+    if bit and bit.band then
+        return bit.band(family, 32) ~= 0 or bit.band(family, 1024) ~= 0
+    end
+    return false
+end
+
 -- free slots in the bags that can hold herbs and ore, or nil when the client has no bag functions
 function GT.FreeBagSlots()
     local fn = (C_Container and C_Container.GetContainerNumFreeSlots) or GetContainerNumFreeSlots
@@ -13,7 +43,10 @@ function GT.FreeBagSlots()
     local free = 0
     for bag = 0, (NUM_BAG_SLOTS or 4) do
         local ok, n, bagType = pcall(fn, bag)
-        if ok and type(n) == "number" and (bagType == nil or USABLE_TYPE[bagType]) then free = free + n end
+        if ok and type(n) == "number" then
+            local family = BagFamily(bag, bagType)
+            if bag == 0 or UsableFamily(family) then free = free + n end
+        end
     end
     return free
 end

@@ -37,7 +37,7 @@ T.hud = H .. "HUD миникарты" .. E .. [[
 - Профиль: сохраняйте, переключайте и удаляйте несколько вариантов оформления. Профили общие для всех персонажей, но каждый персонаж запоминает свой выбор.
 - «Сбросить профиль» возвращает настройки по умолчанию.]]
 
-T.credits = H .. "GatherTimes 0.25.3" .. E .. [[
+T.credits = H .. "GatherTimes 0.26.0" .. E .. [[
 
 Автор: miRidinsa
 Сайт: https://github.com/ridinsa/
@@ -45,14 +45,11 @@ T.credits = H .. "GatherTimes 0.25.3" .. E .. [[
 
 ]] .. H .. "Что нового" .. E .. [[
 
-- Новое: опция «Сбрасывать таймеры и оповещения при смене зоны» на вкладке «Тайминг» (по умолчанию выкл.). Изученное время сохраняется.
-- Новое: при входе в город путевые точки GatherTimes удаляются; стрелки маршрута и ближайшей точки там отключены.
-- Новое: строка fps / пинг может показывать слой, прочность и игровое и местное время (вкладка «Пинги»).
-- Новое: «Баффы на уровне панели» и ползунок «Верхний отступ» (Свернуть > Панель, для Titan Panel и др.).
-- Новое: «Случайное имя», Mini XP, Notifier и карта «Орёл» загружаются по требованию: `/gt module <имя> on|off`, `/gt modules`.
-- Новое: опция в «Инструментах» для импорта данных GatherMate2 при смене зоны; «Скрыть информацию о слое» на HUD.
-- Изменение: таймеры и метки всегда показывают только вашу текущую зону (опция «только зона» удалена).
-- Изменение: меньше нагрузки на ЦП и память; экспорт и импорт точек загружаются по требованию (GatherTimes_Share).
+- Change: mouse-look is removed; use the separate GTMouse addon. A GTMouse button beside the Minimap HUD button opens its settings.
+- Change: hover key is now Auto (default), Ctrl, Shift or Always.
+- Fix: HUD map tooltips no longer blink or vanish quickly, and the +/- zoom buttons stay hidden while the HUD is on.
+- Fix: the HUD Rings tab fits its window.
+- Fix: the HUD no longer fights GTMouse over the player arrow.
 
 ]] .. H .. "Библиотеки" .. E .. [[
 

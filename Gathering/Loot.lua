@@ -292,7 +292,12 @@ function GT.HandleItem(itemName, itemID, source, qty)
                 stats.counts[key] = (stats.counts[key] or 0) + n
                 if GT.SaveSession then pcall(GT.SaveSession) end
             end
-            pendingLoot[dedupeKey] = { t = now, n = n }
+            local pend = pendingLoot[dedupeKey]
+            if pend and (now - pend.t) <= PENDING_WINDOW then
+                pend.t, pend.n = now, pend.n + n
+            else
+                pendingLoot[dedupeKey] = { t = now, n = n }
+            end
             local added = AddNode(key, source, qty)
             local mapID = C_Map.GetBestMapForUnit("player")
             GT.RecordZoneYield(key, mapID, itemID, n, true, added)

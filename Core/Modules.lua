@@ -2,9 +2,9 @@
 --   GatherTimes_Names     Random Name (HideUnitNames + its window)
 --   GatherTimes_XP        Mini XP (hero / pet XP line, goals, history)
 --   GatherTimes_Notifier  Friend / Guild Notifier
+--   GatherTimes_Whisper   whisper sound (Settings > Look; loaded only while a sound is chosen)
 --   GatherTimes_Eagle     the Eagle map (remote views)
 --   GatherTimes_Share     spot export / import (opened from Settings or /gt export | import)
---   GatherTimes_GTMove    GTMove mouse-look toggle / mouse-look while a movement key is held (/gtmove, key bindings)
 -- A module that is not wanted is never read from disk and never runs: its files are only executed by LoadAddOn.
 -- Wanted at login = not switched off here AND the feature is in use (see WANT).  A switched-off module cannot be
 -- loaded at all.  Switch: /gt module <names|xp|notifier|eagle> on|off   (saved account-wide in GatherTimesDB._ui.modules).
@@ -15,11 +15,11 @@ local MODULES = {
     names    = { addon = "GatherTimes_Names",    label = "Random Name",             stage = "early" },
     xp       = { addon = "GatherTimes_XP",       label = "Mini XP",                 stage = "early" },
     notifier = { addon = "GatherTimes_Notifier", label = "Friend/Guild Notifier",   stage = "early" },
+    whisper  = { addon = "GatherTimes_Whisper",   label = "Whisper sound",           stage = "early" },
     eagle    = { addon = "GatherTimes_Eagle",    label = "Eagle map",               stage = "hud"   },
     share    = { addon = "GatherTimes_Share",    label = "Spot sharing",            stage = "late"  },
-    gtmove   = { addon = "GatherTimes_GTMove",   label = "GTMove mouse-look",       stage = "early" },
 }
-local ORDER = { "names", "xp", "notifier", "eagle", "share", "gtmove" }
+local ORDER = { "names", "xp", "notifier", "whisper", "eagle", "share" }
 local REMOTE_VIEW = { HUNTER = true, SHAMAN = true, PRIEST = true, WARLOCK = true }
 
 local function Switches(create)
@@ -37,6 +37,54 @@ function GT.ModuleEnabled(key)
     return not s or s[key] ~= false
 end
 
+-- ---------------------------------------------------------------- whisper sound (Settings > Look)
+-- The list, the saved choice and the player are here (not in GatherTimes_Whisper) so the Look tab can offer and preview a
+-- sound without loading the folder; the folder only listens for whispers.  The files are the ones in GatherTimes\Media.
+local WHISPER_DEFAULT = "Xbox.ogg"
+local whisperList
+function GT.WhisperSoundList()
+    if not whisperList then
+        whisperList = { "Off", "Game default" }
+        local seen = {}
+        for _, f in ipairs(GT.MEDIA_SOUNDS or {}) do whisperList[#whisperList + 1] = f; seen[f] = true end
+        for _, f in ipairs({ "Windows.ogg", "Xbox.ogg" }) do          -- the Notifier's two sounds
+            if not seen[f] then whisperList[#whisperList + 1] = f end
+        end
+    end
+    return whisperList
+end
+
+function GT.WhisperSoundName()
+    local c = GT.cfg and GT.cfg()
+    local n = c and c.whisperSound
+    for _, v in ipairs(GT.WhisperSoundList()) do
+        if v == n then return n end
+    end
+    return WHISPER_DEFAULT
+end
+
+local whisperHandle
+local DEFAULT_ATTEMPTS = {
+    function() return PlaySound(SOUNDKIT and SOUNDKIT.TELL_MESSAGE or 3081) end,
+    function() return PlaySound(SOUNDKIT and SOUNDKIT.TELL_MESSAGE or 3081, "Master") end,
+    function() return PlaySoundFile("Sound\\Interface\\iTellMessage.ogg", "Master") end,
+}
+-- plays `name` (a preview), or the saved choice; one sound at a time, so quick whispers do not stack
+function GT.PlayWhisperSound(name)
+    name = name or GT.WhisperSoundName()
+    if name == "Off" then return end
+    if whisperHandle then pcall(StopSound, whisperHandle); whisperHandle = nil end
+    if name == "Game default" then
+        for _, fn in ipairs(DEFAULT_ATTEMPTS) do
+            local ok, played = pcall(fn)
+            if ok and played then return end
+        end
+        return
+    end
+    local ok, willPlay, handle = pcall(PlaySoundFile, GT.MEDIA_DIR .. name, "Master")
+    whisperHandle = (ok and willPlay) and handle or nil
+end
+
 -- is the feature in use right now (so it must be loaded)?
 local WANT = {
     names = function() return type(GatherTimesHUNDB) == "table" and GatherTimesHUNDB.hideAll == true end,
@@ -46,23 +94,13 @@ local WANT = {
         local c = GT.cfg and GT.cfg()
         if not c or c.miniShowXP ~= false then return true end
         local name = UnitName and UnitName("player")
-        local goals = c and type(c.xpGoal) == "table" and name and c.xpGoal[name .. "-" .. ((GetRealmName and GetRealmName()) or "")]
+        local realm = GT.RealmName and GT.RealmName() or (GetRealmName and GetRealmName()) or ""
+        local goals = c and type(c.xpGoal) == "table" and name and c.xpGoal[name .. "-" .. realm]
         return type(goals) == "table" and next(goals) ~= nil
     end,
     notifier = function() local c = GT.cfg and GT.cfg(); return c and c.guildOnline == true or false end,
+    whisper = function() return GT.WhisperSoundName() ~= "Off" end,    -- a sound is chosen (Settings > Look)
     share = function() return false end,                     -- only when it is opened (see GT.OpenShare)
-    -- GTMove loads on the first bound key press or /gtmove (see Core\GTMove.lua); it also loads at login once a GTMove key is
-    -- bound, so its Options > AddOns page (sensitivity slider) is there without a first use
-    gtmove = function()
-        if GT.CharGet("gtmoveMount", false) == true
-           or (GT.CharGet("gtmoveRemember", false) == true and GT.CharGet("gtmoveWasOn", false) == true) then return true end
-        if not GetBindingKey then return false end
-        for _, action in ipairs({ "GTMOVE_TOGGLE", "GTMOVE_FORWARD", "GTMOVE_BACKWARD", "GTMOVE_TURNLEFT", "GTMOVE_TURNRIGHT",
-                                  "GTMOVE_STRAFELEFT", "GTMOVE_STRAFERIGHT", "GTMOVE_JUMP", "GTMOVE_SENSUP", "GTMOVE_SENSDOWN" }) do
-            if GetBindingKey(action) then return true end
-        end
-        return false
-    end,
     eagle = function()
         local db = GT.HUD and GT.HUD.db
         if not db or db.eagleMap == false then return false end

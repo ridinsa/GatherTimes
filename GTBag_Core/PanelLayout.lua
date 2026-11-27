@@ -31,7 +31,6 @@ P.Layout = function()
     local src = ns.Source()
     P.PruneManualOrder(src)
     local tab = ns.view.tab
-    local showContainerActions = (tab == "bags" or tab == "bank") and #src.containers > 0
     local anyHiddenContainer, anyVisibleContainer = false, false
     for _, container in ipairs(src.containers) do
         if P.IsContainerHidden(tab, container.id) then
@@ -384,4 +383,3 @@ P.Layout = function()
     P.layoutCount = P.layoutCount + 1
 end
 
--- draws the window; an error is caught, shown once in chat (so it can be reported) and the drawing is tried again

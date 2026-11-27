@@ -540,10 +540,19 @@ local function BuildOverlay(f)
     end, { "ringThickness", "ringSegments", "ringDensity", styleBtn, pick, swatch, swatch2 })
 
     y = y - ROW_H - GAP_H
-    local compass = KeyCheck(f, 0, y, "Compass letters (N E S W)", "dirs", 150)
-    Tip(compass, "Compass letters", "Show N, E, S and W around the edge of the map.")
-    local heading = KeyCheck(f, 176, y, "Heading readout", "heading", 88)
+    -- two columns: the left options start at x 0, the right ones all start at COL2, so the rows line up
+    local COL2 = 156
+    local combatRed = KeyCheck(f, 0, y, "Turn Ring 1 red in combat", "ringCombatRed", 134)
+    Tip(combatRed, "Turn Ring 1 red in combat",
+        "Temporarily changes the first HUD ring to red while you are in combat. Your selected ring colour returns when combat ends.")
+    local heading = KeyCheck(f, COL2, y, "Heading readout", "heading", 108)
     Tip(heading, "Heading readout", "Show the direction you are facing as a number of degrees.")
+    y = y - ROW_H
+
+    local compass = KeyCheck(f, 0, y, "Compass letters (N E S W)", "dirs", 134)
+    Tip(compass, "Compass letters", "Show N, E, S and W around the edge of the map.")
+    local route = KeyCheck(f, COL2, y, "Route progress readout", "routeReadout", 108)
+    Tip(route, "Route progress readout", "Show how far you have got along the current route.")
     y = y - ROW_H
 
     local hover = KeyCheck(f, 0, y, "Hover tooltips on map", "hudHover")
@@ -552,10 +561,6 @@ local function BuildOverlay(f)
 
     local priority = KeyCheck(f, 0, y, "Ready-first gathering readout", "priorityReadout")
     Tip(priority, "Ready-first gathering readout", "Show which gathering spot is ready first.")
-    y = y - ROW_H
-
-    local route = KeyCheck(f, 0, y, "Route progress readout", "routeReadout")
-    Tip(route, "Route progress readout", "Show how far you have got along the current route.")
 end
 
 local MODES = { { "auto", "Auto" }, { "own", "HUD button" }, { "stock", "Blizzard" } }
@@ -661,13 +666,16 @@ local function BuildOptions(f)
         "On: the map is drawn smaller (75%) with no rings, no compass letters and no heading readout. Turn it off to bring them back; your saved values are kept.")
 
     -- hover key: which key makes the HUD map take the mouse for tooltips; click to cycle through the modes
-    local HOVER_KEY_ORDER = { "alt", "ctrl", "shift", "always", "auto" }
+    local HOVER_KEY_ORDER = { "auto", "ctrl", "shift", "always" }
     local hoverKeyBtn = Button(f, "", 170, 0, y)
     local function HoverKeyLabel()
-        hoverKeyBtn.label:SetText(GT.TRF("Hover key: %s", HUD.db.hudHoverKey or "alt"))
+        local k = HUD.db.hudHoverKey
+        if k == nil or k == "alt" then k = "auto" end            -- "alt" is what older versions saved for auto
+        hoverKeyBtn.label:SetText(GT.TRF("Hover key: %s", k))
     end
     hoverKeyBtn:SetScript("OnClick", function()
-        local cur = HUD.db.hudHoverKey or "alt"
+        local cur = HUD.db.hudHoverKey
+        if cur == nil or cur == "alt" then cur = "auto" end
         local nextKey = HOVER_KEY_ORDER[1]
         for i, k in ipairs(HOVER_KEY_ORDER) do
             if k == cur then nextKey = HOVER_KEY_ORDER[(i % #HOVER_KEY_ORDER) + 1] end
@@ -677,7 +685,7 @@ local function BuildOptions(f)
     end)
     refreshers[#refreshers + 1] = HoverKeyLabel
     HoverKeyLabel()
-    Tip(hoverKeyBtn, "Hover key", "Which key makes the HUD map take the mouse for tooltips. Click to cycle: alt, ctrl, shift, always, auto (experimental).")
+    Tip(hoverKeyBtn, "Hover key", "Which key makes the HUD map take the mouse for tooltips. Click to cycle: auto, ctrl, shift, always.")
     y = y - ROW
 
     Section("Minimap addons")

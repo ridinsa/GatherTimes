@@ -1,7 +1,7 @@
 -- AutoSort.lua : optional automatic sort of your bags (or the bank) when a vendor opens, a bank opens, or combat
 -- ends. Each trigger is a setting in Settings > Sort, off by default. It runs the same sort as the sort button,
 -- with the sort order you chose, and it stays quiet when it cannot run (no messages in chat).
-local ADDON, ns = ...
+local _, ns = ...
 
 local function CanSortNow(bank)
     if InCombatLockdown() or not ns.ViewingSelf() or ns.panel.physicalSortRun then return false end

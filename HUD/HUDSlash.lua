@@ -391,11 +391,12 @@ function HUD.Slash(msg)
     elseif cmd == "hover" then Toggle("hudHover", "Hover tooltips on the HUD map")
     elseif cmd == "hoverkey" then
         local k = (args[2] or ""):lower()
-        if k ~= "alt" and k ~= "ctrl" and k ~= "shift" and k ~= "always" and k ~= "auto" then
-            return Print("Usage: /gthud hoverkey alt | ctrl | shift | always | auto(experimental)   (now: " .. tostring(db.hudHoverKey or "alt") .. ")")
+        if k == "alt" then k = "auto" end                  -- the old name for auto
+        if k ~= "ctrl" and k ~= "shift" and k ~= "always" and k ~= "auto" then
+            return Print("Usage: /gthud hoverkey auto | ctrl | shift | always   (now: " .. tostring((db.hudHoverKey == nil or db.hudHoverKey == "alt") and "auto" or db.hudHoverKey) .. ")")
         end
         HUD.Set("hudHoverKey", k)
-        Print("HUD map hover tooltips (need /gthud hover on): " .. (k == "auto" and "auto (experimental): herb/ore tooltips, and mob/NPC/player tooltips when you rest on them" or k == "always" and "always on (mob / NPC / player tooltips are blocked)" or ("while holding " .. k)))
+        Print("HUD map hover tooltips (need /gthud hover on): " .. (k == "auto" and "auto: herb/ore tooltips, and mob/NPC/player tooltips when you rest on them" or k == "always" and "always on (mob / NPC / player tooltips are blocked)" or ("while holding " .. k)))
     elseif cmd == "tracking" then Toggle("tracking", "Tracking button on HUD")
     elseif cmd == "trackmode" then
         local m = args[2] or ""

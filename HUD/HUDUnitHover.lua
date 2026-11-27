@@ -6,16 +6,20 @@ local HBD = GT.HBD
 
 local POLL_INTERVAL = 0.1
 local HOVER_RADIUS = 12
+local KEEP_RADIUS = 24          -- once a unit tooltip is up, the cursor may drift this far before it counts as left
+local MISS_POLLS = 3            -- polls (0.1 s each) without a hovered marker before the tooltip is hidden
 local MAX_NAMEPLATES = 40
 local markers = {}
 local elapsed = 0
 local hoveredMarker, hoveredGUID
+local misses = 0
 
 local function HideUnitTooltip()
     if hoveredMarker and GameTooltip and GameTooltip:GetOwner() == hoveredMarker then
         GameTooltip:Hide()
     end
     hoveredMarker, hoveredGUID = nil, nil
+    misses = 0
 end
 
 local function NewMarker()
@@ -40,7 +44,6 @@ end
 
 local function VisibleUnits()
     local units, seen = {}, {}
-    AddUnit(units, seen, "mouseover")
     AddUnit(units, seen, "target")
     AddUnit(units, seen, "focus")
     if IsInRaid and IsInRaid() then
@@ -53,6 +56,9 @@ local function VisibleUnits()
         for i = 1, count do AddUnit(units, seen, "party" .. i) end
     end
     for i = 1, MAX_NAMEPLATES do AddUnit(units, seen, "nameplate" .. i) end
+    -- last: the game's own "mouseover" unit is only a fallback, so a unit that also has a nameplate / party token keeps
+    -- that stable token (a tooltip bound to "mouseover" is hidden by the game whenever the mouse focus changes)
+    AddUnit(units, seen, "mouseover")
     return units
 end
 
@@ -93,6 +99,7 @@ local function PlaceMarker(marker, unit, playerX, playerY, playerInstance, radiu
     marker:SetPoint("CENTER", Minimap, "CENTER",
         nx * Minimap:GetWidth() / 2, -ny * Minimap:GetHeight() / 2)
     marker.unit = unit
+    marker.guid = UnitGUID(unit)
     marker:Show()
     -- GetCenter() is in the marker's own scale (the Minimap is scaled by the blip size, 1.3x by default), but the
     -- cursor is compared in UIParent scale: convert, or the hover point drifts away from the dot.
@@ -103,12 +110,17 @@ local function PlaceMarker(marker, unit, playerX, playerY, playerInstance, radiu
 end
 
 local function ShowUnitTooltip(marker, unit)
+    if unit == "mouseover" then return end               -- the unit is under the real cursor: the game shows its own tooltip
     local guid = UnitGUID(unit)
-    if hoveredMarker == marker and hoveredGUID == guid or not GameTooltip then return end
-    HideUnitTooltip()
+    -- already showing this unit: leave it alone. If the game hid it or another addon took it over, show it again.
+    if hoveredMarker == marker and hoveredGUID == guid and GameTooltip
+       and GameTooltip:IsShown() and GameTooltip:GetOwner() == marker then return end
+    if not GameTooltip then return end
+    if hoveredMarker and hoveredMarker ~= marker then HideUnitTooltip() end
     GameTooltip:SetOwner(marker, "ANCHOR_CURSOR")
     GameTooltip:SetUnit(unit)
     hoveredMarker, hoveredGUID = marker, guid
+    misses = 0
 end
 
 function HUD.UnitHoverUpdate(dt)
@@ -148,7 +160,10 @@ function HUD.UnitHoverUpdate(dt)
         if centerX and centerY then
             local dx, dy = cursorX - centerX, cursorY - centerY
             local distance = dx * dx + dy * dy
-            if distance <= HOVER_RADIUS * HOVER_RADIUS and (not nearestDistance or distance < nearestDistance) then
+            -- the unit already being hovered gets a wider radius: a moving unit (or a map that turns with you) must not
+            -- slip in and out of the 12 px circle every poll, which made the tooltip blink
+            local radiusHere = (hoveredGUID and marker.guid == hoveredGUID) and KEEP_RADIUS or HOVER_RADIUS
+            if distance <= radiusHere * radiusHere and (not nearestDistance or distance < nearestDistance) then
                 nearest, nearestDistance = marker, distance
             end
         end
@@ -157,7 +172,10 @@ function HUD.UnitHoverUpdate(dt)
 
     if nearest then
         ShowUnitTooltip(nearest, nearest.unit)
-    else
-        HideUnitTooltip()
+        misses = 0
+    elseif hoveredMarker then
+        -- a short grace period: one poll without a hit (unit position missing for a moment) does not hide the tooltip
+        misses = misses + 1
+        if misses >= MISS_POLLS then HideUnitTooltip() end
     end
 end

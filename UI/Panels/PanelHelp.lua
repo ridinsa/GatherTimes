@@ -131,11 +131,12 @@ Right-click the Settings button in the main window to open it (right-click again
 - Goals: the goal boxes shown on the bar.
 - Pings: which pings show on the bar, and the sound for a red ping. Tick "Sound when ping is red", then use < > to pick a sound (each click plays it). "Repeat every" sets how often the sound repeats while a ping stays red (1 to 60 s, default 10). Unticking it stops any sound playing.
 
-]] .. H .. "Friend/Guild Notifier (Settings > General)" .. E .. [[
+]] .. H .. "Friend/Guild Notifier (Settings > Look)" .. E .. [[
 
 A small pop-up on the right when a guild member or a friend comes online (gold, with the Xbox sound) or goes offline (red, with the Windows sound). It shows the name, whether they are a Friend, a Guild Member or both, their guild, and their level, class and zone when known. It stays for the time on its button: 3, 6, 10 or 20 seconds. Left click the button for the next time, right click for the previous one; each click shows a demo. The same person shows at most once every 10 seconds.
 - Voice: the voice button next to the time button makes the Notifier read the name and the online or offline state out loud (off, then a voice, then the next voice).
 - Untick the box to turn the whole Notifier off.
+- Whisper sound (the Whisper Sound list below it): the sound played when you receive a whisper. Off, the game's own sound, or one of the Media sounds; picking one plays it. Off loads nothing.
 
 ]] }
 
@@ -211,7 +212,7 @@ Turns the real minimap into a big see-through map across your screen, with optio
   - Balanced: the Eagle map stays but without rings, rings are limited to 48 pieces, the update loops run slower, and deep scan is off.
   - Lowest: no rings and no Eagle map (node names still show during Eagle Eye), the slowest loops, and timers refresh every 2 seconds.
 - Compact map (HUD Options > Behaviour): drawn at 75% with no rings, compass letters or heading readout. Your saved values are kept.
-- Hover tooltips: on by default. Auto shows herb and ore names, and the game's own tooltip when you rest on a mob, NPC or player. The Hover key button on the HUD Options tab cycles alt, ctrl, shift, always and auto.
+- Hover tooltips: on by default. Auto shows herb and ore names, and the game's own tooltip when you rest on a mob, NPC or player. The Hover key button on the HUD Options tab cycles auto, ctrl, shift and always.
 Saved ring values are kept, so going back to Full brings them back.
 
 ]] }
@@ -276,7 +277,7 @@ TOPICS[#TOPICS + 1] = { "cmds", "Cmds", H .. "Slash commands" .. E .. [[
 /gthud reset - reset the current profile
 /gthud help - show command help]] }
 
-TOPICS[#TOPICS + 1] = { "credits", "Credits", H .. "GatherTimes 0.25.3" .. E .. [[
+TOPICS[#TOPICS + 1] = { "credits", "Credits", H .. "GatherTimes 0.26.0" .. E .. [[
 
 Author: miRidinsa
 Website: https://github.com/ridinsa/
@@ -284,14 +285,11 @@ License: GNU GPL v3 or later (see the LICENSE file in the addon folder).
 
 ]] .. H .. "What's new" .. E .. [[
 
-- New: GTMove turns mouse-look on when you mount and off when you dismount, and can remember it across logins and reloads (Nav > Move).
-- New: mouse-look sensitivity up / down keys (Key Bindings > AddOns > GTMove).
-- New: the player arrow turns magenta and grows during mouse-look; the size is set in Nav > Move.
-- New: mouse-look notices show on screen; a right-click or Esc in chat ends mouse-look.
-- New: the cursor moves to the screen centre when mouse-look turns off after being on.
-- New: the GTBag privacy switch also hides session gold and turns on the name disguise in GatherTimes_Names.
-- Change: Nav > Move options are saved per character.
-- Fix: the arrow colour follows GTMove's own mouse-look, not the game's.
+- Change: mouse-look is removed; use the separate GTMouse addon. A GTMouse button beside the Minimap HUD button opens its settings.
+- Change: hover key is now Auto (default), Ctrl, Shift or Always.
+- Fix: HUD map tooltips no longer blink or vanish quickly, and the +/- zoom buttons stay hidden while the HUD is on.
+- Fix: the HUD Rings tab fits its window.
+- Fix: the HUD no longer fights GTMouse over the player arrow.
 
 ]] .. H .. "Libraries" .. E .. [[
 

@@ -2,7 +2,7 @@
 ## Title: GTBag
 ## Notes: One-window bags in the style of Baganator: icon grid, search, category view, bag slots, money, bank, guild bank, mail and every character. /gtbag
 ## Author: miRidinsa
-## Version: 0.25.3
+## Version: 0.26.0
 ## X-License: GPL-3.0-or-later
 ## OptionalDeps: GatherTimes, Pawn
 ## IconTexture: Interface\Icons\INV_Misc_Bag_08

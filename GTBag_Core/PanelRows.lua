@@ -150,7 +150,7 @@ end
 function P.UpdateChrome()
     local rec = ns.Rec(ns.ViewKey())
     local hasGuild = rec and rec.guild ~= nil
-    if ns.view.tab == "guild" and not hasGuild then ns.view.tab = "bags" end
+    if ns.view.tab == "auctions" or (ns.view.tab == "guild" and not hasGuild) then ns.view.tab = "bags" end
     local tab, mine = ns.view.tab, ns.ViewingSelf()
 
     -- tab row: Inv, Bank, Mail, Guild as one segmented bar (see P.LayoutTabs)

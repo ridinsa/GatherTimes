@@ -2,7 +2,7 @@
 ## Title: GTBag - Bag window
 ## Notes: The bag window itself (icon grid, search, category view, bank, guild bank, mail, every character). Loaded on demand by the GTBag folder; do not enable it on its own.
 ## Author: miRidinsa
-## Version: 0.25.3
+## Version: 0.26.0
 ## X-License: GPL-3.0-or-later
 ## Dependencies: GTBag
 ## LoadOnDemand: 1

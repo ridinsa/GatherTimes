@@ -37,7 +37,7 @@ Verwandelt die echte Minimap in eine große, durchscheinende Karte auf deinem Bi
 - Profil: mehrere Darstellungen speichern, wechseln oder löschen. Profile gelten für alle Charaktere; jeder Charakter merkt sich sein eigenes.
 - Profil zurücksetzen stellt die Standardwerte wieder her.]]
 
-T.credits = H .. "GatherTimes 0.25.3" .. E .. [[
+T.credits = H .. "GatherTimes 0.26.0" .. E .. [[
 
 Autor: miRidinsa
 Website: https://github.com/ridinsa/
@@ -45,14 +45,11 @@ Lizenz: GNU GPL v3 oder höher (siehe Datei LICENSE im Addon-Ordner).
 
 ]] .. H .. "Neuheiten" .. E .. [[
 
-- Neu: Timing-Option „Timer und Warnungen beim Zonenwechsel löschen“ (standardmäßig aus). Gelernte Zeiten bleiben erhalten.
-- Neu: Beim Betreten einer Stadt werden GatherTimes-Wegpunkte gelöscht; Routen- und Nächster-Punkt-Pfeile bleiben dort aus.
-- Neu: Die FPS-/Ping-Zeile kann Layer, Haltbarkeit sowie Spiel- und Ortszeit anzeigen (Reiter Pings).
-- Neu: „Buffs auf Höhe der Leiste“ und Regler „Oberer Abstand“ (Minimieren > Leiste, für Titan Panel usw.).
-- Neu: Zufallsname, Mini-XP, Notifier und Adlerkarte werden bei Bedarf geladen: `/gt module <Name> on|off`, `/gt modules`.
-- Neu: Tools-Option zum Import von GatherMate2-Daten beim Zonenwechsel; „Layer-Info ausblenden“ im HUD.
-- Änderung: Timer und Marker zeigen immer nur deine aktuelle Zone (die Option „nur Zone“ entfällt).
-- Änderung: weniger CPU und Speicher; Export und Import von Punkten laden bei Bedarf (GatherTimes_Share).
+- Change: mouse-look is removed; use the separate GTMouse addon. A GTMouse button beside the Minimap HUD button opens its settings.
+- Change: hover key is now Auto (default), Ctrl, Shift or Always.
+- Fix: HUD map tooltips no longer blink or vanish quickly, and the +/- zoom buttons stay hidden while the HUD is on.
+- Fix: the HUD Rings tab fits its window.
+- Fix: the HUD no longer fights GTMouse over the player arrow.
 
 ]] .. H .. "Bibliotheken" .. E .. [[
 

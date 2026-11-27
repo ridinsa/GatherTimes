@@ -37,7 +37,7 @@ T.hud = H .. "미니맵 HUD" .. E .. [[
 - 프로필: 여러 모양을 저장, 전환 또는 삭제합니다. 프로필은 모든 캐릭터가 공유하지만 각 캐릭터는 개별 설정을 기억합니다.
 - 프로필 초기화는 기본값을 복원합니다.]]
 
-T.credits = H .. "GatherTimes 0.25.3" .. E .. [[
+T.credits = H .. "GatherTimes 0.26.0" .. E .. [[
 
 제작자: miRidinsa
 웹사이트: https://github.com/ridinsa/
@@ -45,8 +45,11 @@ T.credits = H .. "GatherTimes 0.25.3" .. E .. [[
 
 ]] .. H .. "라이브러리" .. E .. [[
 
-- Nevcairiel의 HereBeDragons-2.0 및 HereBeDragons-Pins-2.0: 미니맵과 세계 지도의 핀 위치.
-- LibStub 및 CallbackHandler-1.0 (WoW Ace 라이브러리): 라이브러리 로드와 콜백.
+- Change: mouse-look is removed; use the separate GTMouse addon. A GTMouse button beside the Minimap HUD button opens its settings.
+- Change: hover key is now Auto (default), Ctrl, Shift or Always.
+- Fix: HUD map tooltips no longer blink or vanish quickly, and the +/- zoom buttons stay hidden while the HUD is on.
+- Fix: the HUD Rings tab fits its window.
+- Fix: the HUD no longer fights GTMouse over the player arrow.
 
 ]] .. H .. "임의 이름" .. E .. [[
 

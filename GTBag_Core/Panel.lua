@@ -202,7 +202,11 @@ local function Build()
     end)
     viewBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
     P.frame.viewBtn = viewBtn
-    -- Sort + Merge: run from the sort icon (menu entry moved there)
+    -- Sort + Merge: the header button defaults to Priority.
+    -- Other rules remain available through Settings and /gtbag sort; they are not offered by this button.
+    P.SORT_ICON_CHOICES = {
+        { "priority", "Priority (Hearthstone, mounts, buffs, food, potions, gear)" },
+    }
     local function SortAndMerge(rule)
         if not ns.ViewingSelf() or ns.view.tab ~= "bags" then
             print("|cffffd100GTBag|r: open your own bags to sort them.")
@@ -212,16 +216,18 @@ local function Build()
             P.RunPhysicalSort(false)
             return
         end
-        -- the sort moves the real items; the window keeps the view and style you chose
-        ns.SetSort(rule or "name")
-        P.RunPhysicalSort(false)
+        -- sort and merge: bag-slot view, all bags in one group, visual auto sort on (auto sort is turned off again
+        -- when the physical sort completes); the sort moves the real items
+        ns.SetOpt("view", "bag")
+        ns.SetOpt("mergeBags", true)
+        ns.SetOpt("autoSort", true)
+        ns.SetSort(rule or "priority")
+        P.RunPhysicalSort(false, true)
     end
 
     -- One menu for everything that used to sit in the Del / Slots / Badges button row
-    local function Head(text) return { text = "|cffffd100" .. text .. "|r", enabled = false } end
     local function OptMenu()
-        local tab, mine = ns.view.tab, ns.ViewingSelf()
-        local idle = not InCombatLockdown()
+        local tab = ns.view.tab
         local E = {}
         local col = 1                       -- left column: Show; right column: Badges + Window
         local function Add(e) e.col = col; E[#E + 1] = e end
@@ -247,9 +253,10 @@ local function Build()
         GameTooltip:Show()
     end)
     sortIconBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    -- one click, no menu: Hearthstone > Mounts > Chronoboon > Potions > Buffs > Food > Gear > A-Z, merging stacks
-    sortIconBtn:SetScript("OnClick", function()
-        if ns.view.tab == "bank" then P.RunPhysicalSort(true) else SortAndMerge("priority") end
+    -- click: bank sorts with the saved order; bags sort + merge with Priority directly.
+    sortIconBtn:SetScript("OnClick", function(self)
+        if ns.view.tab == "bank" then P.RunPhysicalSort(true) return end
+        SortAndMerge("priority")
     end)
     P.frame.sortIconBtn = sortIconBtn
 
@@ -589,11 +596,10 @@ ev:SetScript("OnEvent", function(_, event)
         local run = P.physicalSortRun
         if run.awaiting and (event == "BAG_UPDATE_DELAYED" or event:find("^PLAYERBANK")) then
             run.awaiting = false
-            run.retries = 0
             run.timeoutToken = run.timeoutToken + 1
-            P.QueuePhysicalSortStep(0.1)
+            P.QueuePhysicalSortStep(0.05)
         elseif not run.awaiting and event == "ITEM_LOCK_CHANGED" then
-            P.QueuePhysicalSortStep(0.1)
+            P.QueuePhysicalSortStep(0.05)
         end
     end
     local open = P.frame and P.frame:IsShown()

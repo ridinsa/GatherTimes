@@ -54,6 +54,9 @@ do
                 GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
                 local col = GT.Col(self.key)
                 GameTooltip:AddLine(GT.TR(def.label), col[1], col[2], col[3])
+                if self.clusterCount and self.clusterCount > 1 then
+                    GameTooltip:AddLine(GT.TRF("%d nearby spots", self.clusterCount), 0.85, 0.85, 0.85)
+                end
                 GameTooltip:Show()
             end)
             fr:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -131,6 +134,7 @@ do
         local want, count = {}, 0
         local groupRes = {}
         local multi = GT.ViewMode() == "checked"         -- "All checked": several items on the map, so name them
+        GT._spawnClusterCounts = nil
         if c.showSpawns then
             local nc, old = 0, #candIdx
             for _, key in ipairs(order) do
@@ -152,15 +156,41 @@ do
                 end
                 table.sort(candIdx, ByRank)
             end
+            local clusterReps, clusterCounts = {}, {}
+            local clusterRadius = 0.012
             for j = 1, nc do
                 if count >= MAX_PINS then break end
                 local i = candIdx[j]
                 -- a running timer draws its own text, but only for nodes the dropdown shows
                 if not (GT.IsShown(candKey[i]) and TimerAt(candKey[i], candSp[i])) then
-                    want[candSp[i]] = candKey[i]
-                    count = count + 1
+                    local sp, key = candSp[i], candKey[i]
+                    local rep = sp
+                    if c.smartClusters then
+                        for _, existing in ipairs(clusterReps) do
+                            if existing.key == key and existing.sp.mapID == sp.mapID
+                                and math.abs(existing.sp.x - sp.x) <= clusterRadius
+                                and math.abs(existing.sp.y - sp.y) <= clusterRadius
+                                and math.sqrt((existing.sp.x - sp.x)^2 + (existing.sp.y - sp.y)^2) <= clusterRadius then
+                                rep = existing.sp
+                                break
+                            end
+                        end
+                        if rep == sp then
+                            clusterReps[#clusterReps + 1] = { sp = sp, key = key }
+                            clusterCounts[sp] = 1
+                        else
+                            clusterCounts[rep] = (clusterCounts[rep] or 1) + 1
+                        end
+                    else
+                        clusterCounts[sp] = 1
+                    end
+                    if rep == sp then
+                        want[rep] = key
+                        count = count + 1
+                    end
                 end
             end
+            GT._spawnClusterCounts = clusterCounts
         end
         for sp in pairs(spawnPins) do
             if not want[sp] then RemoveSpawnPin(sp) end
@@ -168,6 +198,8 @@ do
         for sp, key in pairs(want) do
             if not spawnPins[sp] then CreateSpawnPin(sp, key) end
             local p = spawnPins[sp]
+            local clusterCount = (GT._spawnClusterCounts and GT._spawnClusterCounts[sp]) or 1
+            p.world.clusterCount = clusterCount
             p.world.spot, p.world.key = sp, key
             -- minimap half: only for what the dropdown shows
             local showMini = GT.IsShown(key) and not TimerAt(key, sp)
@@ -186,7 +218,7 @@ do
                     p.mini:Hide()
                 end
             end
-            if p.mini then p.mini.spot, p.mini.key = sp, key end
+            if p.mini then p.mini.spot, p.mini.key, p.mini.clusterCount = sp, key, clusterCount end
             local label, labelMini
             if c.showGroups and GT.IsShown(key) then        -- labels only for what the dropdown shows; the other pins stay hoverable
                 local gk = key .. ":" .. sp.mapID
@@ -196,6 +228,11 @@ do
                     label = ShortName(key) .. " G" .. g.of[sp]          -- world map: several items, so always name them
                     labelMini = multi and label or ("G" .. g.of[sp])
                 end
+            end
+            if clusterCount > 1 then
+                local suffix = " x" .. clusterCount
+                label = (label or ShortName(key)) .. suffix
+                labelMini = labelMini and (labelMini .. suffix) or ("x" .. clusterCount)
             end
             if p.lbl ~= label then
                 p.lbl = label

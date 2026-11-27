@@ -17,15 +17,9 @@ local function SamePlacement(a, b)
         and (tonumber(a.info.count) or 1) == (tonumber(b.info.count) or 1)
 end
 
-local function IsJunk(item)
-    return tonumber(item.info.quality) == 0
-end
-
 local function ItemLess(a, b)
-    local aPriority, bPriority = a.info.id == 6948, b.info.id == 6948
-    if aPriority ~= bPriority then return aPriority end
-    local aJunk, bJunk = IsJunk(a), IsJunk(b)
-    if aJunk ~= bJunk then return not aJunk end
+    -- ns.ItemCompare is the order on screen (the chosen rule, junk last), so the physical sort matches it.  This used
+    -- to put the Hearthstone first whatever rule was chosen.
     if ns.ItemCompare(a, b) then return true end
     if ns.ItemCompare(b, a) then return false end
     local aLink, bLink = a.info.link or "", b.info.link or ""
@@ -35,9 +29,20 @@ end
 
 local function BagFamily(bag)
     if not ns.GetNumFree then return nil end
-    local ok, _, family = pcall(ns.GetNumFree, bag)
-    if not ok then return nil end
-    return tonumber(family)
+    local ok, _, bagType = pcall(ns.GetNumFree, bag)
+    local family = bagType
+    if ok and tonumber(family) then return tonumber(family) end
+
+    local itemID
+    if ContainerIDToInventoryID and GetInventoryItemID then
+        itemID = GetInventoryItemID("player", ContainerIDToInventoryID(bag))
+    end
+    if not itemID then return nil end
+    local getFamily = (C_Item and C_Item.GetItemFamily) or GetItemFamily
+    if type(getFamily) ~= "function" then return nil end
+    local ok2, fallback = pcall(getFamily, itemID)
+    if ok2 then return tonumber(fallback) end
+    return nil
 end
 
 local AMMO_FAMILY_BITS = { 1, 2 }

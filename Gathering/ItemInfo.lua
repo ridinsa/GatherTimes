@@ -152,7 +152,7 @@ end
 
 -- Fills tooltip `tt` with the node info.  append = true when the game already drew the item itself
 -- (inventory / bank / chat link): then the name, icon, stack size and vendor price lines are skipped.
-local function Fill(tt, key, append)
+local function Fill(tt, key, append, owner)
     local def = GT.nodes[key]
     local id = def.id
     local name, _, quality, _, _, _, _, maxStack, _, icon, sellPrice
@@ -220,6 +220,26 @@ local function Fill(tt, key, append)
         respawn = respawn .. "  (" .. GT.TR("learned") .. " " .. shown .. ")"
     end
     tt:AddDoubleLine(GT.TR("Respawn"), respawn, 0.7, 0.7, 0.7, 1, 1, 1)
+    if owner and owner.node and GT.RespawnPrediction then
+        local node = owner.node
+        local pred = GT.RespawnPrediction(key, node.mapID, node)
+        if pred.confidence ~= "none" then
+            local now = GetServerTime()
+            local lowLeft = math.max(0, (pred.low or pred.likely) - now)
+            local likelyLeft = math.max(0, pred.likely - now)
+            local window
+            if lowLeft ~= likelyLeft then
+                window = Mmss(lowLeft) .. " - " .. Mmss(likelyLeft)
+            else
+                window = Mmss(likelyLeft)
+            end
+            local confidence = GT.TR(pred.confidence)
+            local r, g, b = 1, 0.45, 0.1
+            if pred.confidence == "medium" then r, g, b = 1, 0.82, 0
+            elseif pred.confidence == "high" then r, g, b = 0.2, 1, 0.2 end
+            tt:AddDoubleLine(GT.TR("Likely ready"), window .. "  (" .. confidence .. ", " .. pred.n .. ")", 0.7, 0.7, 0.7, r, g, b)
+        end
+    end
     local total, here, groups = #GT.spawns[key], 0, 0
     local mapID = C_Map.GetBestMapForUnit("player")
     if mapID then
@@ -268,7 +288,7 @@ function GT.ShowItemTooltip(owner, key)
     end
     GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
     GameTooltip:ClearLines()
-    Fill(GameTooltip, key, false)
+    Fill(GameTooltip, key, false, owner)
     GT.AddSpotNoteTooltip(owner, key)
     HideCharacterNames(GameTooltip)
     GameTooltip:Show()

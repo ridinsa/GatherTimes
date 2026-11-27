@@ -15,10 +15,16 @@ local counts, links = {}, {}          -- reused: one scan per bag update, no new
 
 local function Session()
     GTBagDB = GTBagDB or {}
-    local s = GTBagDB.session
+    local key = ns.MyKey and ns.MyKey() or "?"
+    if type(GTBagDB.sessions) ~= "table" then
+        GTBagDB.sessions = {}
+        if type(GTBagDB.session) == "table" then GTBagDB.sessions[key] = GTBagDB.session end
+        GTBagDB.session = nil
+    end
+    local s = GTBagDB.sessions[key]
     if type(s) ~= "table" or type(s.gain) ~= "table" then
         s = { start = time(), last = time(), gain = {} }
-        GTBagDB.session = s
+        GTBagDB.sessions[key] = s
     end
     return s
 end
@@ -75,9 +81,9 @@ local function Update()
             if not g then g = { n = 0 }; s.gain[id] = g end
             g.n = g.n + (n - old)
             g.link = g.link or links[id]
+            s.last = time()
         end
     end
-    s.last = time()
     Remember()
 end
 
@@ -112,14 +118,22 @@ end
 local function Archive(s)
     if not (s and next(s.gain or {})) then return end
     local sum = ns.SessionSummary(s)
+    local key = ns.MyKey and ns.MyKey() or "?"
+    GTBagDB.sessionHistoryByChar = GTBagDB.sessionHistoryByChar or {}
+    if type(GTBagDB.sessionHistoryByChar[key]) ~= "table" then GTBagDB.sessionHistoryByChar[key] = {} end
     GTBagDB.sessionHistory = GTBagDB.sessionHistory or {}
-    table.insert(GTBagDB.sessionHistory, 1, { start = s.start, stop = s.last or time(), value = sum.total,
-        count = sum.count, perHour = sum.perHour })
+    local entry = { start = s.start, stop = s.last or time(), value = sum.total,
+        count = sum.count, perHour = sum.perHour }
+    table.insert(GTBagDB.sessionHistoryByChar[key], 1, entry)
+    while #GTBagDB.sessionHistoryByChar[key] > 5 do table.remove(GTBagDB.sessionHistoryByChar[key]) end
+    table.insert(GTBagDB.sessionHistory, 1, entry)
     while #GTBagDB.sessionHistory > 5 do table.remove(GTBagDB.sessionHistory) end
 end
 
 function ns.SessionReset()
     Archive(Session())
+    local key = ns.MyKey and ns.MyKey() or "?"
+    if type(GTBagDB.sessions) == "table" then GTBagDB.sessions[key] = nil end
     GTBagDB.session = nil
     Session()
     if Scan() then Remember() end
@@ -150,7 +164,10 @@ end
 
 function ns.SessionPrint(history)
     if history then
-        local list = GTBagDB and GTBagDB.sessionHistory
+        local key = ns.MyKey and ns.MyKey() or "?"
+        local list = GTBagDB and type(GTBagDB.sessionHistoryByChar) == "table"
+            and GTBagDB.sessionHistoryByChar[key]
+        if type(list) ~= "table" then list = GTBagDB and GTBagDB.sessionHistory end
         if type(list) ~= "table" or #list == 0 then Say("no finished sessions yet."); return end
         for i, h in ipairs(list) do
             Say(string.format("%d. %s  %s  %d items, worth %s (%s per hour)", i, date("%d %b %H:%M", h.start or 0),
@@ -179,11 +196,13 @@ ev:SetScript("OnEvent", function(_, event)
         resync = true                       -- gear coming out of the bags or going into them is not farming
     elseif event == "PLAYER_ENTERING_WORLD" then
         -- a few seconds after the loading screen, when the bag contents are known
+        if ns.RefreshMyKey then ns.RefreshMyKey() end
         C_Timer.After(3, function()
-            local s = GTBagDB and GTBagDB.session
+            local key = ns.MyKey and ns.MyKey() or "?"
+            local s = GTBagDB and type(GTBagDB.sessions) == "table" and GTBagDB.sessions[key]
             if type(s) == "table" and time() - (s.last or s.start or 0) > 1800 then
                 Archive(s)
-                GTBagDB.session = nil
+                GTBagDB.sessions[key] = nil
             end
             Session()
             if Scan() then Remember() end

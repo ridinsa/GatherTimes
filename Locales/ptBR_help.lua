@@ -37,7 +37,7 @@ Transforma o minimapa real em um mapa grande e transparente que ocupa a tela, co
 - Perfis: salve várias aparências, alterne entre elas ou exclua. Os perfis são compartilhados por todos os personagens; cada personagem guarda o próprio.
 - Redefinir perfil restaura os padrões.]]
 
-T.credits = H .. "GatherTimes 0.25.3" .. E .. [[
+T.credits = H .. "GatherTimes 0.26.0" .. E .. [[
 
 Autor: miRidinsa
 Site: https://github.com/ridinsa/
@@ -45,14 +45,11 @@ Licença: GNU GPL v3 ou posterior (veja o arquivo LICENSE na pasta do addon).
 
 ]] .. H .. "Novidades" .. E .. [[
 
-- Novo: opção Timing «Limpar timers e alertas ao mudar de zona» (desativada por padrão). Os tempos aprendidos são mantidos.
-- Novo: ao entrar numa cidade, os waypoints do GatherTimes são limpos; as setas de rota e do nó mais próximo ficam desligadas.
-- Novo: a linha de fps / ping pode mostrar layer, durabilidade e os relógios do jogo e local (aba Pings).
-- Novo: «Buffs alinhados à barra» e controle «Deslocamento superior» (Minimizar > Barra, para Titan Panel etc.).
-- Novo: Nome aleatório, Mini XP, Notifier e mapa Águia carregam sob demanda: `/gt module <nome> on|off`, `/gt modules`.
-- Novo: opção de Ferramentas para importar dados do GatherMate2 ao mudar de zona; «Ocultar info de layer» no HUD.
-- Mudança: timers e marcadores mostram sempre só a zona atual (a opção de só zona foi removida).
-- Mudança: menos CPU e memória; exportar e importar pontos carregam sob demanda (GatherTimes_Share).
+- Change: mouse-look is removed; use the separate GTMouse addon. A GTMouse button beside the Minimap HUD button opens its settings.
+- Change: hover key is now Auto (default), Ctrl, Shift or Always.
+- Fix: HUD map tooltips no longer blink or vanish quickly, and the +/- zoom buttons stay hidden while the HUD is on.
+- Fix: the HUD Rings tab fits its window.
+- Fix: the HUD no longer fights GTMouse over the player arrow.
 
 ]] .. H .. "Bibliotecas" .. E .. [[
 

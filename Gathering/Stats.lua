@@ -67,6 +67,7 @@ function GT.RecordZoneYield(key, mapID, itemID, quantityDelta, newDrop, newGathe
     item.drops = math.min(1000000000, CleanCount(item.drops) + (newDrop and 1 or 0))
     quantityDelta = tonumber(quantityDelta)
     if not quantityDelta or quantityDelta ~= quantityDelta then quantityDelta = 0 end
+    quantityDelta = math.max(-1000000000, math.min(1000000000, math.floor(quantityDelta)))
     item.quantity = math.max(0, math.min(1000000000, CleanCount(item.quantity) + quantityDelta))
     -- one gather visit: the skill ETA (Gathering\SkillEta.lua) counts these
     if newGather and GT.NoteSkillGather then pcall(GT.NoteSkillGather, key) end
@@ -351,7 +352,8 @@ end
 local function SessionKey()
     local name = UnitName("player")
     if not name then return nil end
-    return name .. "-" .. (GetRealmName() or "")
+    local realm = GT.RealmName and GT.RealmName() or (GetRealmName and GetRealmName()) or ""
+    return name .. "-" .. realm
 end
 
 local restored = false
@@ -361,9 +363,11 @@ function GT.SaveSession()
     if not key then return end
     local counts = {}
     for k, v in pairs(stats.counts) do
-        if v and v > 0 then counts[k] = v end
+        if v and GT.IsFiniteNumber(v) and v > 0 then
+            counts[k] = math.min(1000000000, math.floor(v))
+        end
     end
-    GatherTimesDB._session = GatherTimesDB._session or {}
+    if type(GatherTimesDB._session) ~= "table" then GatherTimesDB._session = {} end
     local other = {}
     for id, n in pairs(stats.other) do
         if n and n > 0 then other[id] = n end
@@ -378,18 +382,23 @@ function GT.RestoreSession()
     wipe(stats.counts)
     wipe(stats.other)
     stats.start = GetTime()
+    if type(GatherTimesDB._session) ~= "table" then GatherTimesDB._session = {} end
     local key = SessionKey()
     local saved = key and GatherTimesDB and GatherTimesDB._session and GatherTimesDB._session[key]
-    if saved and not GT.cfg().newSessionOnLogin then
+    if type(saved) == "table" and not GT.cfg().newSessionOnLogin then
         for k, v in pairs(saved.counts or {}) do
-            if nodes[k] and type(v) == "number" and v > 0 then stats.counts[k] = v end
+            if nodes[k] and GT.IsFiniteNumber(v) and v > 0 then
+                stats.counts[k] = math.min(1000000000, math.floor(v))
+            end
         end
         if type(saved.other) == "table" then
             for id, v in pairs(saved.other) do
                 if type(id) == "number" and type(v) == "number" and v > 0 then stats.other[id] = CleanCount(v) end
             end
         end
-        stats.start = GetTime() - math.max(0, tonumber(saved.elapsed) or 0)
+        local elapsed = GT.IsFiniteNumber(saved.elapsed) and tonumber(saved.elapsed) or 0
+        elapsed = math.max(0, math.min(365 * 86400, elapsed))
+        stats.start = GetTime() - elapsed
     end
     GT.SaveSession()
 end
@@ -407,19 +416,6 @@ function GT.ResetSessionStats()
     GT.UpdateList()
     if GT.SyncSpawnPins then pcall(GT.SyncSpawnPins) end
     return summary
-end
-
--- Is this a Hardcore character?  The game's own answer first; a realm name with "Hardcore" in it also counts. A client that
--- cannot tell (no such call) answers true, so the warning is not lost there.
-function GT.IsHardcore()
-    local gameRules = _G.C_GameRules
-    if gameRules and gameRules.IsHardcoreActive then
-        local ok, active = pcall(gameRules.IsHardcoreActive)
-        if ok and active then return true end
-        local realm = GetRealmName and GetRealmName() or ""
-        return type(realm) == "string" and realm:lower():find("hardcore", 1, true) ~= nil
-    end
-    return true
 end
 
 local lowWarned = false; local lowLast = 0

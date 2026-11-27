@@ -102,6 +102,7 @@ HUD.DEFAULTS = {
     ring2Yd       = 0,             -- second ring in yards, 0 = off
     ringColor     = { 1, 1, 1, 0.6 },
     ringColor2    = { 1, 1, 1, 0.6 },   -- colour of the second ring
+    ringCombatRed = true,              -- temporarily turn ring 1 red while in combat (on by default)
     ringThickness = 2,
     ringSegments  = 64,
     ringStyle     = "solid",       -- "solid" (line), "stripes" or "dots"
@@ -130,7 +131,7 @@ HUD.DEFAULTS = {
     eagleHideLabels = true,        -- hide the Gx group labels and the (G) timers on the map while the Eagle map is up
     hideLayer     = false,         -- hide the layer info (e.g. "Layer 1") while the HUD or the Eagle map is on (off by default)
     eagleHover    = true,          -- the Eagle map takes the mouse (clicks pass through) so the game's herb / ore hover tooltips work
-    hudHoverKey   = "alt",         -- map hover (normal HUD and Eagle map): the map takes the mouse only while this key is held (alt / ctrl / shift), so the game's own mob / NPC / player tooltips reach the world otherwise; "always" = the map keeps the mouse (blocks those tooltips)
+    hudHoverKey   = "auto",        -- map hover (normal HUD and Eagle map): "auto" = the map takes the mouse over blips and hands it to the game when you rest on a mob / NPC / player; ctrl / shift = only while that key is held; "always" = the map keeps the mouse (blocks mob / NPC / player tooltips). An old saved "alt" means "auto".
     hudHover      = true,          -- the HUD map shows node hover tooltips in auto mode (off: it ignores the mouse)
 }
 

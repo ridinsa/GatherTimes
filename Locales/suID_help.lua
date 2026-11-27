@@ -37,7 +37,7 @@ Ngarobah minimap asli jadi peta gedé transparan nu nutupan layar, kalawan pilih
 - Profil: simpen sababaraha tampilan, pindah atawa hapus. Profil dipaké bareng ku sakabéh karakter; unggal karakter nyimpen pilihanana sorangan.
 - Reset profil mulangkeun setélan baku.]]
 
-T.credits = H .. "GatherTimes 0.25.3" .. E .. [[
+T.credits = H .. "GatherTimes 0.26.0" .. E .. [[
 
 Nu nyieun: miRidinsa
 Website: https://github.com/ridinsa/
@@ -45,14 +45,11 @@ Lisénsi: GNU GPL v3 atawa leuwih anyar (tingali file LICENSE dina folder addon)
 
 ]] .. H .. "Nu anyar" .. E .. [[
 
-- Anyar: pilihan Timing "Hapus timer jeung peringatan nalika pindah zona" (mareuman sacara baku). Waktu nu geus dipelajari tetep disimpen.
-- Anyar: asup ka kota bakal ngahapus waypoint GatherTimes; panah rute jeung node pangdeukeutna tetep mareuman di dinya.
-- Anyar: baris fps / ping bisa nembongkeun layer, daya tahan, jeung jam game sarta jam lokal (tab Pings).
-- Anyar: "Buff sajajar jeung bar" jeung slider "Offset luhur" (Minimalkeun > Bar, pikeun Titan Panel jns.).
-- Anyar: Ngaran Acak, Mini XP, Notifier, jeung peta Elang dimuat nalika diperlukeun: `/gt module <ngaran> on|off`, `/gt modules`.
-- Anyar: pilihan Alat pikeun ngimpor data GatherMate2 nalika pindah zona; "Sumputkeun info layer" dina HUD.
-- Robah: timer jeung pin salawasna ngan nembongkeun zona anjeun ayeuna (pilihan ngan zona dihapus).
-- Robah: CPU jeung memori leuwih hemat; ekspor jeung impor titik dimuat nalika diperlukeun (GatherTimes_Share).
+- Change: mouse-look is removed; use the separate GTMouse addon. A GTMouse button beside the Minimap HUD button opens its settings.
+- Change: hover key is now Auto (default), Ctrl, Shift or Always.
+- Fix: HUD map tooltips no longer blink or vanish quickly, and the +/- zoom buttons stay hidden while the HUD is on.
+- Fix: the HUD Rings tab fits its window.
+- Fix: the HUD no longer fights GTMouse over the player arrow.
 
 ]] .. H .. "Library" .. E .. [[
 

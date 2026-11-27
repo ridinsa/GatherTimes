@@ -37,7 +37,7 @@ local function PhysicalSortStep(run)
         if run.lockWaits > 20 then
             P.StopPhysicalSort("some items remained locked; wait and click Sort again.")
         else
-            P.QueuePhysicalSortStep(0.25)
+            P.QueuePhysicalSortStep(0.10)
         end
         return
     end
@@ -50,6 +50,11 @@ local function PhysicalSortStep(run)
         if status == "done" then
             P.StopPhysicalSort((run.bank and "bank" or "bag") .. " sorting and stack merge complete.")
             if not run.bank then
+                if run.fromIcon then
+                    -- the sort icon's merge is done: auto sort goes off again.
+                    -- Hidden containers stay hidden; never reset container visibility on completion.
+                    ns.SetOpt("autoSort", false)
+                end
                 P.slotManageMode = false
                 P.Layout()
             end
@@ -88,16 +93,16 @@ local function PhysicalSortStep(run)
         return
     end
 
-    C_Timer.After(2, function()
+    C_Timer.After(1.5, function()
         if P.physicalSortRun == run and run.awaiting and run.timeoutToken == token then
-            -- no confirmation (laggy server?): plan again from what the bags look like now and retry, up to 2 times
-            -- per move.  Planning again is safe: if the move did happen, the next step is simply a different one.
+            -- No confirmation (laggy server): replan safely after a longer wait.
+            -- The move may have happened even if the bag event arrived late.
             run.retries = (run.retries or 0) + 1
             if run.retries > 2 then
                 P.StopPhysicalSort("sorting stopped because the game did not confirm an item move.")
             else
                 run.awaiting = false
-                P.QueuePhysicalSortStep(0.5)
+                P.QueuePhysicalSortStep(0.35)
             end
         end
     end)
@@ -107,14 +112,14 @@ P.QueuePhysicalSortStep = function(delay)
     local run = P.physicalSortRun
     if not run or run.queued or run.awaiting then return end
     run.queued = true
-    C_Timer.After(delay or 0.1, function()
+    C_Timer.After(delay or 0.05, function()
         if P.physicalSortRun ~= run then return end
         run.queued = false
         PhysicalSortStep(run)
     end)
 end
 
-function P.RunPhysicalSort(bank)
+function P.RunPhysicalSort(bank, fromIcon)
     if InCombatLockdown() then
         print("|cffffd100GTBag|r: physical sorting is unavailable during combat.")
         return
@@ -149,6 +154,7 @@ function P.RunPhysicalSort(bank)
 
     P.ResetManualOrder()
     P.physicalSortRun = { bank = bank, steps = 0, maxSteps = totalSlots * 2 + 20, lockWaits = 0,
-                        awaiting = false, timeoutToken = 0, queued = false, retries = 0 }
+                        awaiting = false, timeoutToken = 0, queued = false, retries = 0,
+                        fromIcon = fromIcon and true or false }
     P.QueuePhysicalSortStep()
 end

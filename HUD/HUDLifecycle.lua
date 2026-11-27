@@ -75,6 +75,9 @@ function HUD.OnEvent(event, arg1, arg2, arg3)
         HUD.EagleCheck()
         C_Timer.After(0.1, HUD.EagleCheck)              -- channel info can lag the event by a moment
 
+    elseif event == "PLAYER_REGEN_DISABLED" or event == "PLAYER_REGEN_ENABLED" then
+        HUD.Overlay.CombatChanged(event == "PLAYER_REGEN_DISABLED")
+
     elseif event == "PLAYER_MOUNT_DISPLAY_CHANGED" or event == "UNIT_AURA" then
         if event == "UNIT_AURA" and HUD.EagleClass() then HUD.EagleInvalidate(); HUD.EagleCheck() end   -- other classes have no remote view
         if S.active then HUD.UpdateVisibility() end       -- mounts (if the option is on)

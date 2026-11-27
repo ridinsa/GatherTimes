@@ -53,6 +53,40 @@ function GT.RealmName()
     return r
 end
 
+-- Migrate account-wide character keys that predate the Hardcore realm stamp.
+-- Existing stamped entries always win, and legacy entries are never duplicated.
+function GT.MigrateHardcoreCharacterKeys(db)
+    if not GT.IsHardcore() then return 0 end
+    local name = UnitName and UnitName("player")
+    local bare = GetRealmName and GetRealmName() or (GetNormalizedRealmName and GetNormalizedRealmName())
+    if type(name) ~= "string" or type(bare) ~= "string" or bare == "" then return 0 end
+    local stamped = name .. "-" .. bare .. GT.HC_SUFFIX
+    local legacy = name .. "-" .. bare
+    local migrated = 0
+
+    local function CopyAny(value)
+        if type(value) ~= "table" then return value end
+        local copy = {}
+        for k, v in pairs(value) do copy[k] = CopyAny(v) end
+        return copy
+    end
+
+    local function Move(tableValue)
+        if type(tableValue) ~= "table" then return end
+        if tableValue[stamped] == nil and tableValue[legacy] ~= nil then
+            tableValue[stamped] = CopyAny(tableValue[legacy])
+            migrated = migrated + 1
+        end
+        -- Keep the bare-realm key: normal-mode characters use it too.
+    end
+
+    Move(db._char)
+    Move(db._session)
+    if type(db.hud) == "table" then Move(db.hud.chars) end
+    if type(db._cfg) == "table" and type(db._cfg.xpGoal) == "table" then Move(db._cfg.xpGoal) end
+    return migrated
+end
+
 -- Libraries the addon cannot do without for distances and map pins.  They are looked up when the files
 -- load; an addon that bundles them and loads AFTER GatherTimes is only seen at PLAYER_ENTERING_WORLD.
 -- Returns the names of the libraries that are missing, and those that exist now but were not there at load.

@@ -258,7 +258,7 @@ local function Build()
     -- ------------------------------------------------------------------------------------ Sort: order and slots
     col = Page("sort", "Sort")
     Cycle(col, "Sort order", SORTS, function() return ns.Opt("sort") end, function(v) ns.SetSort(v) end,
-        "Priority is Hearthstone > Mounts > Potions > Buffs > Food > Gear > A-Z. Used by Auto sort and Sort + Merge.")
+        "Priority is Hearthstone > Mounts > Buffs > Food > Potions > Gear > A-Z, junk last. Used by Auto sort and Sort + Merge.")
     OptCheck(col, "Auto sort the displayed items", "autoSort", "Sorts what you see; it does not move items.")
     OptCheck(col, "Sort bags when a vendor opens", "autoSortVendor",
         "Runs the sort (with your sort order) when you open a vendor. Pinned, locked and hidden items stay where they are. Off by default.")

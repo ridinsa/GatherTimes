@@ -1,0 +1,5 @@
+<Bindings>
+    <Binding name="GTMOUSE_TOGGLE" header="GTMOUSE" category="ADDONS">
+        if GTMouse then GTMouse.Toggle() end
+    </Binding>
+</Bindings>

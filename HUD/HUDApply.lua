@@ -46,11 +46,13 @@ local RestoreHud        -- defined just below
 -- An error half-way through must not leave the HUD half applied and unreported: report it, and if this call was
 -- the one switching the HUD on, switch it back off so the stock minimap is restored.
 local function ApplyHud(light)
-    local wasActive = S.active
     local ok, err = pcall(ApplyHudInner, light)
     if ok then return end
     GT.ReportError("HUD apply", err)
-    if not wasActive then pcall(RestoreHud) end
+    -- ApplyHudInner sets S.active before geometry is applied. Restore on every
+    -- failure, including refreshes of an already-active HUD, so no partial
+    -- minimap or frame state can remain active.
+    pcall(RestoreHud)
 end
 
 function RestoreHud()

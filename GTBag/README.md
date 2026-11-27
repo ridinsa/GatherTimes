@@ -1,4 +1,4 @@
-# GTBag 0.25.3
+# GTBag 0.26.0
 
 An inventory browser for gatherers, with five window styles (Baganator-like by default). Open with `B` or `/gtbag`. When opened out of combat, GTBag hides the Blizzard bag windows; it defers hiding them during combat to avoid protected-frame errors. Blizzard's native windows handle item transfers.
 
@@ -15,6 +15,21 @@ An inventory browser for gatherers, with five window styles (Baganator-like by d
 - Physical sorting moves real items out of combat using GTBag's selected order and combines compatible partial stacks up to each item's stack limit (overflow stays in additional slots). Regular bags are sorted together; family-restricted bags stay separate and are sorted internally. Arrows and bullets are moved into matching equipped quivers or ammo pouches when space permits. Other sort choices include **Type**, **Quality** (highest first), **Expansion** (oldest first), **Item level** (equipped items, highest first), **Name**, **Value**, or **Category**. Quality then Category sorts highest quality first, then follows the category order. Display sorting is optional; turn on **Auto sort items** to sort displayed items, and turn it off to preserve source slot order. Poor-quality items sort last whenever sorting is enabled.
 - **Opt > Equipped bags row**: view your equipped bags (shows the free general-slot count).
 - Footer: money and free / total slots.
+
+## New in 0.26.0
+
+- **Auction tab removed**: the tab row is now Inv / Bank / Mail / Guild. Your saved auction listings still count in item tooltips and in search (`/gtbag find`).
+- Clean-up: unused code from the old auction view and a few unused helpers are removed. No change to what the other tabs show.
+
+## New in 0.25.4 (sort menu)
+
+- **Default sort order**: Hearthstone > Mounts > Chronoboon Displacer > Buffs > Food and drink > Potions > Gear > A-Z, with junk (poor-quality) items last. Buffs and food now come before potions. `/gtbag tiers` numbers them 1 Hearthstone, 2 mount, 3 Chronoboon Displacer, 4 buff, 5 food, 6 potion, 7 gear, 8 other.
+
+## New in 0.25.15
+
+- **Sorting fixed**:
+  - Physical sorting now follows the sort order you chose. The Hearthstone was always moved to the front, even with Name or Value selected.
+  - The sort icon opens a menu: **Priority**, **Name (A-Z)**, **Quality > Category** or **Number of items**. It switches to bag-slot view, merges the bags into one group and turns on auto sort. When the sort finishes, auto sort turns itself off and bags you had hidden are shown again.
 
 ## New in 0.25.14
 

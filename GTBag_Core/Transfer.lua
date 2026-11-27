@@ -45,7 +45,8 @@ local function FreeGeneralSlots(ids, skip)
         if not skip[bag] then
             local n = ns.GetNumSlots(bag)
             if type(n) == "number" and n > 0 then
-                local ok, f, family = pcall(ns.GetNumFree, bag)
+                local ok, f, bagType = pcall(ns.GetNumFree, bag)
+                local family = bagType
                 if ok and type(f) == "number" and (tonumber(family) or 0) == 0 then free = free + f end
             end
         end
@@ -136,12 +137,28 @@ local function MailTo(items, key)
         if i >= #items or MailSlotsUsed() >= max then return Finish() end
         i = i + 1
         local it = items[i]
+        local before = MailSlotsUsed()
+        local sourceBefore = ns.ItemInfo and ns.ItemInfo(it.bag, it.slot)
+        local sourceCount = sourceBefore and tonumber(sourceBefore.count) or 1
+        local sourceID = sourceBefore and sourceBefore.id
         if not pcall(use, it.bag, it.slot) then
             mailBusy = false             -- an error must not leave the mail action stuck busy until /reload
             Say("an attach failed, stopped. Check the mail window.")
             return
         end
-        C_Timer.After(0.2, Step)         -- one item at a time: the game locks the stack while it moves
+        C_Timer.After(0.2, function()
+            local after = MailSlotsUsed()
+            local sourceAfter = ns.ItemInfo and ns.ItemInfo(it.bag, it.slot)
+            local changedSource = (sourceID ~= nil and (
+                not sourceAfter or sourceAfter.id ~= sourceID
+                or (tonumber(sourceAfter.count) or 1) < sourceCount))
+            if after < before + 1 and not changedSource then
+                mailBusy = false
+                Say("an attachment did not confirm. Stop and verify the mail window.")
+                return
+            end
+            Step()
+        end)
     end
     Step()
 end

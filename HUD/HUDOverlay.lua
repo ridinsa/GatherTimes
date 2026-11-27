@@ -24,6 +24,7 @@ do
     local elapsedSince = 0
     local priorityElapsed = 0
     local needsTick = false              -- something rotates: HUD.OnUpdate calls Overlay.OnUpdate
+    local lastCombat
 
     local LETTER_DEFS = {
         { "N", 0,             1.0, 0.25, 0.25 },
@@ -167,6 +168,9 @@ do
     end
 
     local function RingColorOf(index)
+        if index == 1 and HUD.db.ringCombatRed and lastCombat then
+            return { 1, 0, 0, HUD.db.ringColor[4] }
+        end
         return index == 1 and HUD.db.ringColor or HUD.db.ringColor2
     end
 
@@ -359,6 +363,11 @@ do
     function Overlay.OnUpdate(dt)
         if not (frame and frame:IsShown()) then return end
         local cfg = HUD.Cfg()
+        local combat = UnitAffectingCombat("player") and true or false
+        if combat ~= lastCombat then
+            lastCombat = combat
+            if HUD.db.ringCombatRed then LayoutRings(cfg) end
+        end
         if cfg.ringUnit == "yd" or cfg.scaleCaps then
             -- the map's reach changes with zoom and indoors / outdoors: re-lay the rings when it does
             radiusAcc = radiusAcc + dt
@@ -390,6 +399,13 @@ do
     -- Public API
     ---------------------------------------------------------------------------
 
+    function Overlay.CombatChanged(inCombat)
+        lastCombat = inCombat and true or false
+        if frame and frame:IsShown() and HUD.db.ringCombatRed then
+            LayoutRings(HUD.Cfg())
+        end
+    end
+
     function Overlay.RingColors(index)
         return { index == 1 and HUD.db.ringColor or HUD.db.ringColor2 }
     end
@@ -401,6 +417,7 @@ do
     function Overlay.Update()
         local db = HUD.Cfg()
         if not db then return end
+        lastCombat = UnitAffectingCombat("player") and true or false
         EnsureFrame()
         local size = HUD.EffectiveSize(db)
         frame:SetSize(size, size)
@@ -439,6 +456,7 @@ do
 
     function Overlay.Hide()
         needsTick = false
+        lastCombat = nil
         sig.valid = false
         if priorityText then priorityText:Hide() end
         if frame then frame:Hide() end

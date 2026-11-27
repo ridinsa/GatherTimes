@@ -120,6 +120,11 @@ function GT.BuildDebugReport()
         out[#out + 1] = string.format("Spots: %d (%d imported)   Timers: %d running, %d ready", total, imported, running, ready)
         local q = GT.QuarantinedTimers and GT.QuarantinedTimers()
         if type(q) == "number" then out[#out + 1] = "Timers set aside after an error: " .. tostring(q) end
+        local details = GT.QuarantinedTimerDetails and GT.QuarantinedTimerDetails()
+        if type(details) == "table" and #details > 0 then
+            for i = 1, math.min(#details, 10) do out[#out + 1] = "  " .. details[i] end
+            if #details > 10 then out[#out + 1] = "  ... " .. tostring(#details - 10) .. " more" end
+        end
         out[#out + 1] = "Spawn index rebuilds: " .. tostring(GT.spawnIndexRebuilds or 0)
         out[#out + 1] = "Spawn evictions: " .. tostring(GT.spawnEvictions or 0)
         out[#out + 1] = "GatherMate2 import: " .. tostring(GT.ImportRunning and GT.ImportRunning() and "running" or "idle")

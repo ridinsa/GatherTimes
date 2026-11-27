@@ -1,5 +1,5 @@
 -- GuildPopup.lua : a small pop-up on the right of the screen when a guild member comes online.
--- Settings > General: "Friend/Guild Notifier" (on/off) and "Show N s" (how long it stays; clicking it shows a demo).
+-- Settings > Look: "Friend/Guild Notifier" (on/off) and "Show N s" (how long it stays; clicking it shows a demo).
 local GT = _G.GatherTimesAddon     -- load-on-demand part: it gets its own private table, so take the shared one
 
 local popup
@@ -246,7 +246,7 @@ function GT.GuildVoiceStep(step)
     return true
 end
 
--- Speaks a line with the game's text-to-speech (Settings > General: the voice button next to the notifier). Newer clients take
+-- Speaks a line with the game's text-to-speech (Settings > Look: the voice button next to the notifier). Newer clients take
 -- (voice, text, rate, volume); older ones also take where to play it (the VoiceTtsDestination enum), so that argument
 -- is only added when the client has the enum. A new line cuts off one still being spoken.
 local speakToken = 0

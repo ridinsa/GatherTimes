@@ -74,6 +74,9 @@ local function HookShow(f)
     if f.Show and not hookedShow[f] then
         hookedShow[f] = true
         hooksecurefunc(f, "Show", ManagedShowHook)
+        if f.SetShown then       -- the game shows some of these with SetShown(true), which does not run the Show hook
+            hooksecurefunc(f, "SetShown", function(self, shown) if shown then ManagedShowHook(self) end end)
+        end
     end
 end
 
@@ -277,6 +280,10 @@ end
 
 local function HideDecorations()
     for _, name in ipairs(DECORATIONS) do HideFrame(_G[name], "deco") end
+    -- newer clients keep the +/- zoom buttons as fields of the Minimap (not globals) and show them while the mouse is over it
+    for _, key in ipairs({ "ZoomIn", "ZoomOut", "ZoomHitArea" }) do
+        if Minimap and type(Minimap[key]) == "table" then HideFrame(Minimap[key], "deco") end
+    end
     if HUD.HideClockFrames then HUD.HideClockFrames() end
     HideAddonFrames()
 end

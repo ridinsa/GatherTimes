@@ -77,6 +77,26 @@ function GT.LearnedRange(key, mapID)
     return est, n, false, typ
 end
 
+-- Learned prediction for a running timer.
+-- low/likely/high are server timestamps; confidence reflects real sample count.
+-- Zone data wins only once it has enough samples, otherwise the item-wide value is used.
+function GT.RespawnPrediction(key, mapID, node)
+    local fast, n, fromZone, typical = GT.LearnedRange(key, mapID)
+    if not fast then
+        return { confidence = "none", n = n or 0 }
+    end
+    local likely = typical or fast
+    local confidence = n >= 10 and "high" or (n >= 5 and "medium" or "low")
+    local prediction = { confidence = confidence, n = n, fromZone = fromZone,
+        low = nil, likely = likely, high = nil }
+    if type(node) == "table" and GT.IsFiniteNumber(node.time) then
+        prediction.low = node.time + fast
+        prediction.likely = node.time + likely
+        prediction.high = node.time + likely
+    end
+    return prediction
+end
+
 -- allowLonger (auto-apply only): also take a learned value that is clearly LONGER than the current timer
 -- (more than 5 % above it), so a timer that is too short is corrected too.  Never more than twice the factory
 -- value.  The "Apply all faster" button does not pass it and stays faster-only.

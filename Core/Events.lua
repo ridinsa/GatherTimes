@@ -45,6 +45,8 @@ if not pcall(f.RegisterUnitEvent, f, "UNIT_HEALTH", "player") then f:RegisterEve
 -- HUD events. These may not exist on every client build, so register defensively.
 pcall(f.RegisterEvent, f, "MINIMAP_UPDATE_TRACKING")
 pcall(f.RegisterEvent, f, "PLAYER_MOUNT_DISPLAY_CHANGED")
+pcall(f.RegisterEvent, f, "PLAYER_REGEN_DISABLED")        -- combat start (HUD ring colour)
+pcall(f.RegisterEvent, f, "PLAYER_REGEN_ENABLED")         -- combat end (HUD ring colour)
 pcall(f.RegisterEvent, f, "PLAYER_UPDATE_RESTING")
 pcall(f.RegisterEvent, f, "ZONE_CHANGED")
 pcall(f.RegisterEvent, f, "ZONE_CHANGED_INDOORS")
@@ -194,6 +196,7 @@ f:SetScript("OnEvent", function(_, event, msg, msg2, ...)
         end
 
     elseif event == "MINIMAP_UPDATE_TRACKING" or event == "PLAYER_MOUNT_DISPLAY_CHANGED"
+        or event == "PLAYER_REGEN_DISABLED" or event == "PLAYER_REGEN_ENABLED"
         or event == "PLAYER_UPDATE_RESTING" or event == "ZONE_CHANGED"
         or event == "ZONE_CHANGED_INDOORS" or event == "ZONE_CHANGED_NEW_AREA" or event == "UNIT_AURA"
         or event == "UNIT_SPELLCAST_CHANNEL_START" or event == "UNIT_SPELLCAST_CHANNEL_STOP"

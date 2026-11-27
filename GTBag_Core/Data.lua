@@ -35,14 +35,148 @@ local function DB()
     return GTBagDB
 end
 
+local HC = "-Hardcore"
+local FoldTwin                      -- defined below (folds a stale "Name-Realm" record into "Name-Realm-Hardcore")
 local myKey
 function ns.MyKey()
     if not myKey then
         local name = UnitName("player")
         if not name or name == UNKNOWNOBJECT then return "?-" .. (GetRealmName() or "?") end
-        myKey = name .. "-" .. (GetRealmName() or "?")
+        myKey = ns.CharacterKey(name, GetRealmName() or "?") or (name .. "-" .. (GetRealmName() or "?"))
     end
     return myKey
+end
+function ns.RefreshMyKey()
+    local old = myKey
+    myKey = nil
+    local new = ns.MyKey()
+    if old and new and old ~= new then
+        local d = DB()
+        local function CopyAny(value)
+            if type(value) ~= "table" then return value end
+            local copy = {}
+            for k, v in pairs(value) do copy[k] = CopyAny(v) end
+            return copy
+        end
+        local function CopyKey(tableValue, from, to)
+            if type(tableValue) == "table" and tableValue[from] ~= nil and tableValue[to] == nil then
+                tableValue[to] = CopyAny(tableValue[from])
+                return true
+            end
+            return false
+        end
+        CopyKey(d.chars, old, new)
+        CopyKey(d.charOpts, old, new)
+        CopyKey(d.sessions, old, new)
+        CopyKey(d.sessionHistoryByChar, old, new)
+        CopyKey(d.pendingNicks, old, new)
+
+        local function CopyPrefixed(tableValue, fromPrefix, toPrefix)
+            if type(tableValue) ~= "table" then return end
+            for k, v in pairs(tableValue) do
+                if type(k) == "string" and k:sub(1, #fromPrefix) == fromPrefix
+                    and tableValue[toPrefix .. k:sub(#fromPrefix + 1)] == nil then
+                    tableValue[toPrefix .. k:sub(#fromPrefix + 1)] = CopyAny(v)
+                end
+            end
+        end
+        CopyPrefixed(d.hiddenContainers, old, new)
+        CopyPrefixed(d.hiddenSlots, old .. ":", new .. ":")
+        CopyPrefixed(d.manualOrders, old .. ":", new .. ":")
+        if new == old .. HC then FoldTwin(d, old, new) end      -- late Hardcore detection: move, do not keep a twin
+    end
+    return new
+end
+-- "Name-Realm" and "Name-Realm-Hardcore" are ONE character when the plain record was written before the game reported
+-- Hardcore mode (PLAYER_LOGIN comes first), and RefreshMyKey copied it under the Hardcore key.  Both then showed up in
+-- the character selector.  This folds the plain record into the Hardcore one and removes the plain key everywhere.
+FoldTwin = function(d, from, to)
+    local a, b = d.chars[from], d.chars[to]
+    if type(a) ~= "table" or type(b) ~= "table" then return false end
+    for k, v in pairs(a) do                                   -- fill in what the Hardcore record lacks
+        if b[k] == nil then b[k] = v end
+    end
+    for _, part in ipairs({ { "bags", "bagsT" }, { "bank", "bankT" } }) do    -- newer snapshot wins
+        if type(a[part[1]]) == "table" and (tonumber(a[part[2]]) or 0) > (tonumber(b[part[2]]) or 0) then
+            b[part[1]], b[part[2]] = a[part[1]], a[part[2]]
+        end
+    end
+    if a.nick and not b.nick then b.nick = a.nick end
+    d.chars[from] = nil
+    for _, name in ipairs({ "charOpts", "sessions", "sessionHistoryByChar", "pendingNicks", "hiddenContainers" }) do
+        local t = d[name]
+        if type(t) == "table" then
+            if t[to] == nil then t[to] = t[from] end
+            t[from] = nil
+        end
+    end
+    for _, name in ipairs({ "hiddenSlots", "manualOrders" }) do          -- scopes look like "Name-Realm:..."
+        local t = d[name]
+        if type(t) == "table" then
+            local prefix, moved = from .. ":", nil
+            for k, v in pairs(t) do
+                if type(k) == "string" and k:sub(1, #prefix) == prefix then
+                    moved = moved or {}
+                    moved[#moved + 1] = { k, to .. ":" .. k:sub(#prefix + 1), v }
+                end
+            end
+            for _, m in ipairs(moved or {}) do
+                if t[m[2]] == nil then t[m[2]] = m[3] end
+                t[m[1]] = nil
+            end
+        end
+    end
+    if ns.view and ns.view.char == from then ns.view.char = to end
+    return true
+end
+
+-- Same character saved under more than one key: "Name-Realm" and "Name-Realm-Hardcore", or a realm written a little
+-- differently by an older version.  The key is the identity: it is compared without the Hardcore suffix, case, spaces and
+-- punctuation, and the records must not disagree on name or class (an empty field agrees with anything).  Every key of a
+-- group is folded into one: the character being played, else the Hardcore key, else the newest record.
+local function KeyId(key)
+    key = tostring(key):lower()
+    if key:sub(-#HC) == HC:lower() then key = key:sub(1, -#HC - 1) end
+    return (key:gsub("[%s%p]", ""))
+end
+local function Agree(a, b)
+    local function Same(x, y) return x == nil or y == nil or tostring(x):lower() == tostring(y):lower() end
+    return Same(a.name, b.name) and Same(a.class, b.class)
+end
+
+function ns.MergeHardcoreTwins()
+    local d = DB()
+    local groups
+    for key, rec in pairs(d.chars) do
+        if type(key) == "string" and type(rec) == "table" and key:sub(1, 2) ~= "?-" then
+            groups = groups or {}
+            local id = KeyId(key)
+            groups[id] = groups[id] or {}
+            table.insert(groups[id], key)
+        end
+    end
+    local me, merged = ns.MyKey(), 0
+    for _, keys in pairs(groups or {}) do
+        if #keys > 1 then
+            local target
+            for _, k in ipairs(keys) do if k == me then target = k end end
+            if not target then
+                for _, k in ipairs(keys) do
+                    if k:sub(-#HC) == HC and (not target or (tonumber(d.chars[k].t) or 0) > (tonumber(d.chars[target].t) or 0)) then target = k end
+                end
+            end
+            if not target then
+                for _, k in ipairs(keys) do
+                    if not target or (tonumber(d.chars[k].t) or 0) > (tonumber(d.chars[target].t) or 0) then target = k end
+                end
+            end
+            for _, k in ipairs(keys) do
+                if k ~= target and Agree(d.chars[k], d.chars[target]) and FoldTwin(d, k, target) then merged = merged + 1 end
+            end
+        end
+    end
+    if merged > 0 then ns.dataVersion = (ns.dataVersion or 0) + 1 end
+    return merged
 end
 function ns.ViewKey() return ns.view.char or ns.MyKey() end
 function ns.ViewingSelf() return ns.view.char == nil or ns.view.char == ns.MyKey() end
@@ -503,7 +637,14 @@ function ns.RefreshAuctions()
                 if success and type(info) == "table" then
                     local id = IdOf(info.itemLink)
                     if not id and info.itemKey then id = tonumber(info.itemKey.itemID) end
-                    if id then items[#items + 1] = { id = id, count = tonumber(info.quantity) or 1 } end
+                    if id then
+                        items[#items + 1] = { id = id, count = tonumber(info.quantity) or 1, link = info.itemLink,
+                            buyout = tonumber(info.buyoutAmount), bid = tonumber(info.bidAmount),
+                            unit = tonumber(info.buyoutAmount),          -- retail: unit price for commodities
+                            sold = (Enum and Enum.AuctionStatus and info.status == Enum.AuctionStatus.Sold) or nil,
+                            left = tonumber(info.timeLeftSeconds),
+                            tl = tonumber(info.timeLeft) and (tonumber(info.timeLeft) + 1) or nil }   -- 1 short .. 4 very long
+                    end
                 end
             end
         end
@@ -522,7 +663,20 @@ function ns.RefreshAuctions()
                 -- (values[4]), the item id the 17th (values[18]).  Checked with /dump on a Classic client.
                 local itemID = values[1] and tonumber(values[18]) or nil
                 if not itemID or itemID <= 0 then itemID = IdOf(link) end
-                if itemID then items[#items + 1] = { id = itemID, count = tonumber(values[4]) or 1 } end
+                if itemID then
+                    local tl
+                    if GetAuctionItemTimeLeft then
+                        local okT, v = pcall(GetAuctionItemTimeLeft, "owner", index)
+                        if okT then tl = tonumber(v) end
+                    end
+                    local cnt = tonumber(values[4]) or 1
+                    local bo = values[1] and tonumber(values[11]) or nil
+                    items[#items + 1] = { id = itemID, count = cnt, link = link, tl = tl,
+                        unit = bo and bo > 0 and math.floor(bo / math.max(cnt, 1)) or nil,
+                        icon = values[1] and values[3] or nil, q = values[1] and tonumber(values[5]) or nil,
+                        buyout = values[1] and tonumber(values[11]) or nil, bid = values[1] and tonumber(values[12]) or nil,
+                        sold = (values[1] and tonumber(values[17]) == 1) or nil }
+                end
             end
         end
     else
@@ -688,7 +842,9 @@ local function GuildNext()
     gcur = gq and table.remove(gq, 1) or nil
     if not gcur then
         gq, gstarted = nil, false
-        RestoreGuildTab()
+        C_Timer.After(0.25, function()
+            if ns.atGuild then RestoreGuildTab() end
+        end)
         return
     end
     local mine = gcur
@@ -838,6 +994,8 @@ ev:SetScript("OnEvent", function(_, event, arg1)
     elseif event == "PLAYER_LOGIN" then
         ns.SaveChar("none")                -- the record exists from the first login; bag contents follow with BAG_UPDATE_DELAYED
     elseif event == "PLAYER_ENTERING_WORLD" then
+        if ns.RefreshMyKey then ns.RefreshMyKey() end
+        if ns.MergeHardcoreTwins then ns.MergeHardcoreTwins() end     -- also clears twins saved by older versions
         local key = ns.MyKey()
         C_Timer.After(10, function()
             if ns.MyKey() == key then SaveMoney(false) end
@@ -982,6 +1140,7 @@ function ns.Source()
             src.notice = m and ("No items in the mail of " .. who .. ".")
                             or ("No mail data for " .. who .. " yet.\nOpen a mailbox with this character once.")
         end
+
     end
     return src
 end
